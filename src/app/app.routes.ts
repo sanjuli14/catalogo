@@ -10,9 +10,15 @@ export const routes: Routes = [
     loadComponent: () => import('./pages/login/login').then((m) => m.Login),
   },
   {
+    path: 'registro',
+    canActivate: [guestGuard],
+    loadComponent: () => import('./pages/register/register').then((m) => m.Register),
+  },
+  {
     path: 'admin',
     canActivate: [roleGuard('tenant_admin')],
     loadComponent: () => import('./pages/admin/admin').then((m) => m.Admin),
+    loadChildren: () => import('./pages/admin/admin.routes').then((m) => m.adminRoutes),
   },
   {
     path: 'superadmin',

@@ -1,12 +1,13 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject, signal, viewChild } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 
 import { Auth, homeFor } from '../../core/auth';
+import { Turnstile, captchaEnabled } from '../../shared/turnstile';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, RouterLink, Turnstile],
   template: `
     <main class="auth-page">
       <form class="card auth-card" [formGroup]="form" (ngSubmit)="submit()">
@@ -15,7 +16,8 @@ import { Auth, homeFor } from '../../core/auth';
 
         @if (auth.session() && !auth.profile()) {
           <p class="alert">
-            Tu cuenta no tiene acceso a ningún panel. Pide al administrador que te asigne un negocio.
+            Tu cuenta todavía no tiene un negocio.
+            <a routerLink="/registro">Termina de crearlo aquí</a>.
           </p>
         }
 
@@ -33,9 +35,19 @@ import { Auth, homeFor } from '../../core/auth';
           <p class="alert">{{ error() }}</p>
         }
 
-        <button type="submit" class="button" [disabled]="form.invalid || loading()">
+        @if (captchaEnabled) {
+          <app-turnstile (token)="captchaToken.set($event)" />
+        }
+
+        <button
+          type="submit"
+          class="button"
+          [disabled]="form.invalid || loading() || (captchaEnabled && !captchaToken())"
+        >
           {{ loading() ? 'Entrando…' : 'Entrar' }}
         </button>
+
+        <p class="muted">¿No tienes cuenta? <a routerLink="/registro">Crea tu catálogo</a></p>
       </form>
     </main>
   `,
@@ -50,20 +62,26 @@ export class Login {
   });
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
+  protected readonly captchaEnabled = captchaEnabled;
+  protected readonly captchaToken = signal<string | null>(null);
+  private readonly captcha = viewChild(Turnstile);
 
   protected async submit(): Promise<void> {
     const { email, password } = this.form.getRawValue();
     this.loading.set(true);
     this.error.set(null);
 
-    const error = await this.auth.signIn(email, password);
+    const error = await this.auth.signIn(email, password, this.captchaToken() ?? undefined);
     this.loading.set(false);
     if (error) {
+      // El token ya se usó: hace falta uno nuevo para reintentar.
+      this.captcha()?.reset();
       this.error.set(error);
       return;
     }
 
+    // Sin perfil: se registró pero aún no creó su negocio.
     const profile = this.auth.profile();
-    if (profile) await this.router.navigateByUrl(homeFor(profile.role));
+    await this.router.navigateByUrl(profile ? homeFor(profile.role) : '/registro');
   }
 }

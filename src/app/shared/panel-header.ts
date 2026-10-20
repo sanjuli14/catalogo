@@ -13,7 +13,9 @@ import { Auth } from '../core/auth';
       </div>
       <div class="panel-header__user">
         <span>{{ auth.session()?.user?.email }}</span>
-        <button type="button" class="button button--ghost" (click)="signOut()">Cerrar sesión</button>
+        <button type="button" class="button button--ghost" (click)="signOut()">
+          Cerrar sesión
+        </button>
       </div>
     </header>
   `,

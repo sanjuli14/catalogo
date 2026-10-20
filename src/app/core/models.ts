@@ -1,7 +1,7 @@
 // Tipos de las tablas de Supabase (supabase/migrations).
 
 export type Role = 'superadmin' | 'tenant_admin';
-export type BusinessStatus = 'active' | 'suspended';
+export type BusinessStatus = 'pending' | 'active' | 'suspended';
 export type ItemKind = 'product' | 'service';
 
 export interface Profile {

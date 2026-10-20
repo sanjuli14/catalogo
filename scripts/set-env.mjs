@@ -13,6 +13,8 @@ if (missing.length) {
 const environment = {
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  // Opcional: sin ella no se muestra el captcha (solo funciona si Supabase no lo exige).
+  turnstileSiteKey: process.env.TURNSTILE_SITE_KEY ?? '',
 };
 
 mkdirSync('src/environments', { recursive: true });

@@ -1,0 +1,231 @@
+import { Component, OnDestroy, inject, input, signal } from '@angular/core';
+import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { Router, RouterLink } from '@angular/router';
+
+import { CatalogApi } from '../../../core/catalog-api';
+import { errorMessage } from '../../../core/format';
+import { Category, ItemKind } from '../../../core/models';
+import { CurrentBusiness } from '../current-business';
+
+const MAX_PHOTOS = 5;
+
+/** Una foto ya guardada (path) o una nueva elegida en este formulario (file). */
+interface PhotoDraft {
+  path?: string;
+  file?: File;
+  url: string;
+}
+
+@Component({
+  selector: 'app-item-form',
+  imports: [ReactiveFormsModule, RouterLink],
+  template: `
+    <section class="section-header">
+      <h2>{{ id() ? 'Editar' : 'Nuevo producto o servicio' }}</h2>
+      <a class="button button--ghost" routerLink="/admin/productos">Volver</a>
+    </section>
+
+    @if (loading()) {
+      <p class="muted">Cargando…</p>
+    } @else {
+      <form class="card form-grid" [formGroup]="form" (ngSubmit)="save()">
+        <label class="field">
+          <span>Tipo</span>
+          <select formControlName="kind">
+            <option value="product">Producto</option>
+            <option value="service">Servicio</option>
+          </select>
+        </label>
+
+        <label class="field">
+          <span>Categoría</span>
+          <select formControlName="category_id">
+            <option [ngValue]="null">Sin categoría</option>
+            @for (category of categories(); track category.id) {
+              <option [ngValue]="category.id">{{ category.name }}</option>
+            }
+          </select>
+        </label>
+
+        <label class="field form-grid__full">
+          <span>Nombre</span>
+          <input formControlName="name" maxlength="120" />
+        </label>
+
+        <label class="field form-grid__full">
+          <span>Descripción</span>
+          <textarea formControlName="description" rows="4" maxlength="1000"></textarea>
+        </label>
+
+        <label class="field">
+          <span>Precio ({{ current.business()?.currency }})</span>
+          <input type="number" formControlName="price" min="0" step="0.01" inputmode="decimal" />
+          <small>Déjalo vacío para mostrar "Precio a consultar".</small>
+        </label>
+
+        <div class="field">
+          <span>Estado</span>
+          <label class="check">
+            <input type="checkbox" formControlName="is_available" /> Disponible
+          </label>
+          <label class="check">
+            <input type="checkbox" formControlName="is_visible" /> Visible en el catálogo
+          </label>
+        </div>
+
+        <div class="field form-grid__full">
+          <span>Fotos ({{ photos().length }} de {{ maxPhotos }})</span>
+          <div class="photos">
+            @for (photo of photos(); track photo.url; let i = $index) {
+              <div class="photos__item">
+                <img [src]="photo.url" alt="" />
+                <button
+                  type="button"
+                  class="photos__remove"
+                  (click)="removePhoto(i)"
+                  aria-label="Quitar foto"
+                >
+                  ×
+                </button>
+              </div>
+            }
+            @if (photos().length < maxPhotos) {
+              <label class="photos__add">
+                <input
+                  type="file"
+                  accept="image/png,image/jpeg,image/webp"
+                  multiple
+                  (change)="addPhotos($event)"
+                />
+                + Agregar
+              </label>
+            }
+          </div>
+          <small>La primera foto es la principal.</small>
+        </div>
+
+        @if (error(); as error) {
+          <p class="alert form-grid__full">{{ error }}</p>
+        }
+
+        <div class="form-actions form-grid__full">
+          <button type="submit" class="button" [disabled]="form.invalid || saving()">
+            {{ saving() ? 'Guardando…' : 'Guardar' }}
+          </button>
+        </div>
+      </form>
+    }
+  `,
+})
+export class ItemForm implements OnDestroy {
+  private readonly api = inject(CatalogApi);
+  private readonly router = inject(Router);
+  protected readonly current = inject(CurrentBusiness);
+  private readonly businessId = this.current.id()!;
+
+  /** Viene de la ruta /admin/productos/:id; vacío al crear. */
+  readonly id = input<string>();
+
+  protected readonly maxPhotos = MAX_PHOTOS;
+  protected readonly categories = signal<Category[]>([]);
+  protected readonly photos = signal<PhotoDraft[]>([]);
+  protected readonly loading = signal(true);
+  protected readonly saving = signal(false);
+  protected readonly error = signal<string | null>(null);
+  /** Fotos guardadas que se quitaron: se borran del Storage al guardar. */
+  private removedPaths: string[] = [];
+  private nextPosition = 0;
+
+  protected readonly form = inject(NonNullableFormBuilder).group({
+    kind: ['product' as ItemKind],
+    category_id: [null as string | null],
+    name: ['', [Validators.required, Validators.maxLength(120)]],
+    description: [''],
+    price: [null as number | null, Validators.min(0)],
+    is_available: [true],
+    is_visible: [true],
+  });
+
+  constructor() {
+    void this.load();
+  }
+
+  ngOnDestroy(): void {
+    for (const photo of this.photos()) if (photo.file) URL.revokeObjectURL(photo.url);
+  }
+
+  private async load(): Promise<void> {
+    try {
+      const [categories, items] = await Promise.all([
+        this.api.listCategories(this.businessId),
+        this.api.listItems(this.businessId),
+      ]);
+      this.categories.set(categories);
+      this.nextPosition = items.length;
+
+      const item = items.find((i) => i.id === this.id());
+      if (this.id() && !item) throw new Error('No se encontró este producto.');
+      if (item) {
+        this.form.patchValue({ ...item, description: item.description ?? '' });
+        this.photos.set(item.photos.map((path) => ({ path, url: this.api.imageUrl(path) })));
+      }
+    } catch (e) {
+      this.error.set(errorMessage(e));
+    } finally {
+      this.loading.set(false);
+    }
+  }
+
+  protected addPhotos(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    const free = MAX_PHOTOS - this.photos().length;
+    const added = Array.from(input.files ?? [])
+      .slice(0, free)
+      .map((file) => ({ file, url: URL.createObjectURL(file) }));
+    this.photos.update((list) => [...list, ...added]);
+    input.value = '';
+  }
+
+  protected removePhoto(index: number): void {
+    const photo = this.photos()[index];
+    if (photo.path) this.removedPaths.push(photo.path);
+    if (photo.file) URL.revokeObjectURL(photo.url);
+    this.photos.update((list) => list.filter((_, i) => i !== index));
+  }
+
+  protected async save(): Promise<void> {
+    this.saving.set(true);
+    this.error.set(null);
+    try {
+      // Sube las fotos nuevas y deja todas como rutas del bucket, en el orden mostrado.
+      const photos = await Promise.all(
+        this.photos().map((p) => p.path ?? this.api.uploadImage(this.businessId, 'items', p.file!)),
+      );
+      const value = this.form.getRawValue();
+      const data = {
+        ...value,
+        name: value.name.trim(),
+        description: value.description.trim() || null,
+        price: value.price ?? null,
+        photos,
+      };
+
+      const id = this.id();
+      if (id) {
+        await this.api.updateItem(id, data);
+      } else {
+        await this.api.createItem({
+          ...data,
+          business_id: this.businessId,
+          position: this.nextPosition,
+        });
+      }
+      await this.api.removeImages(this.removedPaths);
+      await this.router.navigateByUrl('/admin/productos');
+    } catch (e) {
+      this.error.set(errorMessage(e));
+    } finally {
+      this.saving.set(false);
+    }
+  }
+}
