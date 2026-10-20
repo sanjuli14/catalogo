@@ -1,7 +1,11 @@
-/** "$12.50", "12,50 €"... según la moneda del negocio. null = "Precio a consultar". */
+/** "$12.50", "€12.50", "Q 12.50"... según la moneda del negocio. null = "Precio a consultar". */
 export function formatPrice(price: number | null, currency: string): string {
   if (price === null) return 'Precio a consultar';
-  return new Intl.NumberFormat('es', { style: 'currency', currency }).format(price);
+  return new Intl.NumberFormat('es-419', {
+    style: 'currency',
+    currency,
+    currencyDisplay: 'narrowSymbol',
+  }).format(price);
 }
 
 /** Convierte un error de Supabase en un mensaje para el usuario. */

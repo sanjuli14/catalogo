@@ -1,0 +1,229 @@
+@if (loading()) {
+  <p class="catalog-status">Cargando catálogo…</p>
+} @else if (!business()) {
+  <main class="catalog-status">
+    @if (error(); as error) {
+      <p class="alert">{{ error }}</p>
+    } @else {
+      <h1>Este catálogo no existe</h1>
+      <p>Revisa el enlace o pídele al negocio que te lo envíe de nuevo.</p>
+    }
+    <a class="button" routerLink="/">Ir al inicio</a>
+  </main>
+} @else {
+  @let b = business()!;
+
+  @if (isPreview()) {
+    <p class="preview-banner">
+      Vista previa: este catálogo todavía no es público ({{
+        b.status === 'pending' ? 'en revisión' : 'suspendido'
+      }}).
+    </p>
+  }
+
+  <header class="hero">
+    <div class="hero__inner">
+      @if (logoUrl(); as logo) {
+        <img class="hero__logo" [src]="logo" [alt]="'Logo de ' + b.name" />
+      }
+      <div class="hero__text">
+        <h1>{{ b.name }}</h1>
+        @if (b.description) {
+          <p>{{ b.description }}</p>
+        }
+      </div>
+    </div>
+
+    <div class="hero__actions">
+      @if (contactUrl(); as url) {
+        <a class="action action--primary" [href]="url" target="_blank" rel="noopener">
+          Escribir por WhatsApp
+        </a>
+      }
+      <a class="action" [href]="shareOnWhatsappUrl()" target="_blank" rel="noopener">
+        Enviar a un amigo
+      </a>
+      <button type="button" class="action" (click)="share()">
+        {{ copied() ? '¡Enlace copiado!' : 'Compartir enlace' }}
+      </button>
+      <button
+        type="button"
+        class="action"
+        [disabled]="generatingPdf() || !groups().length"
+        (click)="downloadPdf()"
+      >
+        {{ generatingPdf() ? 'Generando PDF…' : 'Descargar PDF' }}
+      </button>
+    </div>
+  </header>
+
+  <main class="catalog">
+    @if (error(); as error) {
+      <p class="alert">{{ error }}</p>
+    }
+
+    @if (!groups().length) {
+      <p class="catalog-empty">Este negocio todavía no tiene productos publicados.</p>
+    } @else {
+      <div class="filters">
+        <input
+          class="filters__search"
+          type="search"
+          placeholder="Buscar productos y servicios"
+          aria-label="Buscar"
+          [value]="search()"
+          (input)="search.set($any($event.target).value)"
+        />
+        @if (groups().length > 1) {
+          <div class="filters__chips" role="group" aria-label="Categorías">
+            <button
+              type="button"
+              class="chip"
+              [class.is-active]="selectedGroup() === null"
+              (click)="selectedGroup.set(null)"
+            >
+              Todo
+            </button>
+            @for (group of groups(); track group.id) {
+              <button
+                type="button"
+                class="chip"
+                [class.is-active]="selectedGroup() === group.id"
+                (click)="selectedGroup.set(group.id)"
+              >
+                {{ group.name }}
+              </button>
+            }
+          </div>
+        }
+      </div>
+
+      @if (!resultCount()) {
+        <p class="catalog-empty">No encontramos nada con "{{ search() }}".</p>
+      }
+
+      @for (group of visibleGroups(); track group.id) {
+        <section class="group">
+          @if (group.name) {
+            <h2>{{ group.name }}</h2>
+          }
+          <div class="grid">
+            @for (item of group.items; track item.id) {
+              <article class="product" [class.is-unavailable]="!item.is_available">
+                <button type="button" class="product__open" (click)="showItem(item)">
+                  @if (item.photos.length) {
+                    <img
+                      class="product__image"
+                      [src]="photoUrl(item.photos[0])"
+                      [alt]="item.name"
+                      loading="lazy"
+                    />
+                  } @else {
+                    <span class="product__image product__image--empty" aria-hidden="true">
+                      {{ item.name.charAt(0) }}
+                    </span>
+                  }
+                  <span class="product__body">
+                    <span class="product__name">{{ item.name }}</span>
+                    <span class="product__price">{{ price(item) }}</span>
+                    @if (!item.is_available) {
+                      <span class="product__tag">No disponible</span>
+                    }
+                  </span>
+                </button>
+                @if (item.is_available && orderUrl(item); as url) {
+                  <a class="product__order" [href]="url" target="_blank" rel="noopener">
+                    Pedir por WhatsApp
+                  </a>
+                }
+              </article>
+            }
+          </div>
+        </section>
+      }
+    }
+  </main>
+
+  <footer class="contact">
+    <div class="contact__inner">
+      <h2>Contacto</h2>
+      <ul>
+        @if (b.whatsapp) {
+          <li>
+            <span>WhatsApp</span>
+            <a [href]="contactUrl()" target="_blank" rel="noopener">+{{ b.whatsapp }}</a>
+          </li>
+        }
+        @if (b.phone) {
+          <li>
+            <span>Teléfono</span><a [href]="'tel:' + b.phone">{{ b.phone }}</a>
+          </li>
+        }
+        @if (b.email) {
+          <li>
+            <span>Correo</span><a [href]="'mailto:' + b.email">{{ b.email }}</a>
+          </li>
+        }
+        @if (b.address) {
+          <li><span>Dirección</span>{{ b.address }}</li>
+        }
+        @if (b.schedule) {
+          <li><span>Horario</span>{{ b.schedule }}</li>
+        }
+      </ul>
+      @if (socials().length) {
+        <div class="contact__socials">
+          @for (social of socials(); track social.label) {
+            <a [href]="social.url" target="_blank" rel="noopener">{{ social.label }}</a>
+          }
+        </div>
+      }
+    </div>
+    <p class="made-with">
+      <a routerLink="/registro">Crea tu propio catálogo gratis</a>
+    </p>
+  </footer>
+
+  <dialog #dialog class="detail" (click)="onDialogClick($event)" (close)="openItem.set(null)">
+    @if (openItem(); as item) {
+      <article class="detail__card">
+        <button type="button" class="detail__close" (click)="closeItem()" aria-label="Cerrar">
+          ×
+        </button>
+        @if (item.photos.length) {
+          <img class="detail__image" [src]="photoUrl(item.photos[openPhoto()])" [alt]="item.name" />
+          @if (item.photos.length > 1) {
+            <div class="detail__thumbs">
+              @for (photo of item.photos; track photo; let i = $index) {
+                <button
+                  type="button"
+                  [class.is-active]="openPhoto() === i"
+                  (click)="openPhoto.set(i)"
+                  [attr.aria-label]="'Foto ' + (i + 1)"
+                >
+                  <img [src]="photoUrl(photo)" alt="" />
+                </button>
+              }
+            </div>
+          }
+        }
+        <div class="detail__body">
+          <span class="detail__kind">{{ item.kind === 'service' ? 'Servicio' : 'Producto' }}</span>
+          <h2>{{ item.name }}</h2>
+          <p class="detail__price">{{ price(item) }}</p>
+          @if (!item.is_available) {
+            <p class="product__tag">No disponible por ahora</p>
+          }
+          @if (item.description) {
+            <p class="detail__description">{{ item.description }}</p>
+          }
+          @if (item.is_available && orderUrl(item); as url) {
+            <a class="action action--primary" [href]="url" target="_blank" rel="noopener">
+              Pedir por WhatsApp
+            </a>
+          }
+        </div>
+      </article>
+    }
+  </dialog>
+}

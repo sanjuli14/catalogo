@@ -24,6 +24,17 @@ export class CatalogApi {
     return data;
   }
 
+  /** null si no existe o si el visitante no puede verlo (no está activo y no es su dueño). */
+  async getBusinessBySlug(slug: string): Promise<Business | null> {
+    const { data, error } = await this.supabase
+      .from('businesses')
+      .select('*')
+      .eq('slug', slug)
+      .maybeSingle<Business>();
+    if (error) throw error;
+    return data;
+  }
+
   async updateBusiness(id: string, patch: BusinessPatch): Promise<Business> {
     const { data, error } = await this.supabase
       .from('businesses')
