@@ -70,6 +70,19 @@
   text-wrap: balance;
 }
 
+/*
+ * Titular que achica la letra según su largo (--chars, lo pone el componente) y el ancho
+ * de su contenedor, para que los nombres largos no ocupen tres o más renglones.
+ * El contenedor más cercano necesita `container-type: inline-size`.
+ */
+.fit {
+  font-size: clamp(
+    var(--fit-min, 26px),
+    calc(var(--fit-k, 210cqi) / var(--chars, 12)),
+    var(--fit-max, 72px)
+  );
+}
+
 .figure {
   font-weight: 800;
   letter-spacing: -0.04em;
@@ -139,7 +152,11 @@
 .btn--block {
   width: 100%;
   min-height: 58px;
+  padding: 8px 20px;
   font-size: 16px;
+  line-height: 1.2;
+  text-align: center;
+  white-space: normal;
 }
 
 .icon-btn {
@@ -174,6 +191,44 @@
 :is(a, button):focus-visible {
   outline: 3px solid color-mix(in oklab, var(--brand) 60%, var(--ink));
   outline-offset: 2px;
+}
+
+/* ---------- Datos del cliente (van en los mensajes de WhatsApp) ---------- */
+.delivery {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  color: var(--ink-2);
+  font-size: 14px;
+  line-height: 1.35;
+}
+
+.delivery > app-icon {
+  flex: none;
+  color: var(--muted);
+}
+
+.delivery__text {
+  flex: 1;
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.delivery button {
+  font: inherit;
+  flex: none;
+  padding: 8px 12px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.delivery button:hover {
+  border-color: var(--ink);
 }
 
 /* ---------- Aviso de vista previa ---------- */

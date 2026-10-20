@@ -12,16 +12,21 @@ import {
   viewChild,
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
+import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 
 import { readableTextColor } from '../../core/color';
+import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
 import { Icon } from '../../shared/icon';
+import { Cart, MAX_QUANTITY } from './cart';
+import { CartSheet } from './cart-sheet';
+import { CustomerSheet } from './customer-sheet';
 import { ProductCard } from './product-card';
 import {
   PublicCatalog,
   PublicCatalogData,
-  contactUrl,
+  askAvailabilityUrl,
   itemPrice,
   orderTotal,
   orderUrl,
@@ -30,12 +35,11 @@ import {
 
 /** Cuántos productos se sugieren abajo ("Más en esta categoría"). */
 const RELATED_LIMIT = 8;
-const MAX_QUANTITY = 99;
 
 /** Página de un producto o servicio: /:slug/:itemId */
 @Component({
   selector: 'app-product',
-  imports: [RouterLink, Icon, ProductCard],
+  imports: [NgTemplateOutlet, RouterLink, Icon, ProductCard, CartSheet, CustomerSheet],
   templateUrl: './product.html',
   styleUrls: ['./catalog-theme.css', './product.css'],
   host: {
@@ -48,6 +52,8 @@ export class Product implements OnInit, OnDestroy {
   private readonly catalog = inject(PublicCatalog);
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  protected readonly customer = inject(CustomerProfile);
+  protected readonly cart = inject(Cart);
 
   /** Vienen de la ruta /:slug/:itemId */
   readonly slug = input.required<string>();
@@ -58,7 +64,10 @@ export class Product implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly copied = signal(false);
   protected readonly photoIndex = signal(0);
-  /** Cantidad que se pide: va en el mensaje de WhatsApp junto al total. */
+  /** Durante un momento después de añadir, el botón lo confirma. */
+  protected readonly justAdded = signal(false);
+  private justAddedTimer?: ReturnType<typeof setTimeout>;
+  /** Cantidad que se añade al pedido o se pide directo. */
   protected readonly quantity = signal(1);
   protected readonly maxQuantity = MAX_QUANTITY;
   private readonly gallery = viewChild<ElementRef<HTMLElement>>('gallery');
@@ -67,6 +76,13 @@ export class Product implements OnInit, OnDestroy {
   protected readonly item = computed(
     () => this.data()?.items.find((i) => i.id === this.itemId()) ?? null,
   );
+
+  protected readonly allItems = computed(() => this.data()?.items ?? []);
+  /** Cuántos hay ya en el pedido (0 si no está). */
+  protected readonly inCart = computed(() => {
+    const item = this.item();
+    return item ? this.cart.quantity(item.business_id, item.id) : 0;
+  });
 
   protected readonly categoryName = computed(() => {
     const categoryId = this.item()?.category_id;
@@ -103,7 +119,10 @@ export class Product implements OnInit, OnDestroy {
   protected readonly orderUrl = computed(() => {
     const business = this.business();
     const item = this.item();
-    return business && item ? orderUrl(business, item, this.quantity()) : null;
+    if (!business || !item) return null;
+    // Los servicios no llevan cantidad.
+    const quantity = item.kind === 'product' ? this.quantity() : 1;
+    return orderUrl(business, item, this.customer.data(), quantity);
   });
   protected readonly total = computed(() => {
     const business = this.business();
@@ -114,11 +133,7 @@ export class Product implements OnInit, OnDestroy {
   protected readonly askUrl = computed(() => {
     const business = this.business();
     const item = this.item();
-    if (!business || !item) return null;
-    return contactUrl(
-      business,
-      `¡Hola ${business.name}! ¿Cuándo vuelven a tener *${item.name}*?\n${productUrl(business, item)}`,
-    );
+    return business && item ? askAvailabilityUrl(business, item, this.customer.data()) : null;
   });
 
   /** El dueño (o el superadmin) ve su catálogo aunque todavía no sea público. */
@@ -156,6 +171,7 @@ export class Product implements OnInit, OnDestroy {
   }
 
   ngOnDestroy(): void {
+    clearTimeout(this.justAddedTimer);
     this.title.setTitle(this.platformTitle);
     this.meta.updateTag({ name: 'theme-color', content: this.platformThemeColor });
     this.meta.removeTag('name="description"');
@@ -163,7 +179,9 @@ export class Product implements OnInit, OnDestroy {
 
   private async load(): Promise<void> {
     try {
-      this.data.set(await this.catalog.load(this.slug()));
+      const data = await this.catalog.load(this.slug());
+      this.data.set(data);
+      if (data?.business.whatsapp) this.customer.askOnArrival();
     } catch (e) {
       this.error.set(errorMessage(e));
     } finally {
@@ -195,6 +213,15 @@ export class Product implements OnInit, OnDestroy {
     await navigator.clipboard.writeText(url);
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 2500);
+  }
+
+  protected addToCart(): void {
+    const item = this.item()!;
+    this.cart.add(item, item.kind === 'product' ? this.quantity() : 1);
+    this.quantity.set(1);
+    this.justAdded.set(true);
+    clearTimeout(this.justAddedTimer);
+    this.justAddedTimer = setTimeout(() => this.justAdded.set(false), 1800);
   }
 
   protected changeQuantity(delta: 1 | -1): void {

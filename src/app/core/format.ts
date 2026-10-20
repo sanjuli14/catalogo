@@ -1,10 +1,16 @@
-/** "$12.50", "€12.50", "Q 12.50"... según la moneda del negocio. null = "Precio a consultar". */
+/**
+ * "$12.50", "€12.50", "Q 12.50"... según la moneda del negocio. null = "Precio a consultar".
+ * Los precios enteros van sin ".00" ("$1,250,000"), que en las tarjetas ocupa mucho.
+ */
 export function formatPrice(price: number | null, currency: string): string {
   if (price === null) return 'Precio a consultar';
+  const decimals = Number.isInteger(price) ? 0 : 2;
   return new Intl.NumberFormat('es-419', {
     style: 'currency',
     currency,
     currencyDisplay: 'narrowSymbol',
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: decimals,
   }).format(price);
 }
 
@@ -34,6 +40,8 @@ export function errorMessage(error: unknown): string {
       return 'Se enviaron demasiados correos. Espera unos minutos e inténtalo de nuevo.';
     case 'captcha_failed':
       return 'No pudimos verificar que eres una persona. Inténtalo de nuevo.';
+    case 'image_decode':
+      return 'No se pudo leer una de las fotos. Puede estar dañada o en un formato que el navegador no abre (por ejemplo una foto HEIC con extensión .jpg). Ábrela y guárdala de nuevo como JPG o PNG.';
     case 'signup_disabled':
       return 'El registro de cuentas nuevas está desactivado.';
     default:

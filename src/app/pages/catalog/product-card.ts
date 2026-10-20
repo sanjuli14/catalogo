@@ -3,7 +3,8 @@ import { RouterLink } from '@angular/router';
 
 import { Business, Item } from '../../core/models';
 import { Icon } from '../../shared/icon';
-import { PublicCatalog, itemPrice, orderUrl } from './public-catalog';
+import { Cart } from './cart';
+import { PublicCatalog, itemPrice } from './public-catalog';
 
 /** Tarjeta de un producto o servicio: abre su página y, si se puede, lo pide por WhatsApp. */
 @Component({
@@ -36,18 +37,23 @@ import { PublicCatalog, itemPrice, orderUrl } from './public-catalog';
       </a>
       <div class="product__foot">
         <span class="product__price" [class.is-ask]="item().price === null">{{ price() }}</span>
-        @if (item().is_available && order(); as url) {
-          <a
+        @if (item().is_available && business().whatsapp) {
+          <button
+            type="button"
             class="product__order"
-            [href]="url"
-            target="_blank"
-            rel="noopener"
-            [attr.aria-label]="'Pedir ' + item().name + ' por WhatsApp'"
-            [title]="'Pedir por WhatsApp'"
+            [class.is-added]="inCart()"
+            (click)="add()"
+            [attr.aria-label]="label()"
+            [title]="label()"
           >
-            <app-icon name="whatsapp" [size]="18" />
-            <span class="product__order-text" aria-hidden="true">Pedir</span>
-          </a>
+            <app-icon [name]="inCart() ? 'check' : 'plus'" [size]="18" />
+            <span class="product__order-text" aria-hidden="true">{{
+              inCart() ? 'En el pedido' : 'Añadir'
+            }}</span>
+            @if (inCart() && item().kind === 'product') {
+              <span class="product__order-count" aria-hidden="true">{{ inCart() }}</span>
+            }
+          </button>
         }
       </div>
     </article>
@@ -56,12 +62,32 @@ import { PublicCatalog, itemPrice, orderUrl } from './public-catalog';
 })
 export class ProductCard {
   private readonly catalog = inject(PublicCatalog);
+  private readonly cart = inject(Cart);
 
   readonly business = input.required<Business>();
   readonly item = input.required<Item>();
 
   protected readonly price = computed(() => itemPrice(this.business(), this.item()));
-  protected readonly order = computed(() => orderUrl(this.business(), this.item()));
+  /** Cantidad que ya está en el pedido (0 si no está). */
+  protected readonly inCart = computed(() =>
+    this.cart.quantity(this.business().id, this.item().id),
+  );
+  protected readonly label = computed(() => {
+    const name = this.item().name;
+    if (!this.inCart()) return `Añadir ${name} al pedido`;
+    return this.item().kind === 'service'
+      ? `${name} ya está en el pedido: ver el pedido`
+      : `Añadir otro ${name} (ya hay ${this.inCart()})`;
+  });
+  /** Un producto suma uno más; un servicio ya agregado abre el pedido. */
+  protected add(): void {
+    if (this.inCart() && this.item().kind === 'service') {
+      this.cart.sheetOpen.set(true);
+      return;
+    }
+    this.cart.add(this.item());
+  }
+
   protected readonly photo = computed(() => {
     const path = this.item().photos[0];
     return path ? this.catalog.imageUrl(path) : null;

@@ -15,6 +15,11 @@ import { CurrentBusiness } from '../current-business';
       margin: 28px 0 4px;
     }
 
+    /* Ancho fijo: al pasar de "Marcar agotado" a "Marcar disponible" los íconos no se corren. */
+    .list__actions .button {
+      min-width: 158px;
+    }
+
     /* Celular: los íconos en una fila pareja y "Marcar agotado" debajo, a todo el ancho. */
     @media (max-width: 639px) {
       .list__actions {

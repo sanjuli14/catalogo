@@ -13,14 +13,18 @@ import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 
 import { readableTextColor } from '../../core/color';
+import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
 import { Business, Category, Item } from '../../core/models';
 import { whatsappShareUrl } from '../../core/whatsapp';
 import { Icon, IconName } from '../../shared/icon';
 import { downloadCatalogPdf } from './catalog-pdf';
-import { groupItems } from './group-items';
+import { countLabel, groupItems } from './group-items';
+import { Cart } from './cart';
+import { CartSheet } from './cart-sheet';
+import { CustomerSheet } from './customer-sheet';
 import { ProductCard } from './product-card';
-import { PublicCatalog, catalogUrl, contactUrl } from './public-catalog';
+import { PublicCatalog, catalogUrl, contactUrl, shareCatalogMessage } from './public-catalog';
 
 const SOCIALS = {
   instagram: { label: 'Instagram', icon: 'instagram' },
@@ -32,7 +36,7 @@ const SOCIALS = {
 
 @Component({
   selector: 'app-catalog',
-  imports: [RouterLink, Icon, ProductCard],
+  imports: [RouterLink, Icon, ProductCard, CartSheet, CustomerSheet],
   templateUrl: './catalog.html',
   styleUrls: ['./catalog-theme.css', './catalog.css'],
   host: {
@@ -45,6 +49,8 @@ export class Catalog implements OnInit, OnDestroy {
   private readonly catalog = inject(PublicCatalog);
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
+  protected readonly customer = inject(CustomerProfile);
+  protected readonly cart = inject(Cart);
 
   /** Viene de la ruta /:slug */
   readonly slug = input.required<string>();
@@ -52,6 +58,7 @@ export class Catalog implements OnInit, OnDestroy {
   protected readonly business = signal<Business | null>(null);
   private readonly categories = signal<Category[]>([]);
   private readonly items = signal<Item[]>([]);
+  protected readonly allItems = this.items.asReadonly();
   protected readonly loading = signal(true);
   protected readonly error = signal<string | null>(null);
 
@@ -87,6 +94,19 @@ export class Catalog implements OnInit, OnDestroy {
   );
 
   protected readonly itemCount = computed(() => this.items().length);
+  /** Título del tile del contador: "Productos", "Servicios" o "En catálogo" si hay de ambos. */
+  protected readonly itemsLabel = computed(() => {
+    const kinds = new Set(this.items().map((i) => i.kind));
+    if (kinds.size !== 1) return 'En catálogo';
+    return kinds.has('service') ? 'Servicios' : 'Productos';
+  });
+  protected readonly countLabel = countLabel;
+  /** Cosas en el pedido: la barra de abajo abre el pedido en vez de una consulta. */
+  protected readonly cartCount = computed(() => {
+    const business = this.business();
+    if (!business) return 0;
+    return this.cart.lines(business.id, this.items()).reduce((n, l) => n + l.quantity, 0);
+  });
 
   protected readonly socials = computed(() => {
     const socials = this.business()?.socials ?? {};
@@ -97,7 +117,7 @@ export class Catalog implements OnInit, OnDestroy {
 
   protected readonly contactUrl = computed(() => {
     const business = this.business();
-    return business ? contactUrl(business) : null;
+    return business ? contactUrl(business, this.customer.data()) : null;
   });
 
   /** El dueño (o el superadmin) ve su catálogo aunque todavía no sea público. */
@@ -133,6 +153,7 @@ export class Catalog implements OnInit, OnDestroy {
         content: data.business.description ?? `Catálogo de ${data.business.name}`,
       });
       this.meta.updateTag({ name: 'theme-color', content: data.business.primary_color });
+      if (data.business.whatsapp) this.customer.askOnArrival();
     } catch (e) {
       this.error.set(errorMessage(e));
     } finally {
@@ -147,7 +168,7 @@ export class Catalog implements OnInit, OnDestroy {
 
   protected shareOnWhatsappUrl(): string {
     const business = this.business()!;
-    return whatsappShareUrl(`Mira el catálogo de ${business.name}: ${catalogUrl(business)}`);
+    return whatsappShareUrl(shareCatalogMessage(business));
   }
 
   protected async share(): Promise<void> {

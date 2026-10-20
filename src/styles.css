@@ -906,12 +906,19 @@ label.button input[type='file'],
   min-width: 0;
 }
 
+/* Nombres largos: hasta dos renglones y cortados, sin salirse de la fila. */
 .list__title {
+  display: -webkit-box;
+  overflow: hidden;
   color: var(--color-text);
   font-size: 17px;
   font-weight: 750;
+  line-height: 1.25;
   letter-spacing: -0.02em;
   text-decoration: none;
+  overflow-wrap: anywhere;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
 }
 
 a.list__title:hover {

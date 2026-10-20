@@ -42,7 +42,7 @@
     <section class="tile board__hero">
       <p class="label">Catálogo</p>
       <div>
-        <h1 class="display board__name">{{ b.name }}</h1>
+        <h1 class="display fit board__name" [style.--chars]="b.name.length">{{ b.name }}</h1>
         @if (b.description) {
           <p class="board__desc">{{ b.description }}</p>
         }
@@ -58,7 +58,13 @@
     </div>
 
     @if (contactUrl(); as url) {
-      <a class="tile board__order" [href]="url" target="_blank" rel="noopener">
+      <a
+        class="tile board__order"
+        [href]="url"
+        target="_blank"
+        rel="noopener"
+        (click)="customer.interceptOrder($event, contactUrl)"
+      >
         <span class="board__order-top">
           <span class="label">¿Te gustó algo?</span>
           <app-icon name="arrowUpRight" [size]="22" />
@@ -86,7 +92,7 @@
         </div>
       }
       <div class="tile fact">
-        <span class="label">Productos</span>
+        <span class="label">{{ itemsLabel() }}</span>
         <p class="fact__value fact__value--big figure">{{ itemCount() }}</p>
         <app-icon class="fact__icon" name="bag" [size]="18" />
       </div>
@@ -125,6 +131,23 @@
         </div>
       </div>
     </div>
+
+    @if (b.whatsapp) {
+      <div class="tile delivery board__delivery">
+        <app-icon name="pin" [size]="18" />
+        @if (customer.data(); as c) {
+          <span class="delivery__text"
+            >Tus datos: <strong>{{ c.name }}</strong> · {{ c.address }}</span
+          >
+          <button type="button" (click)="customer.edit()">Cambiar</button>
+        } @else {
+          <span class="delivery__text"
+            >Agrega tu nombre y dirección para que el negocio sepa quién le escribe.</span
+          >
+          <button type="button" (click)="customer.edit()">Agregar</button>
+        }
+      </div>
+    }
   </header>
 
   <main class="shell catalog">
@@ -198,14 +221,14 @@
         <section class="group">
           @if (group.name) {
             <header class="group__head">
-              <h2 class="display group__title">
+              <h2 class="display fit group__title" [style.--chars]="group.name.length">
                 <span class="group__index" aria-hidden="true">{{
                   g < 9 ? '0' + (g + 1) : g + 1
                 }}</span>
                 {{ group.name }}
               </h2>
               <span class="label">
-                {{ group.items.length }} {{ group.items.length === 1 ? 'producto' : 'productos' }}
+                {{ countLabel(group.items) }}
               </span>
             </header>
           }
@@ -228,7 +251,13 @@
       </header>
       <div class="contact-board">
         @if (b.whatsapp) {
-          <a class="tile contact contact--wa" [href]="contactUrl()" target="_blank" rel="noopener">
+          <a
+            class="tile contact contact--wa"
+            [href]="contactUrl()"
+            target="_blank"
+            rel="noopener"
+            (click)="customer.interceptOrder($event, contactUrl)"
+          >
             <span class="label">WhatsApp</span>
             <span class="contact__value contact__value--big figure">+{{ b.whatsapp }}</span>
             <app-icon class="contact__icon" name="whatsapp" [size]="22" />
@@ -298,8 +327,18 @@
     <button type="button" (click)="focusSearch()">
       <app-icon name="search" [size]="20" /> Buscar
     </button>
-    @if (contactUrl(); as url) {
-      <a class="dock__order" [href]="url" target="_blank" rel="noopener">
+    @if (cartCount()) {
+      <button type="button" class="dock__order" (click)="cart.sheetOpen.set(true)">
+        <app-icon name="bag" [size]="20" /> Pedido ({{ cartCount() }})
+      </button>
+    } @else if (contactUrl(); as url) {
+      <a
+        class="dock__order"
+        [href]="url"
+        target="_blank"
+        rel="noopener"
+        (click)="customer.interceptOrder($event, contactUrl)"
+      >
         <app-icon name="whatsapp" [size]="20" /> Pedir
       </a>
     }
@@ -307,4 +346,7 @@
       <app-icon name="phone" [size]="20" /> Contacto
     </button>
   </nav>
+
+  <app-cart-sheet [business]="b" [items]="allItems()" [raised]="true" />
+  <app-customer-sheet [businessName]="b.name" />
 }
