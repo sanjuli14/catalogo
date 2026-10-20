@@ -1,4 +1,4 @@
-/* Página de un producto en tablero bento. La base compartida está en catalog-theme.css. */
+/* Página de un producto: foto grande y tiles de información. Base en catalog-theme.css. */
 
 .layout {
   display: grid;
@@ -33,35 +33,8 @@
   z-index: 2;
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: center;
   padding: 14px;
-}
-
-.round-btn {
-  display: grid;
-  place-items: center;
-  width: 46px;
-  height: 46px;
-  padding: 0;
-  border: none;
-  border-radius: 15px;
-  background: #ffffff;
-  color: var(--ink);
-  text-decoration: none;
-  cursor: pointer;
-  transition:
-    transform 0.15s var(--ease),
-    background-color 0.2s,
-    color 0.2s;
-}
-
-.round-btn:hover {
-  background: var(--ink);
-  color: #ffffff;
-}
-
-.round-btn:active {
-  transform: scale(0.94);
 }
 
 .dots {

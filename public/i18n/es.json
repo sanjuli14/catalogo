@@ -367,7 +367,6 @@
       "pending": "Vista previa · este catálogo todavía no es público (en revisión)",
       "suspended": "Vista previa · este catálogo todavía no es público (suspendido)"
     },
-    "logoOf": "Logo de {{ name }}",
     "likedSomething": "¿Te gustó algo?",
     "orderWhatsapp": "Pedir por WhatsApp",
     "inCatalog": "En catálogo",
@@ -398,7 +397,8 @@
       "search": "Buscar",
       "order": "Pedido ({{ count }})",
       "ask": "Pedir"
-    }
+    },
+    "about": "Sobre nosotros"
   },
   "product": {
     "loading": "Cargando producto",
@@ -435,7 +435,6 @@
   },
   "card": {
     "soldOut": "Agotado",
-    "featured": "Destacado",
     "inOrder": "En el pedido",
     "add": "Añadir",
     "addLabel": "Añadir {{ name }} al pedido",
@@ -510,5 +509,9 @@
     "linkHint": "Ponlo en tu perfil de Instagram, tu estado de WhatsApp o donde te encuentren tus clientes.",
     "posterTitle": "Escanea y mira nuestro catálogo",
     "posterSubtitle": "Elige lo que quieras y pide por WhatsApp"
+  },
+  "appBar": {
+    "install": "Instalar app",
+    "adminName": "{{ name }} · Panel"
   }
 }

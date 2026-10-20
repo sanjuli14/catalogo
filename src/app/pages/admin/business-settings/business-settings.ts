@@ -3,6 +3,7 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { TranslocoDirective } from '@jsverse/transloco';
 
 import { CatalogApi } from '../../../core/catalog-api';
+import { ICON_SIZE, squareIcon } from '../../../core/app-manifest';
 import { errorMessage, intlLocale } from '../../../core/format';
 import { Business } from '../../../core/models';
 import { SLUG_PATTERN, toSlug } from '../../../core/slug';
@@ -314,16 +315,23 @@ export class BusinessSettings implements OnDestroy {
     this.saving.set(true);
     this.saved.set(false);
     this.error.set(null);
-    // Si el guardado falla, el logo recién subido se borra para no dejarlo huérfano.
-    let uploadedLogo: string | null = null;
+    // Si el guardado falla, lo recién subido (logo e ícono) se borra para no dejarlo huérfano.
+    const uploaded: string[] = [];
     try {
       let logoPath = business.logo_path;
+      let iconPath = business.icon_path;
       if (this.logoChange) {
-        uploadedLogo = await this.api.uploadImage(business.id, 'logo', this.logoChange);
-        logoPath = uploadedLogo;
+        logoPath = await this.api.uploadImage(business.id, 'logo', this.logoChange);
+        uploaded.push(logoPath);
+        iconPath = await this.uploadIcon(business.id, this.logoChange);
       } else if (this.logoChange === null) {
         logoPath = null;
+        iconPath = null;
+      } else if (logoPath && !iconPath) {
+        // Logo de antes de existir el ícono de la app: se arma ahora, al guardar.
+        iconPath = await this.uploadIcon(business.id, this.api.imageUrl(logoPath));
       }
+      if (iconPath && iconPath !== business.icon_path) uploaded.push(iconPath);
 
       const { instagram, facebook, tiktok, website, ...value } = this.form.getRawValue();
       const socials = Object.fromEntries(
@@ -345,19 +353,28 @@ export class BusinessSettings implements OnDestroy {
         schedule: value.schedule.trim() || null,
         socials,
         logo_path: logoPath,
+        icon_path: iconPath,
       });
 
-      if (logoPath !== business.logo_path && business.logo_path) {
-        await this.api.removeImages([business.logo_path]);
-      }
+      const replaced = [
+        logoPath !== business.logo_path && business.logo_path,
+        iconPath !== business.icon_path && business.icon_path,
+      ].filter((path): path is string => !!path);
+      await this.api.removeImages(replaced);
       this.current.business.set(updated);
       this.saved.set(true);
     } catch (e) {
-      if (uploadedLogo) await this.api.removeImages([uploadedLogo]);
+      await this.api.removeImages(uploaded);
       this.error.set(errorMessage(e));
     } finally {
       this.saving.set(false);
     }
+  }
+
+  /** Ícono cuadrado de la app instalable, hecho del logo; null si el logo no se pudo leer. */
+  private async uploadIcon(businessId: string, logo: Blob | string): Promise<string | null> {
+    const icon = await squareIcon(logo, ICON_SIZE);
+    return icon ? this.api.uploadIcon(businessId, icon) : null;
   }
 
   private revokePreview(): void {

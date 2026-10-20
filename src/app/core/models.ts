@@ -16,6 +16,8 @@ export interface Business {
   name: string;
   description: string | null;
   logo_path: string | null;
+  /** Ícono cuadrado de la app instalable, hecho del logo (ver core/app-manifest.ts). */
+  icon_path: string | null;
   primary_color: string;
   secondary_color: string;
   currency: string;

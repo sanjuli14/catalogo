@@ -13,6 +13,7 @@ import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, translate } from '@jsverse/transloco';
 
+import { AppManifest } from '../../core/app-manifest';
 import { readableTextColor } from '../../core/color';
 import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
@@ -26,6 +27,7 @@ import { downloadCatalogPdf } from './catalog-pdf';
 import { countLabel, groupItems, withPinned } from './group-items';
 import { Cart } from './cart';
 import { CartSheet } from './cart-sheet';
+import { CatalogAppBar } from './catalog-app-bar';
 import { CustomerSheet } from './customer-sheet';
 import { ProductCard } from './product-card';
 import { PublicCatalog, catalogUrl, contactUrl, shareCatalogMessage } from './public-catalog';
@@ -49,6 +51,7 @@ const SOCIALS = {
     CustomerSheet,
     TranslocoDirective,
     LangSwitch,
+    CatalogAppBar,
   ],
   templateUrl: './catalog.html',
   styleUrls: ['./catalog-theme.css', './catalog.css'],
@@ -67,6 +70,7 @@ export class Catalog implements OnInit, OnDestroy {
   /** Los textos armados en el código (grupos, mensajes) se rehacen al cambiar de idioma. */
   private readonly language = inject(Language);
   private readonly stats = inject(Stats);
+  private readonly manifest = inject(AppManifest);
 
   /** Viene de la ruta /:slug */
   readonly slug = input.required<string>();
@@ -157,6 +161,7 @@ export class Catalog implements OnInit, OnDestroy {
     this.title.setTitle(this.platformTitle);
     this.meta.updateTag({ name: 'theme-color', content: this.platformThemeColor });
     this.meta.removeTag('name="description"');
+    this.manifest.reset();
   }
 
   private async load(): Promise<void> {
@@ -176,6 +181,15 @@ export class Catalog implements OnInit, OnDestroy {
       });
       this.meta.updateTag({ name: 'theme-color', content: data.business.primary_color });
       this.stats.view(data.business.id);
+      // Instalado desde aquí, el catálogo queda como app con el nombre y el logo del negocio.
+      void this.manifest.use({
+        name: data.business.name,
+        shortName: data.business.name,
+        startPath: `/${data.business.slug}`,
+        color: data.business.primary_color,
+        iconUrl: data.business.icon_path ? this.catalog.imageUrl(data.business.icon_path) : null,
+        logoUrl: this.logoUrl(),
+      });
       if (data.business.whatsapp) this.customer.askOnArrival();
     } catch (e) {
       this.error.set(errorMessage(e));

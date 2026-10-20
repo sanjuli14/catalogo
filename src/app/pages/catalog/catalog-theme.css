@@ -1,6 +1,6 @@
 /*
- * Base del catálogo público (catálogo y detalle de producto), estilo "bento":
- * lienzo casi blanco, tiles blancos con borde finísimo y titulares enormes.
+ * Base del catálogo público (catálogo y detalle de producto): lienzo casi blanco,
+ * tiles blancos con borde finísimo, barra del negocio arriba y cuadrícula de productos.
  * El color del negocio (--brand, --brand-2, --on-brand) llega del componente y se usa
  * solo en uno o dos tiles clave (pedir por WhatsApp) y en estados activos.
  */
@@ -22,6 +22,8 @@
   --line: var(--border);
   --tile: #ffffff;
   --gap: 12px;
+  /* Alto de la barra fija del negocio (catalog-app-bar.ts). */
+  --appbar-height: 64px;
   --radius-tile: 26px;
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
@@ -246,31 +248,19 @@
   text-align: center;
 }
 
-/* ---------- Cuadrícula bento de productos ----------
- * Filas de alto fijo: así un producto destacado ocupa exactamente 2×2 y la tarjeta
- * puede acomodarse a su tamaño con consultas de contenedor (ver product-card.css).
- * data-count = cantidad de productos del grupo, para no dejar huecos en grupos chicos.
+/* ---------- Cuadrícula de productos ----------
+ * 2 columnas en el celular; en pantallas grandes, todas las que quepan a lo ancho
+ * (tarjetas de 220 px como mínimo). Todas las tarjetas son iguales.
  */
-.bento {
+.products {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  grid-auto-rows: 272px;
-  grid-auto-flow: row dense;
   gap: var(--gap);
 }
 
-.bento > .is-featured {
-  grid-column: span 2;
-  grid-row: span 2;
-}
-
-.bento[data-count='1'] > .is-featured {
-  grid-row: span 1;
-}
-
-/* En 2 columnas, si el último queda solo en su fila, ocupa la fila entera. */
-.bento > :last-child:nth-child(even) {
-  grid-column: span 2;
+/* Toda la página a lo ancho de la pantalla (el catálogo), no en una columna central. */
+.shell--wide {
+  max-width: none;
 }
 
 /* ---------- Estados (vacío, sin resultados, no existe) ---------- */
@@ -354,43 +344,15 @@
   .tile {
     padding: 26px;
   }
-
-  .bento {
-    grid-auto-rows: 340px;
-  }
 }
 
-/* Computadora: 4 columnas, con reglas para que los grupos de 1 a 4 productos no dejen huecos. */
 @media (min-width: 900px) {
-  .bento {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-auto-rows: 348px;
+  .products {
+    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
   }
 
-  .bento > :last-child:nth-child(even) {
-    grid-column: auto;
-  }
-
-  /* Ritmo alterno: en los grupos impares el destacado va a la derecha. */
-  .bento--flip > .is-featured {
-    grid-column: 3 / span 2;
-  }
-
-  .bento[data-count='2'] > * {
-    grid-column: span 2;
-    grid-row: span 2;
-  }
-
-  .bento[data-count='3'] > :not(.is-featured) {
-    grid-row: span 2;
-  }
-
-  .bento[data-count='4'] > :nth-child(2) {
-    grid-row: span 2;
-  }
-
-  .bento[data-count='1'] > * {
-    grid-column: 1 / -1;
+  .shell--wide {
+    padding: 0 32px;
   }
 }
 

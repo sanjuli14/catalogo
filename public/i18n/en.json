@@ -367,7 +367,6 @@
       "pending": "Preview · this catalog isn't public yet (under review)",
       "suspended": "Preview · this catalog isn't public yet (suspended)"
     },
-    "logoOf": "{{ name }} logo",
     "likedSomething": "Like something?",
     "orderWhatsapp": "Order via WhatsApp",
     "inCatalog": "In catalog",
@@ -398,7 +397,8 @@
       "search": "Search",
       "order": "Order ({{ count }})",
       "ask": "Order"
-    }
+    },
+    "about": "About us"
   },
   "product": {
     "loading": "Loading product",
@@ -435,7 +435,6 @@
   },
   "card": {
     "soldOut": "Sold out",
-    "featured": "Featured",
     "inOrder": "In order",
     "add": "Add",
     "addLabel": "Add {{ name }} to the order",
@@ -510,5 +509,9 @@
     "linkHint": "Put it in your Instagram bio, your WhatsApp status or wherever your customers find you.",
     "posterTitle": "Scan to see our catalog",
     "posterSubtitle": "Pick what you like and order via WhatsApp"
+  },
+  "appBar": {
+    "install": "Install app",
+    "adminName": "{{ name }} · Dashboard"
   }
 }

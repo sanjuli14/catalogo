@@ -1,6 +1,10 @@
-import { Component, inject } from '@angular/core';
+import { Component, OnDestroy, effect, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
-import { TranslocoDirective } from '@jsverse/transloco';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
+
+import { AppManifest } from '../../core/app-manifest';
+import { CatalogApi } from '../../core/catalog-api';
+import { Language } from '../../core/i18n';
 
 import { Icon } from '../../shared/icon';
 import { PanelHeader } from '../../shared/panel-header';
@@ -65,6 +69,31 @@ import { CurrentBusiness } from './current-business';
     </ng-container>
   `,
 })
-export class Admin {
+export class Admin implements OnDestroy {
   protected readonly current = inject(CurrentBusiness);
+  private readonly manifest = inject(AppManifest);
+  private readonly api = inject(CatalogApi);
+  private readonly language = inject(Language);
+
+  constructor() {
+    // Instalado desde aquí, el panel del dueño queda como app con el logo de su negocio.
+    // El superadmin administrando otro negocio sigue con la app de la plataforma.
+    effect(() => {
+      const business = this.current.business();
+      this.language.current();
+      if (!business || this.current.managedBySuperadmin) return;
+      void this.manifest.use({
+        name: translate('appBar.adminName', { name: business.name }),
+        shortName: business.name,
+        startPath: '/admin',
+        color: business.primary_color,
+        iconUrl: business.icon_path ? this.api.imageUrl(business.icon_path) : null,
+        logoUrl: business.logo_path ? this.api.imageUrl(business.logo_path) : null,
+      });
+    });
+  }
+
+  ngOnDestroy(): void {
+    this.manifest.reset();
+  }
 }

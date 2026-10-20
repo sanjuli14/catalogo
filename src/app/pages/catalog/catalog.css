@@ -1,4 +1,4 @@
-/* Página del catálogo en tablero bento. La base compartida está en catalog-theme.css. */
+/* Página del catálogo: tablero de cabecera y productos. Base en catalog-theme.css. */
 
 /* ---------- Tablero de cabecera ---------- */
 .board {
@@ -18,85 +18,35 @@
   animation-delay: 0.05s;
 }
 
-.board > :nth-child(3) {
-  animation-delay: 0.1s;
-}
 
 .board__facts > * {
   animation-delay: 0.15s;
 }
 
-/* La etiqueta va pegada al nombre, los dos al pie del tile: si el tile es más alto que el
-   texto, el espacio libre queda arriba y no entre "Catálogo" y el nombre. */
-.board__hero {
+/* Quiénes son: la descripción del negocio. */
+.board__about {
   grid-column: 1 / -1;
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 14px;
-  min-height: 200px;
-  padding: 22px 20px 24px;
-  container-type: inline-size;
-}
-
-/* Hasta dos renglones aprox.: los nombres largos achican la letra pero llenan el ancho. */
-.board__name {
-  --fit-min: 26px;
-  --fit-max: clamp(52px, 15vw, 96px);
-  --fit-k: 360cqi;
-  overflow-wrap: break-word;
+  display: grid;
+  align-content: start;
+  gap: 12px;
 }
 
 .board__desc {
-  max-width: 46ch;
-  margin: 16px 0 0;
-  color: var(--muted);
-  font-size: 15px;
+  max-width: 60ch;
+  margin: 0;
+  color: var(--ink-2);
+  font-size: 16px;
   line-height: 1.5;
-}
-
-.board__logo {
-  display: grid;
-  place-items: center;
-  aspect-ratio: 1;
-  padding: 16%;
-  overflow: hidden;
-}
-
-.board__logo img {
-  width: 100%;
-  height: 100%;
-  border-radius: 14px;
-  object-fit: contain;
-}
-
-/* Sin logo: la inicial en un tile de tinta. */
-.board__logo:has(.board__initial) {
-  border-color: var(--ink);
-  background: var(--ink);
-}
-
-.board__initial {
-  color: #ffffff;
-  font-size: clamp(64px, 20vw, 120px);
-  font-weight: 800;
-  line-height: 1;
-  letter-spacing: -0.06em;
-}
-
-.board__logo--tall {
-  grid-column: 1 / -1;
-  aspect-ratio: auto;
-  height: 168px;
-  padding: 24px;
 }
 
 /* El único tile de color del tablero: pedir por WhatsApp. */
 .board__order {
+  grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  aspect-ratio: 1;
+  gap: 18px;
+  min-height: 132px;
   padding: 18px;
   border-color: transparent;
   background: var(--brand);
@@ -196,7 +146,8 @@
 
 .filters {
   position: sticky;
-  top: 0;
+  /* Debajo de la barra del negocio, que también queda fija arriba. */
+  top: var(--appbar-height);
   z-index: 10;
   display: grid;
   gap: 10px;
@@ -502,25 +453,39 @@ a.contact:hover {
 /* ---------- Esqueleto de carga ---------- */
 .skeleton {
   display: grid;
-  gap: 56px;
+  gap: 16px;
 }
 
 .skeleton__tile {
   border-radius: var(--radius-tile);
 }
 
-.skeleton .board__hero {
-  min-height: 200px;
+.skeleton__bar {
+  height: var(--appbar-height);
+  border-bottom: 1px solid var(--border);
+}
+
+.skeleton__body {
+  display: grid;
+  gap: 40px;
+}
+
+.skeleton .board__about {
+  min-height: 120px;
+}
+
+.skeleton .board__order {
+  min-height: 132px;
+}
+
+.skeleton__card {
+  aspect-ratio: 0.78;
 }
 
 /* ---------- Pantallas más grandes ---------- */
 @media (min-width: 640px) {
   .board {
     padding-top: 24px;
-  }
-
-  .board__hero {
-    padding: 28px 30px 30px;
   }
 
   .board__facts {
@@ -559,36 +524,31 @@ a.contact:hover {
 @media (min-width: 900px) {
   .board {
     grid-template-columns: repeat(4, minmax(0, 1fr));
-    grid-template-rows: repeat(2, minmax(190px, auto));
   }
 
-  .board__hero {
-    grid-column: 1 / span 3;
-    grid-row: 1 / span 2;
-    padding: 32px 40px 40px;
+  /* Descripción ancha y "Pedir por WhatsApp" a su lado; sin descripción, el pedido
+     ocupa la fila entera. */
+  .board__about {
+    grid-column: span 3;
+    padding: 28px 32px;
+  }
+
+  .board__about + .board__order {
+    grid-column: span 1;
   }
 
   .board__desc {
     font-size: 17px;
   }
 
-  .board__logo,
   .board__order {
-    aspect-ratio: auto;
-  }
-
-  .board__logo {
-    padding: 36px;
-  }
-
-  .board__logo--tall {
-    grid-row: 1 / span 2;
-    grid-column: 4;
-    height: auto;
-  }
-
-  .board__order {
+    min-height: 168px;
     padding: 24px;
+  }
+
+  .filters {
+    margin: 0 -32px -32px;
+    padding: 14px 32px;
   }
 
   .board__order-title {

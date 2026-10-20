@@ -155,6 +155,16 @@ export class CatalogApi {
     return path;
   }
 
+  /** Sube el ícono PNG ya preparado (sin reducir ni convertir) y devuelve su ruta. */
+  async uploadIcon(businessId: string, icon: Blob): Promise<string> {
+    const path = `${businessId}/logo/icon-${crypto.randomUUID()}.png`;
+    const { error } = await this.supabase.storage
+      .from(BUCKET)
+      .upload(path, icon, { contentType: 'image/png', cacheControl: '31536000' });
+    if (error) throw error;
+    return path;
+  }
+
   async removeImages(paths: string[]): Promise<void> {
     if (!paths.length) return;
     await this.supabase.storage.from(BUCKET).remove(paths);

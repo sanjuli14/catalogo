@@ -16,6 +16,7 @@ import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
 import { TranslocoDirective, translate } from '@jsverse/transloco';
 
+import { AppManifest } from '../../core/app-manifest';
 import { readableTextColor } from '../../core/color';
 import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
@@ -24,6 +25,7 @@ import { Stats } from '../../core/stats';
 import { Icon } from '../../shared/icon';
 import { Cart, MAX_QUANTITY } from './cart';
 import { CartSheet } from './cart-sheet';
+import { CatalogAppBar } from './catalog-app-bar';
 import { CustomerSheet } from './customer-sheet';
 import { ProductCard } from './product-card';
 import {
@@ -54,6 +56,7 @@ const RELATED_LIMIT = 8;
     CartSheet,
     CustomerSheet,
     TranslocoDirective,
+    CatalogAppBar,
   ],
   templateUrl: './product.html',
   styleUrls: ['./catalog-theme.css', './product.css'],
@@ -72,6 +75,7 @@ export class Product implements OnInit, OnDestroy {
   /** Los textos armados en el código (precios, mensajes) se rehacen al cambiar de idioma. */
   private readonly language = inject(Language);
   private readonly stats = inject(Stats);
+  private readonly manifest = inject(AppManifest);
 
   /** Vienen de la ruta /:slug/:itemId */
   readonly slug = input.required<string>();
@@ -232,13 +236,24 @@ export class Product implements OnInit, OnDestroy {
     this.title.setTitle(this.platformTitle);
     this.meta.updateTag({ name: 'theme-color', content: this.platformThemeColor });
     this.meta.removeTag('name="description"');
+    this.manifest.reset();
   }
 
   private async load(): Promise<void> {
     try {
       const data = await this.catalog.load(this.slug());
       this.data.set(data);
-      if (data?.business.whatsapp) this.customer.askOnArrival();
+      if (!data) return;
+      // Instalado desde un producto, abre el catálogo entero.
+      void this.manifest.use({
+        name: data.business.name,
+        shortName: data.business.name,
+        startPath: `/${data.business.slug}`,
+        color: data.business.primary_color,
+        iconUrl: data.business.icon_path ? this.catalog.imageUrl(data.business.icon_path) : null,
+        logoUrl: this.logoUrl(),
+      });
+      if (data.business.whatsapp) this.customer.askOnArrival();
     } catch (e) {
       this.error.set(errorMessage(e));
     } finally {

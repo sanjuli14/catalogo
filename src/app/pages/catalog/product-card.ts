@@ -44,8 +44,6 @@ import {
           }
         </span>
         <span class="product__body">
-          <!-- Solo se ve en los destacados (2×2), que marca la cuadrícula del catálogo. -->
-          <span class="product__flag" aria-hidden="true">{{ t('card.featured') }}</span>
           <span class="product__name">{{ item().name }}</span>
         </span>
       </a>

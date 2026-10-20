@@ -38,14 +38,24 @@
       </p>
     }
 
+    <!-- Barra fija arriba: volver al catálogo, el negocio, instalar y compartir. -->
+    <app-catalog-app-bar [business]="b" [logoUrl]="logoUrl()" [back]="true">
+      <button
+        type="button"
+        class="appbar__btn"
+        (click)="share()"
+        [attr.aria-label]="t('product.share')"
+        [title]="t('catalog.share')"
+      >
+        <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
+      </button>
+    </app-catalog-app-bar>
+
     <!-- Tablero del producto: foto grande a la izquierda y tiles de información a la derecha. -->
     <div class="shell layout">
       <section class="tile stage" [attr.aria-label]="t('product.photos')">
-        <div class="stage__bar">
-          <a class="round-btn" [routerLink]="['/', b.slug]" [attr.aria-label]="t('product.back')">
-            <app-icon name="arrowLeft" [size]="20" />
-          </a>
-          @if (p.photos.length > 1) {
+        @if (p.photos.length > 1) {
+          <div class="stage__bar">
             <div class="dots" role="group" [attr.aria-label]="t('product.photos')">
               @for (photo of p.photos; track photo; let i = $index) {
                 <button
@@ -56,16 +66,8 @@
                 ></button>
               }
             </div>
-          }
-          <button
-            type="button"
-            class="round-btn"
-            (click)="share()"
-            [attr.aria-label]="t('product.share')"
-          >
-            <app-icon [name]="copied() ? 'check' : 'share'" [size]="19" />
-          </button>
-        </div>
+          </div>
+        }
 
         @if (p.photos.length) {
           <div #gallery class="gallery" (scroll)="onGalleryScroll($event)">
@@ -272,9 +274,9 @@
           <h2 class="display fit" [style.--chars]="relatedTitle().length">{{ relatedTitle() }}</h2>
           <span class="label">{{ t('product.more_count', { count: related().length }) }}</span>
         </header>
-        <div class="bento" [attr.data-count]="related().length">
-          @for (other of related(); track other.id; let first = $first) {
-            <app-product-card [class.is-featured]="first" [business]="b" [item]="other" />
+        <div class="products">
+          @for (other of related(); track other.id) {
+            <app-product-card [business]="b" [item]="other" />
           }
         </div>
       </section>

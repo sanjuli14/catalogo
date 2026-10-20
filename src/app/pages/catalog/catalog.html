@@ -1,17 +1,18 @@
 <ng-container *transloco="let t">
   @if (loading()) {
-    <!-- Esqueleto mientras carga: la misma forma del tablero, sin saltos al aparecer. -->
-    <div class="shell skeleton" aria-busy="true" [attr.aria-label]="t('catalog.loading')">
-      <div class="board">
-        <div class="board__hero skeleton__tile shimmer"></div>
-        <div class="board__logo skeleton__tile shimmer"></div>
-        <div class="board__order skeleton__tile shimmer"></div>
-      </div>
-      <div class="bento" data-count="5">
-        <div class="is-featured skeleton__tile shimmer"></div>
-        @for (i of [1, 2, 3, 4]; track i) {
-          <div class="skeleton__tile shimmer"></div>
-        }
+    <!-- Esqueleto mientras carga: la misma forma de la página, sin saltos al aparecer. -->
+    <div class="skeleton" aria-busy="true" [attr.aria-label]="t('catalog.loading')">
+      <div class="skeleton__bar"></div>
+      <div class="shell shell--wide skeleton__body">
+        <div class="board">
+          <div class="board__about skeleton__tile shimmer"></div>
+          <div class="board__order skeleton__tile shimmer"></div>
+        </div>
+        <div class="products">
+          @for (i of [1, 2, 3, 4, 5, 6]; track i) {
+            <div class="skeleton__card skeleton__tile shimmer"></div>
+          }
+        </div>
       </div>
     </div>
   } @else if (!business()) {
@@ -36,25 +37,28 @@
       </p>
     }
 
-    <!-- Tablero de cabecera: nombre gigante, logo, pedir por WhatsApp y datos del negocio. -->
-    <header class="shell board">
-      <section class="tile board__hero">
-        <p class="label">{{ t('group.catalog') }}</p>
-        <div>
-          <h1 class="display fit board__name" [style.--chars]="b.name.length">{{ b.name }}</h1>
-          @if (b.description) {
-            <p class="board__desc">{{ b.description }}</p>
-          }
-        </div>
-      </section>
+    <!-- Barra fija arriba: logo y nombre del negocio, instalar y compartir. -->
+    <app-catalog-app-bar [business]="b" [logoUrl]="logoUrl()" [wide]="true">
+      <button
+        type="button"
+        class="appbar__btn"
+        (click)="share()"
+        [attr.aria-label]="t('catalog.shareLabel')"
+        [title]="t('catalog.share')"
+      >
+        <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
+      </button>
+    </app-catalog-app-bar>
 
-      <div class="tile board__logo" [class.board__logo--tall]="!contactUrl()">
-        @if (logoUrl(); as logo) {
-          <img [src]="logo" [alt]="t('catalog.logoOf', { name: b.name })" />
-        } @else {
-          <span class="board__initial" aria-hidden="true">{{ b.name.charAt(0) }}</span>
-        }
-      </div>
+    <!-- Tablero de cabecera: quiénes son, pedir por WhatsApp y datos del negocio. -->
+    <header class="shell shell--wide board">
+      <h1 class="visually-hidden">{{ b.name }}</h1>
+      @if (b.description) {
+        <section class="tile board__about">
+          <p class="label">{{ t('catalog.about') }}</p>
+          <p class="board__desc">{{ b.description }}</p>
+        </section>
+      }
 
       @if (contactUrl(); as url) {
         <a
@@ -149,7 +153,7 @@
       }
     </header>
 
-    <main class="shell catalog">
+    <main class="shell shell--wide catalog">
       @if (error(); as error) {
         <p class="notice--error">{{ error }}</p>
       }
@@ -216,7 +220,7 @@
           </div>
         }
 
-        @for (group of visibleGroups(); track group.id; let g = $index, odd = $odd) {
+        @for (group of visibleGroups(); track group.id; let g = $index) {
           <section class="group">
             @if (group.name) {
               <header class="group__head">
@@ -231,10 +235,9 @@
                 </span>
               </header>
             }
-            <!-- El primero de cada grupo va destacado (2×2); en los grupos impares, a la derecha. -->
-            <div class="bento" [class.bento--flip]="odd" [attr.data-count]="group.items.length">
-              @for (item of group.items; track item.id; let first = $first) {
-                <app-product-card [class.is-featured]="first" [business]="b" [item]="item" />
+            <div class="products">
+              @for (item of group.items; track item.id) {
+                <app-product-card [business]="b" [item]="item" />
               }
             </div>
           </section>
@@ -243,7 +246,7 @@
     </main>
 
     <footer class="footer" #contactSection>
-      <div class="shell">
+      <div class="shell shell--wide">
         <header class="group__head">
           <h2 class="display group__title">{{ t('catalog.contact') }}</h2>
           <span class="label">{{ b.name }}</span>

@@ -1,12 +1,11 @@
 /*
- * Tile de producto. Vive dentro de la cuadrícula bento (filas de alto fijo), así que su
- * tamaño lo decide la cuadrícula: con consultas de contenedor la tarjeta se acomoda
- * a 1×1, 2×2 (destacado), alta (1×2) o ancha (2×1).
+ * Tarjeta de producto: foto cuadrada arriba, nombre y precio debajo. Todas iguales en la
+ * cuadrícula; la letra se ajusta al ancho de la tarjeta (consultas de contenedor).
  */
 :host {
   display: block;
   min-width: 0;
-  container: card / size;
+  container: card / inline-size;
 }
 
 .product {
@@ -34,9 +33,8 @@
 
 .product__media {
   position: relative;
-  flex: 1;
   display: block;
-  min-height: 0;
+  aspect-ratio: 1;
   overflow: hidden;
   border-radius: calc(var(--radius-tile) - 8px);
   background: var(--panel);
@@ -99,19 +97,6 @@
   display: grid;
   gap: 6px;
   padding: 12px 6px 0;
-}
-
-.product__flag {
-  display: none;
-  color: var(--muted);
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-:host(.is-featured) .product__flag {
-  display: block;
 }
 
 .product__name {
@@ -246,64 +231,11 @@
   }
 }
 
-/* ---------- Ancha (2×1): foto a la izquierda, texto a la derecha ---------- */
-@container card (min-aspect-ratio: 5 / 4) {
-  .product__open {
-    flex-direction: row;
-  }
-
-  .product__media {
-    flex: 0 0 50%;
-  }
-
-  .product__body {
-    align-content: start;
-    padding: 12px 8px 56px 18px;
-  }
-
-  .product__name {
-    font-size: clamp(17px, 3.4cqi, 40px);
-    font-weight: 800;
-    line-height: 1.02;
-    letter-spacing: -0.04em;
-  }
-
-  .product__foot {
-    position: absolute;
-    right: 10px;
-    bottom: 10px;
-    left: calc(50% + 14px);
-  }
-}
-
-/* ---------- Destacado (2×2): nombre y precio grandes ---------- */
-@container card (min-width: 330px) and (min-height: 500px) {
-  .product__body {
-    gap: 8px;
-    padding: 18px 10px 0;
-  }
-
-  .product__name {
-    font-size: clamp(26px, 6.4cqi, 44px);
-    font-weight: 800;
-    line-height: 1;
-    letter-spacing: -0.045em;
-  }
-
-  .product__foot {
-    padding: 12px 2px 4px 10px;
-  }
-
-  .product__price {
-    font-size: clamp(24px, 5cqi, 34px);
-    letter-spacing: -0.045em;
-  }
-
+/* Tarjetas anchas (computadora): el botón muestra "Añadir" además del ícono. */
+@container card (min-width: 260px) {
   .product__order {
     width: auto;
-    height: 48px;
-    padding: 0 18px;
-    border-radius: 16px;
+    padding: 0 14px;
   }
 
   .product__order-text {
