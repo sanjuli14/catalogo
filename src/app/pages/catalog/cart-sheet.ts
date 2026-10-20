@@ -160,7 +160,8 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
               >
               <button type="button" (click)="customer.edit()">Cambiar</button>
             } @else {
-              <span class="customer__text">Agrega tu nombre y dirección al enviar.</span>
+              <span class="customer__text">Agrega tu nombre y dirección para enviar.</span>
+              <button type="button" (click)="customer.edit()">Agregar</button>
             }
           </div>
 
@@ -514,28 +515,19 @@ export class CartSheet {
   );
 
   /**
-   * Abre WhatsApp con el pedido y lo vacía. Si faltan los datos del cliente, primero se piden
-   * y el envío ocurre al guardarlos (o al tocar "Ahora no").
+   * Abre WhatsApp con el pedido y lo vacía. Si faltan los datos del cliente, el primer toque
+   * los pide y el siguiente envía.
    */
   protected send(event: Event): void {
-    if (!this.customer.data()) {
-      event.preventDefault();
-      this.customer.requestThen(() => this.sendNow());
-      return;
-    }
+    // Si faltan los datos, la primera vez se piden y el enlace no se abre.
+    this.customer.interceptOrder(event);
+    if (event.defaultPrevented) return;
     // El enlace abre WhatsApp como cualquier enlace (window.open lo bloquean algunos
     // navegadores de apps como Instagram); el pedido se vacía justo después del clic.
-    setTimeout(() => this.sendNow());
-  }
-
-  /** Arma el enlace con los datos actuales y deja el pedido como enviado. */
-  private sendNow(): string | null {
-    const url = this.orderUrl();
-    if (url) {
+    setTimeout(() => {
       this.cart.markSent(this.business().id);
       this.cart.sheetOpen.set(false);
-    }
-    return url;
+    });
   }
 
   protected restore(): void {

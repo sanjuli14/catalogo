@@ -21,35 +21,32 @@ export class CustomerProfile {
   readonly data = signal<Customer | null>(readStored());
   /** La hoja para escribir los datos está abierta. */
   readonly sheetOpen = signal(false);
-  /** Pedido que espera los datos: al guardarlos se abre WhatsApp con el mensaje completo. */
-  private pendingOrder: (() => string | null) | null = null;
+  /** La hoja se abrió al tocar un botón de WhatsApp: después de guardar hay que tocarlo otra vez. */
+  readonly forOrder = signal(false);
+  /** Ya se le pidieron los datos al tocar un botón de WhatsApp en esta visita. */
+  private askedForOrder = false;
 
   /** Al llegar al catálogo: pide los datos si faltan y no los omitió en esta visita. */
   askOnArrival(): void {
     if (this.data() || readSession(DISMISSED_KEY)) return;
-    this.pendingOrder = null;
-    this.sheetOpen.set(true);
+    this.open(false);
   }
 
   edit(): void {
-    this.pendingOrder = null;
-    this.sheetOpen.set(true);
-  }
-
-  /** Pide los datos y, al guardarlos (o al tocar "Ahora no"), abre WhatsApp con `buildUrl`. */
-  requestThen(buildUrl: () => string | null): void {
-    this.pendingOrder = buildUrl;
-    this.sheetOpen.set(true);
+    this.open(false);
   }
 
   /**
-   * Para los botones de pedir (enlaces a WhatsApp): si ya hay datos, el enlace sigue su curso;
-   * si no, se piden primero y luego se abre WhatsApp con `buildUrl`, que ya los incluye.
+   * Para los botones de WhatsApp (enlaces): si faltan los datos, la primera vez se piden en
+   * lugar de abrir WhatsApp; luego el cliente vuelve a tocar el botón, que ya los incluye.
+   * WhatsApp se abre siempre con el enlace, nunca con window.open: los navegadores de apps
+   * como Instagram o Facebook a veces lo bloquean.
    */
-  interceptOrder(event: Event, buildUrl: () => string | null): void {
-    if (this.data()) return;
+  interceptOrder(event: Event): void {
+    if (this.data() || this.askedForOrder) return;
     event.preventDefault();
-    this.requestThen(buildUrl);
+    this.askedForOrder = true;
+    this.open(true);
   }
 
   save(customer: Customer): void {
@@ -59,35 +56,27 @@ export class CustomerProfile {
     } catch {
       // Navegación privada o almacenamiento bloqueado: se usan solo en esta visita.
     }
-    this.close();
+    this.sheetOpen.set(false);
   }
 
-  /** ✕ o Esc: cierra sin abrir WhatsApp, aunque hubiera un pedido esperando. */
-  cancel(): void {
-    this.pendingOrder = null;
-    this.dismiss();
-  }
-
-  /** "Ahora no": sigue sin datos (si había un pedido esperando, se abre igual). */
+  /** "Ahora no", ✕ o Esc: sigue sin datos y no se vuelve a preguntar al llegar en esta visita. */
   dismiss(): void {
     try {
       sessionStorage.setItem(DISMISSED_KEY, '1');
     } catch {
       // Sin almacenamiento: se volverá a preguntar al recargar, nada grave.
     }
-    this.close();
+    this.sheetOpen.set(false);
   }
 
   /** El navegador cerró la hoja por su cuenta (por ejemplo, el botón atrás de Android). */
   closedByBrowser(): void {
-    if (this.sheetOpen()) this.cancel();
+    if (this.sheetOpen()) this.dismiss();
   }
 
-  private close(): void {
-    this.sheetOpen.set(false);
-    const url = this.pendingOrder?.();
-    this.pendingOrder = null;
-    if (url) window.open(url, '_blank', 'noopener');
+  private open(forOrder: boolean): void {
+    this.forOrder.set(forOrder);
+    this.sheetOpen.set(true);
   }
 }
 

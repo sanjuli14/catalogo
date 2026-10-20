@@ -170,7 +170,7 @@
           [href]="url"
           target="_blank"
           rel="noopener"
-          (click)="customer.interceptOrder($event, orderUrl)"
+          (click)="customer.interceptOrder($event)"
         >
           <app-icon name="whatsapp" [size]="20" />
           {{
@@ -189,7 +189,7 @@
           [href]="url"
           target="_blank"
           rel="noopener"
-          (click)="customer.interceptOrder($event, askUrl)"
+          (click)="customer.interceptOrder($event)"
         >
           <app-icon name="whatsapp" [size]="20" /> Preguntar cuándo vuelve
         </a>

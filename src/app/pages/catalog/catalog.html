@@ -63,7 +63,7 @@
         [href]="url"
         target="_blank"
         rel="noopener"
-        (click)="customer.interceptOrder($event, contactUrl)"
+        (click)="customer.interceptOrder($event)"
       >
         <span class="board__order-top">
           <span class="label">¿Te gustó algo?</span>
@@ -256,7 +256,7 @@
             [href]="contactUrl()"
             target="_blank"
             rel="noopener"
-            (click)="customer.interceptOrder($event, contactUrl)"
+            (click)="customer.interceptOrder($event)"
           >
             <span class="label">WhatsApp</span>
             <span class="contact__value contact__value--big figure">+{{ b.whatsapp }}</span>
@@ -337,7 +337,7 @@
         [href]="url"
         target="_blank"
         rel="noopener"
-        (click)="customer.interceptOrder($event, contactUrl)"
+        (click)="customer.interceptOrder($event)"
       >
         <app-icon name="whatsapp" [size]="20" /> Pedir
       </a>

@@ -1,4 +1,4 @@
-import { Injectable, signal } from '@angular/core';
+import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 
 import { Item } from '../../core/models';
 import { OrderLine } from './public-catalog';
@@ -27,6 +27,13 @@ type CartState = Record<string, Record<string, number>>;
 export class Cart {
   private readonly state = signal<CartState>(readStored(STORAGE_KEY));
   private readonly sent = signal<Record<string, SentOrder>>(readSent());
+  /** Hora actual, refrescada cada minuto: así el aviso del pedido enviado caduca solo. */
+  private readonly now = signal(Date.now());
+
+  constructor() {
+    const timer = setInterval(() => this.now.set(Date.now()), 60_000);
+    inject(DestroyRef).onDestroy(() => clearInterval(timer));
+  }
   /** La hoja del pedido está abierta. */
   readonly sheetOpen = signal(false);
 
@@ -49,7 +56,7 @@ export class Cart {
   /** Hay un pedido enviado que todavía se puede recuperar. */
   hasSent(businessId: string): boolean {
     const order = this.sent()[businessId];
-    return !!order && Date.now() - order.at < SENT_TTL_MS;
+    return !!order && this.now() - order.at < SENT_TTL_MS;
   }
 
   /**
@@ -124,7 +131,7 @@ export class Cart {
   }
 }
 
-function save(key: string, state: unknown): void {
+function save(key: string, state: CartState | Record<string, SentOrder>): void {
   try {
     localStorage.setItem(key, JSON.stringify(state));
   } catch {
@@ -136,19 +143,24 @@ function readStored(key: string): CartState {
   try {
     const value: unknown = JSON.parse(localStorage.getItem(key) ?? '{}');
     if (!value || typeof value !== 'object') return {};
-    // Solo cantidades enteras válidas: un dato dañado no debe dar un total "NaN".
     const state: CartState = {};
     for (const [businessId, lines] of Object.entries(value)) {
       if (!lines || typeof lines !== 'object') continue;
-      const valid = Object.entries(lines).filter((entry): entry is [string, number] =>
-        isQuantity(entry[1]),
-      );
-      if (valid.length) state[businessId] = Object.fromEntries(valid);
+      const valid = validLines(lines);
+      if (valid) state[businessId] = valid;
     }
     return state;
   } catch {
     return {};
   }
+}
+
+/** Solo cantidades enteras válidas (un dato dañado no debe dar un total "NaN"); null si no queda ninguna. */
+function validLines(value: object): Record<string, number> | null {
+  const lines = Object.entries(value).filter((entry): entry is [string, number] =>
+    isQuantity(entry[1]),
+  );
+  return lines.length ? Object.fromEntries(lines) : null;
 }
 
 function isQuantity(value: unknown): value is number {
@@ -164,10 +176,8 @@ function readSent(): Record<string, SentOrder> {
     for (const [businessId, order] of Object.entries(value as Record<string, Partial<SentOrder>>)) {
       if (!order?.lines || typeof order.at !== 'number' || Date.now() - order.at >= SENT_TTL_MS)
         continue;
-      const lines = Object.entries(order.lines).filter((entry): entry is [string, number] =>
-        isQuantity(entry[1]),
-      );
-      if (lines.length) sent[businessId] = { lines: Object.fromEntries(lines), at: order.at };
+      const lines = validLines(order.lines);
+      if (lines) sent[businessId] = { lines, at: order.at };
     }
     return sent;
   } catch {

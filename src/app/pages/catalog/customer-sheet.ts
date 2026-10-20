@@ -16,7 +16,7 @@ import { Icon } from '../../shared/icon';
       #dialog
       class="sheet"
       aria-labelledby="customer-sheet-title"
-      (cancel)="$event.preventDefault(); customer.cancel()"
+      (cancel)="$event.preventDefault(); customer.dismiss()"
       (close)="customer.closedByBrowser()"
     >
       <form class="sheet__body" [formGroup]="form" (ngSubmit)="save()">
@@ -25,7 +25,7 @@ import { Icon } from '../../shared/icon';
           <button
             type="button"
             class="sheet__close"
-            (click)="customer.cancel()"
+            (click)="customer.dismiss()"
             aria-label="Cerrar"
           >
             <app-icon name="close" [size]="18" />
@@ -37,6 +37,11 @@ import { Icon } from '../../shared/icon';
           Tu nombre y dirección van en el mensaje de WhatsApp, así {{ businessName() }} sabe quién
           eres y dónde estás sin tener que preguntarte. Se guardan solo en este teléfono.
         </p>
+        @if (customer.forOrder()) {
+          <p class="sheet__hint">
+            Después de guardar, toca otra vez el botón de WhatsApp para enviar tu mensaje.
+          </p>
+        }
 
         <label class="field">
           <span>Tu nombre</span>
@@ -65,6 +70,17 @@ import { Icon } from '../../shared/icon';
   `,
   styleUrl: './sheet.css',
   styles: `
+    .sheet__hint {
+      margin: -4px 0 4px;
+      padding: 10px 12px;
+      border-radius: 12px;
+      background: var(--brand-soft);
+      color: var(--ink);
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 1.4;
+    }
+
     .field {
       display: grid;
       gap: 6px;
