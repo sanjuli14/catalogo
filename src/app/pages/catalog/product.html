@@ -1,0 +1,182 @@
+@if (loading()) {
+  <div class="shell page skeleton" aria-busy="true" aria-label="Cargando producto">
+    <div class="layout">
+      <div class="skeleton__media shimmer"></div>
+      <div>
+        <div class="skeleton__line skeleton__line--short shimmer"></div>
+        <div class="skeleton__line skeleton__line--title shimmer"></div>
+        <div class="skeleton__line skeleton__line--short shimmer"></div>
+        <div class="skeleton__line shimmer"></div>
+        <div class="skeleton__line shimmer"></div>
+      </div>
+    </div>
+  </div>
+} @else if (!business() || !item()) {
+  <main class="state">
+    <span class="state__icon"><app-icon name="bag" [size]="28" /></span>
+    @if (error(); as error) {
+      <h1>No pudimos abrir este producto</h1>
+      <p>{{ error }}</p>
+    } @else {
+      <h1>Este producto ya no está disponible</h1>
+      <p>Puede que el negocio lo haya quitado de su catálogo.</p>
+    }
+    @if (business(); as b) {
+      <a class="btn btn--dark" [routerLink]="['/', b.slug]">Ver el catálogo de {{ b.name }}</a>
+    } @else {
+      <a class="btn btn--dark" routerLink="/">Ir al inicio</a>
+    }
+  </main>
+} @else {
+  @let b = business()!;
+  @let p = item()!;
+
+  <header class="topbar">
+    <a class="icon-btn" [routerLink]="['/', b.slug]" aria-label="Volver al catálogo">
+      <app-icon name="arrowLeft" [size]="18" />
+    </a>
+    <a class="topbar__brand" [routerLink]="['/', b.slug]">
+      @if (logoUrl(); as logo) {
+        <img [src]="logo" alt="" />
+      } @else {
+        <span class="topbar__initial">{{ b.name.charAt(0) }}</span>
+      }
+      <span>{{ b.name }}</span>
+    </a>
+    <button type="button" class="icon-btn" (click)="share()" aria-label="Compartir producto">
+      <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
+    </button>
+  </header>
+
+  @if (isPreview()) {
+    <p class="preview-banner">
+      <app-icon name="eye" [size]="16" />
+      Vista previa · este catálogo todavía no es público
+    </p>
+  }
+
+  <main class="shell page">
+    <nav class="crumbs" aria-label="Ubicación">
+      <a [routerLink]="['/', b.slug]">{{ b.name }}</a>
+      @if (categoryName(); as category) {
+        <span aria-hidden="true">/</span>
+        <span>{{ category }}</span>
+      }
+    </nav>
+
+    <div class="layout">
+      <section class="media" aria-label="Fotos">
+        @if (p.photos.length) {
+          <div class="media__frame">
+            <div #gallery class="gallery" (scroll)="onGalleryScroll($event)">
+              @for (photo of p.photos; track photo) {
+                <img [src]="imageUrl(photo)" [alt]="p.name" />
+              }
+            </div>
+            @if (p.photos.length > 1) {
+              <span class="media__counter">{{ photoIndex() + 1 }} / {{ p.photos.length }}</span>
+            }
+          </div>
+          @if (p.photos.length > 1) {
+            <div class="thumbs">
+              @for (photo of p.photos; track photo; let i = $index) {
+                <button
+                  type="button"
+                  [class.is-active]="photoIndex() === i"
+                  (click)="goToPhoto(i)"
+                  [attr.aria-label]="'Ver foto ' + (i + 1)"
+                >
+                  <img [src]="imageUrl(photo)" alt="" />
+                </button>
+              }
+            </div>
+          }
+        } @else {
+          <div class="media__frame media__placeholder" aria-hidden="true">
+            {{ p.name.charAt(0) }}
+          </div>
+        }
+      </section>
+
+      <section class="info">
+        <div class="info__tags">
+          <span class="pill">{{ p.kind === 'service' ? 'Servicio' : 'Producto' }}</span>
+          @if (p.is_available) {
+            <span class="status status--ok">Disponible</span>
+          } @else {
+            <span class="status status--out">Agotado por ahora</span>
+          }
+        </div>
+
+        <h1 class="info__name">{{ p.name }}</h1>
+        <p class="info__price" [class.is-ask]="p.price === null">{{ price() }}</p>
+
+        @if (p.description) {
+          <div class="info__block">
+            <h2>Descripción</h2>
+            <p class="info__description">{{ p.description }}</p>
+          </div>
+        }
+
+        <div class="info__actions">
+          @if (p.is_available && orderUrl(); as url) {
+            <a class="btn btn--brand btn--block" [href]="url" target="_blank" rel="noopener">
+              <app-icon name="whatsapp" [size]="20" /> Pedir por WhatsApp
+            </a>
+          } @else if (!p.is_available && askUrl(); as url) {
+            <a class="btn btn--ghost btn--block" [href]="url" target="_blank" rel="noopener">
+              <app-icon name="whatsapp" [size]="20" /> Preguntar cuándo vuelve
+            </a>
+          }
+          <button type="button" class="btn btn--ghost btn--block" (click)="share()">
+            <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
+            {{ copied() ? 'Enlace copiado' : 'Compartir producto' }}
+          </button>
+        </div>
+
+        <a class="seller" [routerLink]="['/', b.slug]">
+          @if (logoUrl(); as logo) {
+            <img class="seller__logo" [src]="logo" alt="" />
+          } @else {
+            <span class="seller__logo seller__logo--initial">{{ b.name.charAt(0) }}</span>
+          }
+          <span class="seller__text">
+            <strong>{{ b.name }}</strong>
+            <small>Ver el catálogo completo</small>
+          </span>
+          <app-icon name="arrowUpRight" [size]="18" />
+        </a>
+      </section>
+    </div>
+
+    @if (related().length) {
+      <section class="related">
+        <h2>{{ relatedTitle() }}</h2>
+        <div class="grid">
+          @for (other of related(); track other.id) {
+            <app-product-card [business]="b" [item]="other" />
+          }
+        </div>
+      </section>
+    }
+  </main>
+
+  <!-- En el celular, el precio y el botón de pedir quedan siempre a mano. -->
+  @if ((p.is_available && orderUrl()) || (!p.is_available && askUrl())) {
+    <div class="buybar">
+      <span class="buybar__price">
+        <small>{{ p.is_available ? 'Precio' : 'Agotado' }}</small>
+        {{ price() }}
+      </span>
+      @if (p.is_available && orderUrl(); as url) {
+        <a class="btn btn--brand" [href]="url" target="_blank" rel="noopener">
+          <app-icon name="whatsapp" [size]="19" /> Pedir
+        </a>
+      } @else if (askUrl(); as url) {
+        <a class="btn btn--ghost" [href]="url" target="_blank" rel="noopener">
+          <app-icon name="whatsapp" [size]="19" /> Preguntar
+        </a>
+      }
+    </div>
+  }
+}

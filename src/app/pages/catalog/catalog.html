@@ -192,57 +192,7 @@
           }
           <div class="grid">
             @for (item of group.items; track item.id) {
-              <article class="product" [class.is-unavailable]="!item.is_available">
-                <button
-                  type="button"
-                  class="product__open"
-                  (click)="showItem(item)"
-                  [attr.aria-label]="'Ver ' + item.name"
-                >
-                  <span class="product__media">
-                    @if (item.photos.length) {
-                      <img [src]="photoUrl(item.photos[0])" [alt]="item.name" loading="lazy" />
-                    } @else {
-                      <span class="product__placeholder" aria-hidden="true">
-                        {{ item.name.charAt(0) }}
-                      </span>
-                    }
-                    <span class="product__badges">
-                      @if (!item.is_available) {
-                        <span class="pill pill--dark">Agotado</span>
-                      } @else if (item.kind === 'service') {
-                        <span class="pill">Servicio</span>
-                      }
-                      @if (item.photos.length > 1) {
-                        <span class="pill pill--glass">
-                          <app-icon name="image" [size]="12" /> {{ item.photos.length }}
-                        </span>
-                      }
-                    </span>
-                  </span>
-                  <span class="product__body">
-                    <span class="product__name">{{ item.name }}</span>
-                    @if (item.description) {
-                      <span class="product__description">{{ item.description }}</span>
-                    }
-                    <span class="product__price" [class.is-ask]="item.price === null">
-                      {{ price(item) }}
-                    </span>
-                  </span>
-                </button>
-                @if (item.is_available && orderUrl(item); as url) {
-                  <a
-                    class="product__order"
-                    [href]="url"
-                    target="_blank"
-                    rel="noopener"
-                    [attr.aria-label]="'Pedir ' + item.name + ' por WhatsApp'"
-                  >
-                    <app-icon name="whatsapp" [size]="18" />
-                    <span>Pedir</span>
-                  </a>
-                }
-              </article>
+              <app-product-card [business]="b" [item]="item" />
             }
           </div>
         </section>
@@ -315,69 +265,4 @@
       <app-icon name="whatsapp" [size]="26" />
     </a>
   }
-
-  <dialog #dialog class="sheet" (click)="onDialogClick($event)" (close)="openItem.set(null)">
-    @if (openItem(); as item) {
-      <article class="sheet__card">
-        <span class="sheet__grip" aria-hidden="true"></span>
-        <button
-          type="button"
-          class="sheet__close icon-btn"
-          (click)="closeItem()"
-          aria-label="Cerrar"
-        >
-          <app-icon name="close" [size]="18" />
-        </button>
-
-        <div class="sheet__media">
-          @if (item.photos.length) {
-            <div #gallery class="gallery" (scroll)="onGalleryScroll($event)">
-              @for (photo of item.photos; track photo) {
-                <img [src]="photoUrl(photo)" [alt]="item.name" />
-              }
-            </div>
-            @if (item.photos.length > 1) {
-              <div class="gallery__dots">
-                @for (photo of item.photos; track photo; let i = $index) {
-                  <button
-                    type="button"
-                    [class.is-active]="openPhoto() === i"
-                    (click)="goToPhoto(i)"
-                    [attr.aria-label]="'Ver foto ' + (i + 1)"
-                  ></button>
-                }
-              </div>
-            }
-          } @else {
-            <span class="sheet__placeholder" aria-hidden="true">{{ item.name.charAt(0) }}</span>
-          }
-        </div>
-
-        <div class="sheet__body">
-          <div class="sheet__tags">
-            <span class="pill">{{ item.kind === 'service' ? 'Servicio' : 'Producto' }}</span>
-            @if (!item.is_available) {
-              <span class="pill pill--dark">Agotado por ahora</span>
-            }
-          </div>
-          <h2 class="sheet__name">{{ item.name }}</h2>
-          <p class="sheet__price" [class.is-ask]="item.price === null">{{ price(item) }}</p>
-          @if (item.description) {
-            <p class="sheet__description">{{ item.description }}</p>
-          }
-          <div class="sheet__cta">
-            @if (item.is_available && orderUrl(item); as url) {
-              <a class="btn btn--brand btn--block" [href]="url" target="_blank" rel="noopener">
-                <app-icon name="whatsapp" [size]="20" /> Pedir por WhatsApp
-              </a>
-            } @else if (!item.is_available && contactUrl(); as url) {
-              <a class="btn btn--ghost btn--block" [href]="url" target="_blank" rel="noopener">
-                <app-icon name="whatsapp" [size]="20" /> Preguntar cuándo vuelve
-              </a>
-            }
-          </div>
-        </div>
-      </article>
-    }
-  </dialog>
 }

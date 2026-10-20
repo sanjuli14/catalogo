@@ -1,0 +1,336 @@
+/*
+ * Base del catálogo público (catálogo y detalle de producto): lienzo claro y neutro,
+ * con el color del negocio como acento. --brand, --brand-2 y --on-brand llegan del componente.
+ */
+:host {
+  --brand: var(--color-primary);
+  --brand-2: var(--purple-500);
+  --on-brand: #ffffff;
+  /* Derivados del color del negocio: sirven igual para colores oscuros y claros. */
+  --brand-soft: color-mix(in oklab, var(--brand) 12%, white);
+  --brand-strong: color-mix(in oklab, var(--brand) 58%, black);
+
+  --ink: #13111c;
+  --ink-2: #4b4860;
+  --muted: #8b889c;
+  --line: #ececf2;
+  --soft: #f4f4f7;
+  --radius-lg: 22px;
+  --shadow-card: 0 1px 2px rgb(19 17 28 / 0.04), 0 10px 30px -14px rgb(19 17 28 / 0.18);
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  display: block;
+  min-height: 100dvh;
+  background: #ffffff;
+  color: var(--ink);
+  -webkit-font-smoothing: antialiased;
+}
+
+.shell {
+  width: 100%;
+  max-width: 1120px;
+  margin: 0 auto;
+  padding: 0 16px;
+}
+
+/* ---------- Botones ---------- */
+.btn {
+  font: inherit;
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  min-height: 48px;
+  padding: 0 20px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    transform 0.15s var(--ease),
+    background-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.btn:active {
+  transform: scale(0.97);
+}
+
+.btn:disabled {
+  opacity: 0.55;
+  cursor: wait;
+}
+
+.btn--brand {
+  background: var(--brand);
+  color: var(--on-brand);
+  box-shadow: 0 10px 24px -10px color-mix(in oklab, var(--brand) 70%, transparent);
+}
+
+.btn--brand:hover {
+  box-shadow: 0 14px 30px -10px color-mix(in oklab, var(--brand) 80%, transparent);
+}
+
+.btn--ghost {
+  border-color: var(--line);
+  background: #ffffff;
+  color: var(--ink);
+}
+
+.btn--ghost:hover:not(:disabled) {
+  background: var(--soft);
+}
+
+.btn--dark {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.btn--block {
+  width: 100%;
+  min-height: 54px;
+  font-size: 16px;
+}
+
+.icon-btn {
+  display: inline-grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+  background: #ffffff;
+  color: var(--ink);
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s,
+    border-color 0.2s;
+}
+
+.icon-btn:hover {
+  border-color: transparent;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.icon-btn--lg {
+  width: 48px;
+  height: 48px;
+}
+
+:is(a, button):focus-visible {
+  outline: 3px solid color-mix(in oklab, var(--brand) 55%, transparent);
+  outline-offset: 2px;
+}
+
+.pill {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 999px;
+  background: var(--soft);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pill--dark {
+  background: var(--ink);
+  color: #ffffff;
+}
+
+/* ---------- Aviso de vista previa ---------- */
+.preview-banner {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 10px 16px;
+  background: #fff4dc;
+  color: #7a4f00;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: center;
+}
+
+/* ---------- Barra superior con el negocio ---------- */
+.topbar {
+  position: fixed;
+  inset: 0 0 auto;
+  z-index: 20;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  height: 60px;
+  padding: 0 16px;
+  border-bottom: 1px solid var(--line);
+  background: rgb(255 255 255 / 0.82);
+  backdrop-filter: saturate(180%) blur(18px);
+}
+
+.topbar__brand {
+  font: inherit;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  min-width: 0;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.topbar__brand span:last-child {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.topbar__brand img,
+.topbar__initial {
+  flex: none;
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  background: #ffffff;
+  box-shadow: 0 0 0 1px var(--line);
+  object-fit: contain;
+}
+
+.topbar__initial {
+  display: grid;
+  place-items: center;
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+/* ---------- Cuadrícula de productos ---------- */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+
+/* ---------- Estados (vacío, sin resultados, no existe) ---------- */
+.state {
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  align-content: center;
+  max-width: 420px;
+  min-height: 70dvh;
+  margin: 0 auto;
+  padding: 48px 24px;
+  text-align: center;
+}
+
+.state--inline {
+  min-height: 0;
+  padding: 40px 16px;
+}
+
+.state__icon {
+  display: grid;
+  place-items: center;
+  width: 64px;
+  height: 64px;
+  margin-bottom: 6px;
+  border-radius: 20px;
+  background: var(--brand-soft);
+  color: var(--brand-strong);
+}
+
+.state h1,
+.state h2 {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.state p {
+  margin: 0 0 8px;
+  color: var(--muted);
+  line-height: 1.5;
+}
+
+.notice--error {
+  margin: 0;
+  padding: 12px 16px;
+  border-radius: 14px;
+  background: #fdecea;
+  color: #a4161a;
+  font-size: 14px;
+}
+
+.shimmer {
+  background: linear-gradient(90deg, #f0eff4 25%, #f8f8fb 37%, #f0eff4 63%);
+  background-size: 400% 100%;
+  animation: shimmer 1.4s ease infinite;
+}
+
+@media (min-width: 640px) {
+  .shell {
+    padding: 0 24px;
+  }
+
+  .grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+}
+
+@media (min-width: 900px) {
+  .grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 20px;
+  }
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: 0 0;
+  }
+}
+
+@keyframes pop-in {
+  from {
+    opacity: 0;
+    transform: scale(0.6);
+  }
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}

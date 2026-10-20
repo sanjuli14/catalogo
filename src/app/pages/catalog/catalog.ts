@@ -1,25 +1,16 @@
-import {
-  Component,
-  ElementRef,
-  OnDestroy,
-  computed,
-  inject,
-  input,
-  signal,
-  viewChild,
-} from '@angular/core';
+import { Component, OnDestroy, OnInit, computed, inject, input, signal } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 
-import { Auth } from '../../core/auth';
-import { CatalogApi } from '../../core/catalog-api';
 import { readableTextColor } from '../../core/color';
-import { errorMessage, formatPrice } from '../../core/format';
+import { errorMessage } from '../../core/format';
 import { Business, Category, Item } from '../../core/models';
-import { whatsappChatUrl, whatsappShareUrl } from '../../core/whatsapp';
+import { whatsappShareUrl } from '../../core/whatsapp';
 import { Icon, IconName } from '../../shared/icon';
 import { downloadCatalogPdf } from './catalog-pdf';
 import { groupItems } from './group-items';
+import { ProductCard } from './product-card';
+import { PublicCatalog, catalogUrl, contactUrl } from './public-catalog';
 
 const SOCIALS = {
   instagram: { label: 'Instagram', icon: 'instagram' },
@@ -34,9 +25,9 @@ const SCROLLED_AFTER_PX = 280;
 
 @Component({
   selector: 'app-catalog',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, ProductCard],
   templateUrl: './catalog.html',
-  styleUrl: './catalog.css',
+  styleUrls: ['./catalog-theme.css', './catalog.css'],
   host: {
     '[style.--brand]': 'business()?.primary_color',
     '[style.--brand-2]': 'business()?.secondary_color',
@@ -45,9 +36,8 @@ const SCROLLED_AFTER_PX = 280;
     '(window:scroll)': 'onScroll()',
   },
 })
-export class Catalog implements OnDestroy {
-  private readonly api = inject(CatalogApi);
-  private readonly auth = inject(Auth);
+export class Catalog implements OnInit, OnDestroy {
+  private readonly catalog = inject(PublicCatalog);
   private readonly title = inject(Title);
   private readonly meta = inject(Meta);
 
@@ -63,20 +53,15 @@ export class Catalog implements OnDestroy {
   protected readonly search = signal('');
   /** null = todas las categorías */
   protected readonly selectedGroup = signal<string | null>(null);
-  protected readonly openItem = signal<Item | null>(null);
-  protected readonly openPhoto = signal(0);
   protected readonly copied = signal(false);
   protected readonly generatingPdf = signal(false);
   /** true cuando ya se pasó la portada: muestra la barra compacta y el botón flotante. */
   protected readonly scrolled = signal(false);
-  private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
-  private readonly gallery = viewChild<ElementRef<HTMLElement>>('gallery');
 
   protected readonly onBrand = computed(() => {
     const color = this.business()?.primary_color;
     return color ? readableTextColor(color) : null;
   });
-  protected readonly catalogUrl = computed(() => `${location.origin}/${this.business()?.slug}`);
 
   protected readonly groups = computed(() => groupItems(this.categories(), this.items()));
 
@@ -105,6 +90,11 @@ export class Catalog implements OnDestroy {
       .map((key) => ({ ...SOCIALS[key], url: withProtocol(socials[key]!) }));
   });
 
+  protected readonly contactUrl = computed(() => {
+    const business = this.business();
+    return business ? contactUrl(business) : null;
+  });
+
   /** El dueño (o el superadmin) ve su catálogo aunque todavía no sea público. */
   protected readonly isPreview = computed(() => this.business()?.status !== 'active');
 
@@ -113,7 +103,8 @@ export class Catalog implements OnDestroy {
   private readonly platformThemeColor =
     this.meta.getTag('name="theme-color"')?.content ?? '#6b45ff';
 
-  constructor() {
+  // En ngOnInit (no en el constructor): el router ya asignó el slug de la ruta.
+  ngOnInit(): void {
     void this.load();
   }
 
@@ -125,26 +116,18 @@ export class Catalog implements OnDestroy {
 
   private async load(): Promise<void> {
     try {
-      // Con sesión, la RLS deja ver al dueño su catálogo aunque esté pendiente.
-      await this.auth.ready;
-      const business = await this.api.getBusinessBySlug(this.slug());
-      if (!business) return;
+      const data = await this.catalog.load(this.slug());
+      if (!data) return;
+      this.business.set(data.business);
+      this.categories.set(data.categories);
+      this.items.set(data.items);
 
-      const [categories, items] = await Promise.all([
-        this.api.listCategories(business.id),
-        this.api.listItems(business.id),
-      ]);
-      this.business.set(business);
-      this.categories.set(categories);
-      // El dueño también recibe los ocultos (por la RLS): aquí nunca se muestran.
-      this.items.set(items.filter((i) => i.is_visible));
-
-      this.title.setTitle(business.name);
+      this.title.setTitle(data.business.name);
       this.meta.updateTag({
         name: 'description',
-        content: business.description ?? `Catálogo de ${business.name}`,
+        content: data.business.description ?? `Catálogo de ${data.business.name}`,
       });
-      this.meta.updateTag({ name: 'theme-color', content: business.primary_color });
+      this.meta.updateTag({ name: 'theme-color', content: data.business.primary_color });
     } catch (e) {
       this.error.set(errorMessage(e));
     } finally {
@@ -152,52 +135,28 @@ export class Catalog implements OnDestroy {
     }
   }
 
-  protected price(item: Item): string {
-    return formatPrice(item.price, this.business()!.currency);
-  }
-
-  protected photoUrl(path: string): string {
-    return this.api.imageUrl(path);
-  }
-
   protected logoUrl(): string | null {
     const path = this.business()?.logo_path;
-    return path ? this.api.imageUrl(path) : null;
-  }
-
-  protected orderUrl(item: Item): string | null {
-    const business = this.business()!;
-    if (!business.whatsapp) return null;
-    const message =
-      `¡Hola ${business.name}! Me interesa *${item.name}* (${this.price(item)}).\n` +
-      this.catalogUrl();
-    return whatsappChatUrl(business.whatsapp, message);
-  }
-
-  protected contactUrl(): string | null {
-    const business = this.business()!;
-    if (!business.whatsapp) return null;
-    return whatsappChatUrl(
-      business.whatsapp,
-      `¡Hola ${business.name}! Vi su catálogo y quiero hacer una consulta.`,
-    );
+    return path ? this.catalog.imageUrl(path) : null;
   }
 
   protected shareOnWhatsappUrl(): string {
-    return whatsappShareUrl(`Mira el catálogo de ${this.business()!.name}: ${this.catalogUrl()}`);
+    const business = this.business()!;
+    return whatsappShareUrl(`Mira el catálogo de ${business.name}: ${catalogUrl(business)}`);
   }
 
   protected async share(): Promise<void> {
-    const name = this.business()!.name;
+    const business = this.business()!;
+    const url = catalogUrl(business);
     if (navigator.share) {
       try {
-        await navigator.share({ title: name, text: `Catálogo de ${name}`, url: this.catalogUrl() });
+        await navigator.share({ title: business.name, text: `Catálogo de ${business.name}`, url });
       } catch {
         // La persona cerró el menú de compartir.
       }
       return;
     }
-    await navigator.clipboard.writeText(this.catalogUrl());
+    await navigator.clipboard.writeText(url);
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 2500);
   }
@@ -208,8 +167,8 @@ export class Catalog implements OnDestroy {
       await downloadCatalogPdf({
         business: this.business()!,
         groups: this.groups(),
-        catalogUrl: this.catalogUrl(),
-        imageUrl: (path) => this.api.imageUrl(path),
+        catalogUrl: catalogUrl(this.business()!),
+        imageUrl: (path) => this.catalog.imageUrl(path),
       });
     } catch (e) {
       this.error.set(errorMessage(e));
@@ -224,34 +183,6 @@ export class Catalog implements OnDestroy {
 
   protected scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
-  }
-
-  protected showItem(item: Item): void {
-    this.openItem.set(item);
-    this.openPhoto.set(0);
-    this.dialog()?.nativeElement.showModal();
-    this.gallery()?.nativeElement.scrollTo({ left: 0 });
-  }
-
-  /** La galería del detalle se desliza con el dedo; aquí se sabe qué foto se está viendo. */
-  protected onGalleryScroll(event: Event): void {
-    const gallery = event.target as HTMLElement;
-    this.openPhoto.set(Math.round(gallery.scrollLeft / gallery.clientWidth));
-  }
-
-  protected goToPhoto(index: number): void {
-    const gallery = this.gallery()?.nativeElement;
-    gallery?.scrollTo({ left: index * gallery.clientWidth, behavior: 'smooth' });
-    this.openPhoto.set(index);
-  }
-
-  protected closeItem(): void {
-    this.dialog()?.nativeElement.close();
-  }
-
-  /** Cierra el detalle al tocar fuera de la tarjeta. */
-  protected onDialogClick(event: MouseEvent): void {
-    if (event.target === this.dialog()?.nativeElement) this.closeItem();
   }
 }
 

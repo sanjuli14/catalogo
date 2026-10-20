@@ -46,6 +46,11 @@ export const routes: Routes = [
   // Después de las rutas fijas: cualquier otro segmento es el slug de un negocio (/mi-tienda).
   { path: ':slug', loadComponent: () => import('./pages/catalog/catalog').then((m) => m.Catalog) },
   {
+    // Página propia de cada producto o servicio, con enlace para compartir.
+    path: ':slug/:itemId',
+    loadComponent: () => import('./pages/catalog/product').then((m) => m.Product),
+  },
+  {
     path: '**',
     loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
   },
