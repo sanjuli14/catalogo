@@ -18,6 +18,12 @@ export function errorMessage(error: unknown): string {
       return 'Algún dato no tiene el formato correcto. Revisa el formulario.';
     case '42501':
       return 'No tienes permiso para hacer esto.';
+    case 'owner_taken':
+      return 'Ese correo ya administra otro negocio.';
+    case 'invalid_email':
+      return 'El correo no es válido.';
+    case 'same_password':
+      return 'La contraseña nueva tiene que ser distinta de la anterior.';
     case 'CT001':
       return 'Tu cuenta ya tiene un negocio.';
     case 'user_already_exists':

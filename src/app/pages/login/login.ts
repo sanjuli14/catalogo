@@ -49,6 +49,9 @@ import { Turnstile, captchaEnabled } from '../../shared/turnstile';
           {{ loading() ? 'Entrando…' : 'Entrar' }}
         </button>
 
+        <p class="muted">
+          <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
+        </p>
         <p class="muted">¿No tienes cuenta? <a routerLink="/registro">Crea tu catálogo</a></p>
       </form>
     </main>
@@ -74,19 +77,24 @@ export class Login {
     this.error.set(null);
 
     const error = await this.auth.signIn(email, password, this.captchaToken() ?? undefined);
-    this.loading.set(false);
     if (error) {
       // El token ya se usó: hace falta uno nuevo para reintentar.
       this.captcha()?.reset();
       this.error.set(error);
+      this.loading.set(false);
       return;
     }
 
     // Entró, pero no se pudo leer su perfil: la alerta de arriba lo explica.
-    if (this.auth.profileError()) return;
+    if (this.auth.profileError()) {
+      this.loading.set(false);
+      return;
+    }
 
     // Sin perfil: se registró pero aún no creó su negocio.
+    // "Entrando…" sigue visible hasta que termina de abrir el panel.
     const profile = this.auth.profile();
     await this.router.navigateByUrl(profile ? homeFor(profile.role) : '/registro');
+    this.loading.set(false);
   }
 }

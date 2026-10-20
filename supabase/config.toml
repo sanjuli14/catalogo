@@ -1,0 +1,6 @@
+# Solo la configuración que este proyecto necesita al desplegar con la CLI de Supabase.
+
+[functions.invite-owner]
+# La función comprueba ella misma que quien llama es superadmin (con su sesión),
+# así funciona también con las claves nuevas (sb_publishable_...).
+verify_jwt = false

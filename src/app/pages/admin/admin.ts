@@ -10,6 +10,12 @@ import { CurrentBusiness } from './current-business';
   providers: [CurrentBusiness],
   template: `
     <app-panel-header [title]="current.business()?.name ?? 'Panel del negocio'" />
+    @if (current.managedBySuperadmin) {
+      <p class="superadmin-bar">
+        Estás administrando este negocio como superadmin.
+        <a routerLink="/superadmin">← Todos los negocios</a>
+      </p>
+    }
 
     @if (!current.id()) {
       <main class="panel">

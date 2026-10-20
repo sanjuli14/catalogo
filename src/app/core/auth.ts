@@ -101,6 +101,21 @@ export class Auth {
     await this.loadProfile(this.session()!.user.id);
   }
 
+  /** Envía el correo para elegir una contraseña nueva. Supabase exige el captcha también aquí. */
+  async sendPasswordReset(email: string, captchaToken?: string): Promise<void> {
+    const { error } = await this.supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${location.origin}/definir-contrasena`,
+      captchaToken,
+    });
+    if (error) throw error;
+  }
+
+  /** Cambia la contraseña del usuario con sesión (al volver del correo de invitación o recuperación). */
+  async updatePassword(password: string): Promise<void> {
+    const { error } = await this.supabase.auth.updateUser({ password });
+    if (error) throw error;
+  }
+
   async signOut(): Promise<void> {
     await this.supabase.auth.signOut();
     this.session.set(null);
@@ -109,13 +124,15 @@ export class Auth {
   }
 
   private async setSession(session: Session | null): Promise<void> {
-    this.session.set(session);
     if (!session) {
+      this.session.set(null);
       this.profile.set(null);
       return;
     }
-    if (this.profile()?.user_id === session.user.id) return;
-    await this.loadProfile(session.user.id);
+    // Primero el perfil y después la sesión: así nunca se ve "con sesión pero sin perfil"
+    // mientras el perfil todavía está cargando.
+    if (this.profile()?.user_id !== session.user.id) await this.loadProfile(session.user.id);
+    this.session.set(session);
   }
 
   private async loadProfile(userId: string): Promise<void> {

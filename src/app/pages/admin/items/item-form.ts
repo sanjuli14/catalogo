@@ -1,6 +1,6 @@
 import { Component, OnDestroy, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Router, RouterLink } from '@angular/router';
+import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 
 import { CatalogApi } from '../../../core/catalog-api';
 import { errorMessage } from '../../../core/format';
@@ -22,7 +22,7 @@ interface PhotoDraft {
   template: `
     <section class="section-header">
       <h2>{{ id() ? 'Editar' : 'Nuevo producto o servicio' }}</h2>
-      <a class="button button--ghost" routerLink="/admin/productos">Volver</a>
+      <a class="button button--ghost" routerLink="..">Volver</a>
     </section>
 
     @if (loading()) {
@@ -120,6 +120,7 @@ interface PhotoDraft {
 export class ItemForm implements OnDestroy {
   private readonly api = inject(CatalogApi);
   private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
   protected readonly current = inject(CurrentBusiness);
   private readonly businessId = this.current.id()!;
 
@@ -233,7 +234,8 @@ export class ItemForm implements OnDestroy {
       }
       uploaded.length = 0; // Ya quedaron guardadas en el producto.
       await this.api.removeImages(this.removedPaths);
-      await this.router.navigateByUrl('/admin/productos');
+      // Vuelve a la lista, sea /admin o /superadmin/negocios/:id.
+      await this.router.navigate(['..'], { relativeTo: this.route });
     } catch (e) {
       await this.api.removeImages(uploaded);
       this.error.set(errorMessage(e));

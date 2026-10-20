@@ -25,6 +25,24 @@ export const routes: Routes = [
     canActivate: [roleGuard('superadmin')],
     loadComponent: () => import('./pages/superadmin/superadmin').then((m) => m.Superadmin),
   },
+  {
+    // El superadmin administra cualquier negocio con el mismo panel del dueño.
+    path: 'superadmin/negocios/:businessId',
+    canActivate: [roleGuard('superadmin')],
+    loadComponent: () => import('./pages/admin/admin').then((m) => m.Admin),
+    loadChildren: () => import('./pages/admin/admin.routes').then((m) => m.adminRoutes),
+  },
+  {
+    path: 'recuperar',
+    canActivate: [guestGuard],
+    loadComponent: () =>
+      import('./pages/forgot-password/forgot-password').then((m) => m.ForgotPassword),
+  },
+  {
+    // Sin guard: llega con la sesión del enlace del correo (invitación o recuperación).
+    path: 'definir-contrasena',
+    loadComponent: () => import('./pages/set-password/set-password').then((m) => m.SetPassword),
+  },
   // Después de las rutas fijas: cualquier otro segmento es el slug de un negocio (/mi-tienda).
   { path: ':slug', loadComponent: () => import('./pages/catalog/catalog').then((m) => m.Catalog) },
   {

@@ -164,6 +164,17 @@ body {
   font-size: 20px;
 }
 
+.superadmin-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  justify-content: center;
+  margin: 0;
+  padding: 8px 16px;
+  font-size: 14px;
+  background: var(--color-primary-soft);
+}
+
 .panel-header__brand {
   display: flex;
   gap: 10px;
