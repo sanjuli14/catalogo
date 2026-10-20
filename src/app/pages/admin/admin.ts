@@ -28,7 +28,9 @@ import { CurrentBusiness } from './current-business';
     } @else {
       <nav class="tabs" aria-label="Secciones del panel">
         <a routerLink="productos" routerLinkActive="is-active">
-          <app-icon name="bag" [size]="16" /> Productos y servicios
+          <app-icon name="bag" [size]="16" /> Productos<span class="tabs__long"
+            >&nbsp;y servicios</span
+          >
         </a>
         <a routerLink="categorias" routerLinkActive="is-active">
           <app-icon name="layers" [size]="16" /> Categorías

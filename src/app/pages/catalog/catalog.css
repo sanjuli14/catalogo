@@ -26,20 +26,24 @@
   animation-delay: 0.15s;
 }
 
+/* La etiqueta va pegada al nombre, los dos al pie del tile: si el tile es más alto que el
+   texto, el espacio libre queda arriba y no entre "Catálogo" y el nombre. */
 .board__hero {
   grid-column: 1 / -1;
   display: flex;
   flex-direction: column;
-  justify-content: space-between;
-  gap: 40px;
-  min-height: 250px;
+  justify-content: flex-end;
+  gap: 14px;
+  min-height: 200px;
   padding: 22px 20px 24px;
   container-type: inline-size;
 }
 
+/* Hasta dos renglones aprox.: los nombres largos achican la letra pero llenan el ancho. */
 .board__name {
   --fit-min: 26px;
-  --fit-max: 96px;
+  --fit-max: clamp(52px, 15vw, 96px);
+  --fit-k: 360cqi;
   overflow-wrap: break-word;
 }
 
@@ -500,7 +504,7 @@ a.contact:hover {
 }
 
 .skeleton .board__hero {
-  min-height: 250px;
+  min-height: 200px;
 }
 
 /* ---------- Pantallas más grandes ---------- */

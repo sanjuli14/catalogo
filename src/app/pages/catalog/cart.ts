@@ -4,6 +4,16 @@ import { Item } from '../../core/models';
 import { OrderLine } from './public-catalog';
 
 const STORAGE_KEY = 'catalogo.carrito';
+/** Último pedido enviado de cada negocio, para recuperarlo si WhatsApp no llegó a abrirse. */
+const SENT_KEY = 'catalogo.carrito.enviado';
+/** Pasado este tiempo ya no se ofrece recuperar el pedido enviado. */
+const SENT_TTL_MS = 12 * 60 * 60 * 1000;
+
+interface SentOrder {
+  lines: Record<string, number>;
+  /** Cuándo se envió (ms), para que el aviso caduque. */
+  at: number;
+}
 export const MAX_QUANTITY = 99;
 
 /** Cantidades por negocio y producto: { [businessId]: { [itemId]: cantidad } }. */
@@ -15,7 +25,8 @@ type CartState = Record<string, Record<string, number>>;
  */
 @Injectable({ providedIn: 'root' })
 export class Cart {
-  private readonly state = signal<CartState>(readStored());
+  private readonly state = signal<CartState>(readStored(STORAGE_KEY));
+  private readonly sent = signal<Record<string, SentOrder>>(readSent());
   /** La hoja del pedido está abierta. */
   readonly sheetOpen = signal(false);
 
@@ -35,8 +46,52 @@ export class Cart {
     });
   }
 
+  /** Hay un pedido enviado que todavía se puede recuperar. */
+  hasSent(businessId: string): boolean {
+    const order = this.sent()[businessId];
+    return !!order && Date.now() - order.at < SENT_TTL_MS;
+  }
+
+  /**
+   * Al enviar por WhatsApp el pedido se vacía (si no, al volver a la app seguiría lleno),
+   * pero se guarda una copia por si WhatsApp no se abrió y hay que recuperarlo.
+   */
+  markSent(businessId: string): void {
+    const lines = this.state()[businessId];
+    if (!lines) return;
+    this.sent.update((sent) => ({ ...sent, [businessId]: { lines, at: Date.now() } }));
+    save(SENT_KEY, this.sent());
+    this.clear(businessId);
+  }
+
+  /** Vuelve a poner en el pedido lo último que se envió, sumándolo a lo que ya haya. */
+  restoreSent(businessId: string): void {
+    if (!this.hasSent(businessId)) return;
+    const sent = this.sent()[businessId].lines;
+    this.update(businessId, (lines) => {
+      const next = { ...lines };
+      for (const [id, quantity] of Object.entries(sent)) {
+        next[id] = Math.min(MAX_QUANTITY, (next[id] ?? 0) + quantity);
+      }
+      return next;
+    });
+    this.forgetSent(businessId);
+  }
+
+  forgetSent(businessId: string): void {
+    if (!this.sent()[businessId]) return;
+    this.sent.update((sent) => {
+      const next = { ...sent };
+      delete next[businessId];
+      return next;
+    });
+    save(SENT_KEY, this.sent());
+  }
+
   /** Un producto suma la cantidad; un servicio queda siempre en 1. */
   add(item: Item, quantity = 1): void {
+    // Se empezó un pedido nuevo: el anterior ya no se ofrece para recuperar.
+    this.forgetSent(item.business_id);
     const current = this.quantity(item.business_id, item.id);
     const next = item.kind === 'service' ? 1 : Math.min(MAX_QUANTITY, current + quantity);
     this.set(item, next);
@@ -65,17 +120,21 @@ export class Cart {
       if (!Object.keys(next[businessId]).length) delete next[businessId];
       return next;
     });
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(this.state()));
-    } catch {
-      // Navegación privada o almacenamiento bloqueado: el pedido dura solo esta visita.
-    }
+    save(STORAGE_KEY, this.state());
   }
 }
 
-function readStored(): CartState {
+function save(key: string, state: unknown): void {
   try {
-    const value: unknown = JSON.parse(localStorage.getItem(STORAGE_KEY) ?? '{}');
+    localStorage.setItem(key, JSON.stringify(state));
+  } catch {
+    // Navegación privada o almacenamiento bloqueado: el pedido dura solo esta visita.
+  }
+}
+
+function readStored(key: string): CartState {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(key) ?? '{}');
     if (!value || typeof value !== 'object') return {};
     // Solo cantidades enteras válidas: un dato dañado no debe dar un total "NaN".
     const state: CartState = {};
@@ -94,4 +153,24 @@ function readStored(): CartState {
 
 function isQuantity(value: unknown): value is number {
   return Number.isInteger(value) && (value as number) > 0 && (value as number) <= MAX_QUANTITY;
+}
+
+/** Pedidos enviados que todavía no caducaron. */
+function readSent(): Record<string, SentOrder> {
+  try {
+    const value: unknown = JSON.parse(localStorage.getItem(SENT_KEY) ?? '{}');
+    if (!value || typeof value !== 'object') return {};
+    const sent: Record<string, SentOrder> = {};
+    for (const [businessId, order] of Object.entries(value as Record<string, Partial<SentOrder>>)) {
+      if (!order?.lines || typeof order.at !== 'number' || Date.now() - order.at >= SENT_TTL_MS)
+        continue;
+      const lines = Object.entries(order.lines).filter((entry): entry is [string, number] =>
+        isQuantity(entry[1]),
+      );
+      if (lines.length) sent[businessId] = { lines: Object.fromEntries(lines), at: order.at };
+    }
+    return sent;
+  } catch {
+    return {};
+  }
 }

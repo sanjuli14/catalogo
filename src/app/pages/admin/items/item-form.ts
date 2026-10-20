@@ -23,7 +23,7 @@ interface PhotoDraft {
     <section class="section-header">
       <div>
         <span class="kicker">{{ id() ? 'Editar' : 'Agregar' }}</span>
-        <h2>{{ id() ? form.controls.name.value || 'Editar' : 'Nuevo producto o servicio' }}</h2>
+        <h2 [class.is-long]="heading().length > longHeading">{{ heading() }}</h2>
       </div>
       <a class="button button--ghost" routerLink="..">Volver</a>
     </section>
@@ -191,6 +191,14 @@ export class ItemForm implements OnDestroy {
     is_available: [true],
     is_visible: [true],
   });
+
+  /** Desde este largo el título usa letra más chica (si no, ocupa 4 renglones en el celular). */
+  protected readonly longHeading = 22;
+
+  /** Título de la página: el nombre mientras se edita. */
+  protected heading(): string {
+    return this.id() ? this.form.controls.name.value || 'Editar' : 'Nuevo producto o servicio';
+  }
 
   constructor() {
     void this.load();

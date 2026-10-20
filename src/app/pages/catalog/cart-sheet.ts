@@ -41,6 +41,25 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
           <span class="cart-bar__total">{{ total }}</span>
         }
       </button>
+    } @else if (sentPending()) {
+      <!-- Recién enviado: el pedido se vació, pero se puede recuperar si WhatsApp no abrió. -->
+      <div class="cart-bar cart-bar--sent" [class.cart-bar--raised]="raised()" role="status">
+        <span class="cart-bar__count"><app-icon name="check" [size]="20" /></span>
+        <span class="cart-bar__text">
+          Pedido enviado
+          <button type="button" class="cart-bar__link" (click)="restore()">
+            ¿No se abrió WhatsApp? Recuperarlo
+          </button>
+        </span>
+        <button
+          type="button"
+          class="cart-bar__close"
+          (click)="cart.forgetSent(business().id)"
+          aria-label="Cerrar aviso"
+        >
+          <app-icon name="close" [size]="16" />
+        </button>
+      </div>
     }
 
     <dialog
@@ -151,7 +170,8 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
               [href]="url"
               target="_blank"
               rel="noopener"
-              (click)="customer.interceptOrder($event, orderUrl)"
+              (click)="send($event)"
+              (auxclick)="$event.button === 1 && send($event)"
             >
               <app-icon name="whatsapp" [size]="20" />
               Enviar pedido por WhatsApp
@@ -212,6 +232,43 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
     .cart-bar__text {
       flex: 1;
       text-align: left;
+    }
+
+    .cart-bar--sent {
+      cursor: default;
+    }
+
+    .cart-bar__text {
+      display: grid;
+      gap: 2px;
+    }
+
+    .cart-bar__link,
+    .cart-bar__close {
+      font: inherit;
+      padding: 0;
+      border: none;
+      background: none;
+      color: inherit;
+      cursor: pointer;
+    }
+
+    .cart-bar__link {
+      justify-self: start;
+      font-size: 13px;
+      font-weight: 600;
+      text-align: left;
+      text-decoration: underline;
+      opacity: 0.9;
+    }
+
+    .cart-bar__close {
+      display: grid;
+      flex: none;
+      place-items: center;
+      width: 32px;
+      height: 32px;
+      border-radius: 10px;
     }
 
     .cart-bar__total {
@@ -449,6 +506,41 @@ export class CartSheet {
 
   protected imageUrl(path: string): string {
     return this.catalog.imageUrl(path);
+  }
+
+  /** Hay un pedido recién enviado para ofrecer recuperarlo (solo si el pedido actual está vacío). */
+  protected readonly sentPending = computed(
+    () => !this.lines().length && this.cart.hasSent(this.business().id),
+  );
+
+  /**
+   * Abre WhatsApp con el pedido y lo vacía. Si faltan los datos del cliente, primero se piden
+   * y el envío ocurre al guardarlos (o al tocar "Ahora no").
+   */
+  protected send(event: Event): void {
+    if (!this.customer.data()) {
+      event.preventDefault();
+      this.customer.requestThen(() => this.sendNow());
+      return;
+    }
+    // El enlace abre WhatsApp como cualquier enlace (window.open lo bloquean algunos
+    // navegadores de apps como Instagram); el pedido se vacía justo después del clic.
+    setTimeout(() => this.sendNow());
+  }
+
+  /** Arma el enlace con los datos actuales y deja el pedido como enviado. */
+  private sendNow(): string | null {
+    const url = this.orderUrl();
+    if (url) {
+      this.cart.markSent(this.business().id);
+      this.cart.sheetOpen.set(false);
+    }
+    return url;
+  }
+
+  protected restore(): void {
+    this.cart.restoreSent(this.business().id);
+    this.cart.sheetOpen.set(true);
   }
 
   protected clear(): void {

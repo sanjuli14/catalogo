@@ -827,12 +827,40 @@ label.button input[type='file'],
   color: var(--color-primary-hover);
 }
 
+/* Celular: las pestañas en dos columnas para que se vean todas sin deslizar. */
+@media (max-width: 639px) {
+  .tabs {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    overflow: visible;
+  }
+
+  .tabs a {
+    justify-content: center;
+    padding: 0 10px;
+    font-size: 14px;
+  }
+
+  .tabs .tabs__external {
+    margin-left: 0;
+  }
+
+  .tabs__long {
+    display: none;
+  }
+}
+
 .panel {
   display: grid;
   gap: var(--gap);
   max-width: 1200px;
   margin: 0 auto;
   padding: 24px 16px 72px;
+}
+
+/* Sin esto, un texto largo sin espacios (un correo, un slug) ensancha toda la página. */
+.panel > * {
+  min-width: 0;
 }
 
 .section-header {
@@ -846,6 +874,7 @@ label.button input[type='file'],
 
 .section-header h2 {
   margin: 0;
+  overflow-wrap: anywhere;
   font-size: clamp(40px, 10vw, 76px);
   line-height: 0.95;
   letter-spacing: -0.05em;
@@ -874,6 +903,8 @@ label.button input[type='file'],
 /* ---------- Listas ---------- */
 .list {
   display: grid;
+  /* Una sola columna que no crece con el contenido (botones, correos largos). */
+  grid-template-columns: minmax(0, 1fr);
   gap: 8px;
   margin: 0;
   padding: 0;
@@ -925,9 +956,17 @@ a.list__title:hover {
   color: var(--color-primary);
 }
 
+/* Títulos con un nombre largo (por ejemplo, al editar un producto): letra más chica. */
+.section-header h2.is-long {
+  font-size: clamp(28px, 7vw, 52px);
+  line-height: 1;
+}
+
 .list__meta {
   display: flex;
   flex-wrap: wrap;
+  min-width: 0;
+  overflow-wrap: anywhere;
   gap: 6px 10px;
   align-items: center;
   margin-top: 6px;
@@ -938,6 +977,7 @@ a.list__title:hover {
 .list__actions {
   display: flex;
   flex-wrap: wrap;
+  max-width: 100%;
   gap: 6px;
   align-items: center;
 }

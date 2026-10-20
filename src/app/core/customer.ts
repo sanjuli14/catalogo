@@ -36,6 +36,12 @@ export class CustomerProfile {
     this.sheetOpen.set(true);
   }
 
+  /** Pide los datos y, al guardarlos (o al tocar "Ahora no"), abre WhatsApp con `buildUrl`. */
+  requestThen(buildUrl: () => string | null): void {
+    this.pendingOrder = buildUrl;
+    this.sheetOpen.set(true);
+  }
+
   /**
    * Para los botones de pedir (enlaces a WhatsApp): si ya hay datos, el enlace sigue su curso;
    * si no, se piden primero y luego se abre WhatsApp con `buildUrl`, que ya los incluye.
@@ -43,8 +49,7 @@ export class CustomerProfile {
   interceptOrder(event: Event, buildUrl: () => string | null): void {
     if (this.data()) return;
     event.preventDefault();
-    this.pendingOrder = buildUrl;
-    this.sheetOpen.set(true);
+    this.requestThen(buildUrl);
   }
 
   save(customer: Customer): void {

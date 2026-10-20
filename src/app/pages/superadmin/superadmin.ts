@@ -142,7 +142,7 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
                 <div class="owners">
                   @for (owner of business.owners; track owner.user_id) {
                     <span class="owner">
-                      {{ owner.email }}
+                      <span class="owner__email">{{ owner.email }}</span>
                       <button
                         type="button"
                         class="owner__remove"
@@ -255,9 +255,24 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
       max-width: 420px;
     }
 
-    /* Los tiles de cifras son los filtros: el activo lleva un anillo de tinta. */
+    /* Los tiles de cifras son los filtros: el activo lleva un anillo de tinta.
+       En el celular van de a dos ("Suspendidos" no cabe en un tercio). */
     .stats {
-      grid-template-columns: repeat(3, minmax(0, 1fr));
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .filter:last-child:nth-child(even) {
+      grid-column: 1 / -1;
+    }
+
+    @media (min-width: 640px) {
+      .stats {
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+      }
+
+      .filter:last-child:nth-child(even) {
+        grid-column: auto;
+      }
     }
 
     .filter.stat--wide {
@@ -304,6 +319,14 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
       align-items: flex-start;
     }
 
+    /* Correos largos: se cortan con "…" en vez de ensanchar la fila. */
+    .owner__email {
+      min-width: 0;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
     .owners {
       display: flex;
       flex-wrap: wrap;
@@ -313,6 +336,8 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
     }
 
     .owner {
+      min-width: 0;
+      max-width: 100%;
       display: inline-flex;
       gap: 4px;
       align-items: center;
