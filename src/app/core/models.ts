@@ -45,8 +45,13 @@ export interface Item {
   name: string;
   description: string | null;
   price: number | null;
+  /** Precio anterior, tachado junto al de oferta (siempre mayor que price). */
+  compare_at_price: number | null;
   photos: string[];
   is_available: boolean;
   is_visible: boolean;
+  /** Va arriba del catálogo, en "Destacados". */
+  is_pinned: boolean;
   position: number;
+  created_at: string;
 }

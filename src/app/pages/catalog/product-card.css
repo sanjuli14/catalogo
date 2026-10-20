@@ -78,6 +78,12 @@
   text-transform: uppercase;
 }
 
+.tag--brand {
+  background: var(--brand);
+  color: var(--on-brand);
+  letter-spacing: 0.04em;
+}
+
 .tag--dark {
   background: var(--ink);
   color: #ffffff;
@@ -141,6 +147,14 @@
   font-variant-numeric: tabular-nums;
   text-overflow: ellipsis;
   white-space: nowrap;
+}
+
+/* Precio anterior de la oferta: chico y tachado, delante del precio actual. */
+.product__was {
+  margin-right: 4px;
+  color: var(--muted);
+  font-size: 0.75em;
+  font-weight: 600;
 }
 
 /* "Precio a consultar" puede ir en dos renglones antes que cortarse. */

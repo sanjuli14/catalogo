@@ -157,7 +157,8 @@
       "products": "Products",
       "productsLong": "and services",
       "categories": "Categories",
-      "business": "My business"
+      "business": "My business",
+      "stats": "Statistics"
     },
     "viewCatalog": "View my catalog",
     "pending": "Your catalog is under review. You can already add your products; the public will see it as soon as we approve it.",
@@ -183,7 +184,9 @@
     "markSoldOut": "Mark sold out",
     "markAvailable": "Mark available",
     "edit": "Edit",
-    "confirmDelete": "Delete \"{{ name }}\"? This can't be undone."
+    "confirmDelete": "Delete \"{{ name }}\"? This can't be undone.",
+    "onSale": "On sale",
+    "pinned": "Featured"
   },
   "itemForm": {
     "back": "Back",
@@ -206,7 +209,12 @@
     "removePhoto": "Remove photo",
     "addPhoto": "Add",
     "photosHint": "The first photo is the main one.",
-    "notFound": "This product wasn't found."
+    "notFound": "This product wasn't found.",
+    "compareAt": "Previous price",
+    "compareAtHint": "Optional. If you fill it in, it's shown crossed out and the product appears on sale.",
+    "compareAtError": "It must be higher than the price.",
+    "pinned": "Featured at the top of the catalog",
+    "pinnedHint": "Products added in the last 14 days get the \"New\" tag automatically."
   },
   "categories": {
     "lead": "They group your products and services in the catalog, in this order.",
@@ -299,7 +307,8 @@
     "products": "{{ n }} products",
     "total": "{{ n }} in total",
     "others": "Others",
-    "catalog": "Catalog"
+    "catalog": "Catalog",
+    "pinned": "Featured"
   },
   "whatsapp": {
     "hello": "Hi, {{ name }}!",
@@ -332,7 +341,8 @@
     "myDetails": "MY DETAILS",
     "name": "Name: {{ name }}",
     "address": "Address: {{ address }}",
-    "reference": "Landmark: {{ reference }}"
+    "reference": "Landmark: {{ reference }}",
+    "before": "(was {{ price }})"
   },
   "pdf": {
     "phone": "Phone: {{ phone }}"
@@ -418,7 +428,9 @@
     "add": "Add",
     "addLabel": "Add {{ name }} to the order",
     "serviceInOrderLabel": "{{ name }} is already in the order: view the order",
-    "addAnotherLabel": "Add another {{ name }} ({{ count }} already)"
+    "addAnotherLabel": "Add another {{ name }} ({{ count }} already)",
+    "new": "New",
+    "before": "Before:"
   },
   "customer": {
     "title": "Who's writing?",
@@ -449,5 +461,23 @@
     "addDetails": "Add your name and address to send.",
     "send": "Send order via WhatsApp",
     "clear": "Empty the order"
+  },
+  "stats": {
+    "title": "Statistics",
+    "lead": "How many people see your catalog and message you on WhatsApp.",
+    "period": "Period",
+    "days": "{{ n }} days",
+    "catalogViews": "Catalog visits",
+    "itemViews": "Product views",
+    "whatsappClicks": "WhatsApp clicks",
+    "perDay": "Visits per day",
+    "visits": "{{ n }} visits",
+    "clicks": "{{ n }} WhatsApp clicks",
+    "views": "{{ n }} views",
+    "peak": "Peak: {{ n }} visits in a day",
+    "today": "Today",
+    "topItems": "Most viewed",
+    "noItems": "Nobody has opened a product in this period yet.",
+    "note": "Your own visits (while signed in) aren't counted. Each visitor counts once per tab."
   }
 }

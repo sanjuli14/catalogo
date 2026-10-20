@@ -13,6 +13,7 @@ import { TranslocoDirective } from '@jsverse/transloco';
 import { CustomerProfile } from '../../core/customer';
 import { formatPrice } from '../../core/format';
 import { Language } from '../../core/i18n';
+import { Stats } from '../../core/stats';
 import { Business, Item } from '../../core/models';
 import { Icon } from '../../shared/icon';
 import { Cart, MAX_QUANTITY } from './cart';
@@ -475,6 +476,7 @@ export class CartSheet {
   private readonly catalog = inject(PublicCatalog);
   /** Los textos armados en el código (precios, mensaje) se rehacen al cambiar de idioma. */
   private readonly language = inject(Language);
+  private readonly stats = inject(Stats);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   readonly business = input.required<Business>();
@@ -533,6 +535,9 @@ export class CartSheet {
     // Si faltan los datos, la primera vez se piden y el enlace no se abre.
     this.customer.interceptOrder(event);
     if (event.defaultPrevented) return;
+    // Un pedido de un solo renglón cuenta para ese producto.
+    const lines = this.lines();
+    this.stats.whatsappClick(this.business().id, lines.length === 1 ? lines[0].item.id : undefined);
     // El enlace abre WhatsApp como cualquier enlace (window.open lo bloquean algunos
     // navegadores de apps como Instagram); el pedido se vacía justo después del clic.
     setTimeout(() => {

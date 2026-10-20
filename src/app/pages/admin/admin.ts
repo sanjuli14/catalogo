@@ -33,6 +33,9 @@ import { CurrentBusiness } from './current-business';
           <a routerLink="categorias" routerLinkActive="is-active">
             <app-icon name="layers" [size]="16" /> {{ t('admin.tabs.categories') }}
           </a>
+          <a routerLink="estadisticas" routerLinkActive="is-active">
+            <app-icon name="chart" [size]="16" /> {{ t('admin.tabs.stats') }}
+          </a>
           <a routerLink="negocio" routerLinkActive="is-active">
             <app-icon name="store" [size]="16" /> {{ t('admin.tabs.business') }}
           </a>

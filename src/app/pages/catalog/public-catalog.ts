@@ -67,6 +67,26 @@ export function itemPrice(business: Business, item: Item): string {
   return formatPrice(item.price, business.currency);
 }
 
+/** Precio anterior (tachado) si el producto está en oferta; null si no. */
+export function itemCompareAtPrice(business: Business, item: Item): string | null {
+  return item.compare_at_price === null
+    ? null
+    : formatPrice(item.compare_at_price, business.currency);
+}
+
+/** Descuento de la oferta en porcentaje entero (20 = "-20%"); null si no está en oferta. */
+export function discountPercent(item: Item): number | null {
+  if (item.compare_at_price === null || item.price === null) return null;
+  return Math.round((1 - item.price / item.compare_at_price) * 100);
+}
+
+/** Días que un producto recién agregado lleva la etiqueta "Nuevo". */
+const NEW_DAYS = 14;
+
+export function isNew(item: Item): boolean {
+  return Date.now() - new Date(item.created_at).getTime() < NEW_DAYS * 24 * 60 * 60 * 1000;
+}
+
 /*
  * Mensajes de WhatsApp. Son la única forma en que el cliente le habla al negocio, así que
  * llevan todo lo necesario para atenderlo sin preguntar: qué quiere, cuánto, el precio,
@@ -157,6 +177,9 @@ function productLines(
     const each = w('each', { price: itemPrice(business, item) });
     price = `${each} = *${orderTotal(business, item, quantity)}*`;
   } else price = `*${itemPrice(business, item)}*`;
+  // El precio anterior: el negocio ve que se pidió en oferta.
+  const before = itemCompareAtPrice(business, item);
+  if (before) price += ` ${w('before', { price: before })}`;
   const lines = [`• *${plain(item.name)}*`, `   ${w('quantity', { quantity })} · ${price}`];
   if (withLink) lines.push(`   ${w('view', { url: productUrl(business, item) })}`);
   return lines;

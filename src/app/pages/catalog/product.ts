@@ -20,6 +20,7 @@ import { readableTextColor } from '../../core/color';
 import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
 import { Language } from '../../core/i18n';
+import { Stats } from '../../core/stats';
 import { Icon } from '../../shared/icon';
 import { Cart, MAX_QUANTITY } from './cart';
 import { CartSheet } from './cart-sheet';
@@ -29,6 +30,9 @@ import {
   PublicCatalog,
   PublicCatalogData,
   askAvailabilityUrl,
+  discountPercent,
+  isNew,
+  itemCompareAtPrice,
   itemPrice,
   orderTotal,
   orderUrl,
@@ -66,6 +70,7 @@ export class Product implements OnInit, OnDestroy {
   protected readonly cart = inject(Cart);
   /** Los textos armados en el código (precios, mensajes) se rehacen al cambiar de idioma. */
   private readonly language = inject(Language);
+  private readonly stats = inject(Stats);
 
   /** Vienen de la ruta /:slug/:itemId */
   readonly slug = input.required<string>();
@@ -124,6 +129,20 @@ export class Product implements OnInit, OnDestroy {
     const color = this.business()?.primary_color;
     return color ? readableTextColor(color) : null;
   });
+  protected readonly before = computed(() => {
+    this.language.current();
+    const business = this.business();
+    const item = this.item();
+    return business && item ? itemCompareAtPrice(business, item) : null;
+  });
+  protected readonly discount = computed(() => {
+    const item = this.item();
+    return item ? discountPercent(item) : null;
+  });
+  protected readonly isNew = computed(() => {
+    const item = this.item();
+    return item ? isNew(item) : false;
+  });
   protected readonly price = computed(() => {
     this.language.current();
     const business = this.business();
@@ -173,6 +192,7 @@ export class Product implements OnInit, OnDestroy {
         this.gallery()?.nativeElement.scrollTo({ left: 0 });
       });
       if (!item || !business) return;
+      untracked(() => this.stats.view(business.id, item.id));
       this.title.setTitle(`${item.name} · ${business.name}`);
       this.meta.updateTag({
         name: 'description',
@@ -233,6 +253,12 @@ export class Product implements OnInit, OnDestroy {
     await navigator.clipboard.writeText(url);
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 2500);
+  }
+
+  /** Botones de WhatsApp: si faltan los datos del cliente se piden; si no, cuenta el clic. */
+  protected whatsappClick(event: Event): void {
+    this.customer.interceptOrder(event);
+    if (!event.defaultPrevented) this.stats.whatsappClick(this.business()!.id, this.item()!.id);
   }
 
   protected addToCart(): void {

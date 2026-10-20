@@ -157,7 +157,8 @@
       "products": "Productos",
       "productsLong": "y servicios",
       "categories": "Categorías",
-      "business": "Mi negocio"
+      "business": "Mi negocio",
+      "stats": "Estadísticas"
     },
     "viewCatalog": "Ver mi catálogo",
     "pending": "Tu catálogo está en revisión. Ya puedes cargar tus productos; el público lo verá en cuanto lo aprobemos.",
@@ -183,7 +184,9 @@
     "markSoldOut": "Marcar agotado",
     "markAvailable": "Marcar disponible",
     "edit": "Editar",
-    "confirmDelete": "¿Eliminar \"{{ name }}\"? Esta acción no se puede deshacer."
+    "confirmDelete": "¿Eliminar \"{{ name }}\"? Esta acción no se puede deshacer.",
+    "onSale": "Oferta",
+    "pinned": "Destacado"
   },
   "itemForm": {
     "back": "Volver",
@@ -206,7 +209,12 @@
     "removePhoto": "Quitar foto",
     "addPhoto": "Agregar",
     "photosHint": "La primera foto es la principal.",
-    "notFound": "No se encontró este producto."
+    "notFound": "No se encontró este producto.",
+    "compareAt": "Precio anterior",
+    "compareAtHint": "Opcional. Si lo llenas, sale tachado y el producto se muestra en oferta.",
+    "compareAtError": "Tiene que ser mayor que el precio.",
+    "pinned": "Destacado arriba del catálogo",
+    "pinnedHint": "Los productos agregados en los últimos 14 días llevan la etiqueta «Nuevo» solos."
   },
   "categories": {
     "lead": "Agrupan tus productos y servicios en el catálogo, en este orden.",
@@ -299,7 +307,8 @@
     "products": "{{ n }} productos",
     "total": "{{ n }} en total",
     "others": "Otros",
-    "catalog": "Catálogo"
+    "catalog": "Catálogo",
+    "pinned": "Destacados"
   },
   "whatsapp": {
     "hello": "¡Hola, {{ name }}!",
@@ -332,7 +341,8 @@
     "myDetails": "MIS DATOS",
     "name": "Nombre: {{ name }}",
     "address": "Dirección: {{ address }}",
-    "reference": "Referencia: {{ reference }}"
+    "reference": "Referencia: {{ reference }}",
+    "before": "(antes {{ price }})"
   },
   "pdf": {
     "phone": "Tel: {{ phone }}"
@@ -418,7 +428,9 @@
     "add": "Añadir",
     "addLabel": "Añadir {{ name }} al pedido",
     "serviceInOrderLabel": "{{ name }} ya está en el pedido: ver el pedido",
-    "addAnotherLabel": "Añadir otro {{ name }} (ya hay {{ count }})"
+    "addAnotherLabel": "Añadir otro {{ name }} (ya hay {{ count }})",
+    "new": "Nuevo",
+    "before": "Antes:"
   },
   "customer": {
     "title": "¿Quién nos escribe?",
@@ -449,5 +461,23 @@
     "addDetails": "Agrega tu nombre y dirección para enviar.",
     "send": "Enviar pedido por WhatsApp",
     "clear": "Vaciar el pedido"
+  },
+  "stats": {
+    "title": "Estadísticas",
+    "lead": "Cuánta gente ve tu catálogo y te escribe por WhatsApp.",
+    "period": "Período",
+    "days": "{{ n }} días",
+    "catalogViews": "Visitas al catálogo",
+    "itemViews": "Productos vistos",
+    "whatsappClicks": "Clics a WhatsApp",
+    "perDay": "Visitas por día",
+    "visits": "{{ n }} visitas",
+    "clicks": "{{ n }} clics a WhatsApp",
+    "views": "{{ n }} vistas",
+    "peak": "Máximo: {{ n }} visitas en un día",
+    "today": "Hoy",
+    "topItems": "Lo más visto",
+    "noItems": "Todavía nadie abrió un producto en este período.",
+    "note": "Tus propias visitas (con la sesión iniciada) no se cuentan. Cada visitante cuenta una vez por pestaña."
   }
 }

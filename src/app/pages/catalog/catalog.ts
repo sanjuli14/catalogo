@@ -17,12 +17,13 @@ import { readableTextColor } from '../../core/color';
 import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
 import { Language } from '../../core/i18n';
+import { Stats } from '../../core/stats';
 import { Business, Category, Item } from '../../core/models';
 import { whatsappShareUrl } from '../../core/whatsapp';
 import { Icon, IconName } from '../../shared/icon';
 import { LangSwitch } from '../../shared/lang-switch';
 import { downloadCatalogPdf } from './catalog-pdf';
-import { countLabel, groupItems } from './group-items';
+import { countLabel, groupItems, withPinned } from './group-items';
 import { Cart } from './cart';
 import { CartSheet } from './cart-sheet';
 import { CustomerSheet } from './customer-sheet';
@@ -65,6 +66,7 @@ export class Catalog implements OnInit, OnDestroy {
   protected readonly cart = inject(Cart);
   /** Los textos armados en el código (grupos, mensajes) se rehacen al cambiar de idioma. */
   private readonly language = inject(Language);
+  private readonly stats = inject(Stats);
 
   /** Viene de la ruta /:slug */
   readonly slug = input.required<string>();
@@ -98,7 +100,7 @@ export class Catalog implements OnInit, OnDestroy {
   protected readonly visibleGroups = computed(() => {
     const query = normalize(this.search().trim());
     const selected = this.selectedGroup();
-    if (!query && !selected) return this.groups();
+    if (!query && !selected) return withPinned(this.groups());
 
     const items = this.groups()
       .filter((g) => !selected || g.id === selected)
@@ -173,6 +175,7 @@ export class Catalog implements OnInit, OnDestroy {
           translate<string>('catalog.of', { name: data.business.name }),
       });
       this.meta.updateTag({ name: 'theme-color', content: data.business.primary_color });
+      this.stats.view(data.business.id);
       if (data.business.whatsapp) this.customer.askOnArrival();
     } catch (e) {
       this.error.set(errorMessage(e));
@@ -222,6 +225,12 @@ export class Catalog implements OnInit, OnDestroy {
     } finally {
       this.generatingPdf.set(false);
     }
+  }
+
+  /** Botones de WhatsApp: si faltan los datos del cliente se piden; si no, cuenta el clic. */
+  protected whatsappClick(event: Event): void {
+    this.customer.interceptOrder(event);
+    if (!event.defaultPrevented) this.stats.whatsappClick(this.business()!.id);
   }
 
   // Acciones de la barra inferior.

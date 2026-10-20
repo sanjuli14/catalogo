@@ -117,6 +117,12 @@ import { CurrentBusiness } from '../current-business';
                     <span>{{ categoryNames().get(item.category_id) }}</span>
                   }
                   <span>{{ price(item) }}</span>
+                  @if (item.compare_at_price !== null) {
+                    <span class="badge">{{ t('items.onSale') }}</span>
+                  }
+                  @if (item.is_pinned) {
+                    <span class="badge">{{ t('items.pinned') }}</span>
+                  }
                   @if (!item.is_available) {
                     <span class="badge badge--warn">{{ t('items.unavailable') }}</span>
                   }

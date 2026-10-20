@@ -105,7 +105,17 @@
         <h1 class="display fit name" [style.--chars]="p.name.length">{{ p.name }}</h1>
 
         <div class="info__foot">
-          <p class="price figure" [class.is-ask]="p.price === null">{{ price() }}</p>
+          <div class="price-block">
+            @if (before(); as before) {
+              <p class="price-was">
+                <s
+                  ><span class="visually-hidden">{{ t('card.before') }} </span>{{ before }}</s
+                >
+                <span class="price-off">-{{ discount() }}%</span>
+              </p>
+            }
+            <p class="price figure" [class.is-ask]="p.price === null">{{ price() }}</p>
+          </div>
           <div class="meta">
             @if (p.is_available) {
               <span class="status status--ok">{{ t('itemForm.available') }}</span>
@@ -113,6 +123,9 @@
               <span class="status status--out">{{ t('product.soldOut') }}</span>
             }
             <span class="meta__kind">{{ t('kind.' + p.kind) }}</span>
+            @if (isNew()) {
+              <span class="meta__kind">{{ t('card.new') }}</span>
+            }
           </div>
         </div>
       </section>
@@ -182,7 +195,7 @@
             [href]="url"
             target="_blank"
             rel="noopener"
-            (click)="customer.interceptOrder($event)"
+            (click)="whatsappClick($event)"
           >
             <app-icon name="whatsapp" [size]="20" />
             {{ t(p.kind === 'service' ? 'product.requestOnly' : 'product.orderOnly') }}
@@ -197,7 +210,7 @@
             [href]="url"
             target="_blank"
             rel="noopener"
-            (click)="customer.interceptOrder($event)"
+            (click)="whatsappClick($event)"
           >
             <app-icon name="whatsapp" [size]="20" /> {{ t('product.askWhen') }}
           </a>

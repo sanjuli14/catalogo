@@ -19,6 +19,10 @@ export const adminRoutes: Routes = [
     loadComponent: () => import('./categories/categories').then((m) => m.Categories),
   },
   {
+    path: 'estadisticas',
+    loadComponent: () => import('./stats/stats').then((m) => m.Stats),
+  },
+  {
     path: 'negocio',
     loadComponent: () =>
       import('./business-settings/business-settings').then((m) => m.BusinessSettings),

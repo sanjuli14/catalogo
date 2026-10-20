@@ -62,7 +62,7 @@
           [href]="url"
           target="_blank"
           rel="noopener"
-          (click)="customer.interceptOrder($event)"
+          (click)="whatsappClick($event)"
         >
           <span class="board__order-top">
             <span class="label">{{ t('catalog.likedSomething') }}</span>
@@ -255,7 +255,7 @@
               [href]="contactUrl()"
               target="_blank"
               rel="noopener"
-              (click)="customer.interceptOrder($event)"
+              (click)="whatsappClick($event)"
             >
               <span class="label">WhatsApp</span>
               <span class="contact__value contact__value--big figure">+{{ b.whatsapp }}</span>
@@ -337,7 +337,7 @@
           [href]="url"
           target="_blank"
           rel="noopener"
-          (click)="customer.interceptOrder($event)"
+          (click)="whatsappClick($event)"
         >
           <app-icon name="whatsapp" [size]="20" /> {{ t('catalog.dock.ask') }}
         </a>

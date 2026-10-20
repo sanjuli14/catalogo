@@ -12,7 +12,7 @@ const EXTENSIONS: Record<string, string> = {
 };
 
 export type BusinessPatch = Partial<Omit<Business, 'id' | 'status' | 'created_at' | 'updated_at'>>;
-export type ItemInput = Omit<Item, 'id'>;
+export type ItemInput = Omit<Item, 'id' | 'created_at'>;
 
 /** Acceso a las tablas y al Storage. Lanza el error de Supabase si algo falla. */
 @Injectable({ providedIn: 'root' })

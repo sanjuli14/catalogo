@@ -40,3 +40,16 @@ export function groupItems(categories: Category[], items: Item[]): ItemGroup[] {
   }
   return groups.filter((g) => g.items.length);
 }
+
+/**
+ * Vista sin filtros del catálogo: primero "Destacados" (los fijados por el dueño) y después
+ * las categorías sin esos productos, para no mostrarlos dos veces.
+ */
+export function withPinned(groups: ItemGroup[]): ItemGroup[] {
+  const pinned = groups.flatMap((g) => g.items).filter((i) => i.is_pinned);
+  if (!pinned.length) return groups;
+  const rest = groups
+    .map((g) => ({ ...g, items: g.items.filter((i) => !i.is_pinned) }))
+    .filter((g) => g.items.length);
+  return [{ id: 'destacados', name: translate('group.pinned'), items: pinned }, ...rest];
+}

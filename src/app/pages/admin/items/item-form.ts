@@ -1,5 +1,11 @@
 import { Component, OnDestroy, inject, input, signal } from '@angular/core';
-import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  AbstractControl,
+  NonNullableFormBuilder,
+  ReactiveFormsModule,
+  ValidationErrors,
+  Validators,
+} from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, translate } from '@jsverse/transloco';
 
@@ -9,6 +15,16 @@ import { Category, ItemKind } from '../../../core/models';
 import { CurrentBusiness } from '../current-business';
 
 const MAX_PHOTOS = 5;
+
+/** El precio anterior (tachado) tiene que ser mayor que el precio, y necesita uno. */
+function compareAtAbovePrice(group: AbstractControl): ValidationErrors | null {
+  const { price, compare_at_price } = group.value as {
+    price: number | null;
+    compare_at_price: number | null;
+  };
+  if (compare_at_price === null) return null;
+  return price !== null && compare_at_price > price ? null : { compareAt: true };
+}
 
 /** Una foto ya guardada (path) o una nueva elegida en este formulario (file). */
 interface PhotoDraft {
@@ -86,6 +102,21 @@ interface PhotoDraft {
               />
               <small>{{ t('itemForm.priceHint') }}</small>
             </label>
+            <label class="field">
+              <span>{{ t('itemForm.compareAt') }} ({{ current.business()?.currency }})</span>
+              <input
+                type="number"
+                formControlName="compare_at_price"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+              />
+              @if (form.hasError('compareAt')) {
+                <small class="error-text">{{ t('itemForm.compareAtError') }}</small>
+              } @else {
+                <small>{{ t('itemForm.compareAtHint') }}</small>
+              }
+            </label>
           </section>
 
           <section class="card form-tile">
@@ -101,6 +132,10 @@ interface PhotoDraft {
               <label class="check">
                 <input type="checkbox" formControlName="is_visible" /> {{ t('itemForm.visible') }}
               </label>
+              <label class="check">
+                <input type="checkbox" formControlName="is_pinned" /> {{ t('itemForm.pinned') }}
+              </label>
+              <small>{{ t('itemForm.pinnedHint') }}</small>
             </div>
           </section>
 
@@ -194,15 +229,20 @@ export class ItemForm implements OnDestroy {
   private removedPaths: string[] = [];
   private nextPosition = 0;
 
-  protected readonly form = inject(NonNullableFormBuilder).group({
-    kind: ['product' as ItemKind],
-    category_id: [null as string | null],
-    name: ['', [Validators.required, Validators.maxLength(120)]],
-    description: [''],
-    price: [null as number | null, Validators.min(0)],
-    is_available: [true],
-    is_visible: [true],
-  });
+  protected readonly form = inject(NonNullableFormBuilder).group(
+    {
+      kind: ['product' as ItemKind],
+      category_id: [null as string | null],
+      name: ['', [Validators.required, Validators.maxLength(120)]],
+      description: [''],
+      price: [null as number | null, Validators.min(0)],
+      compare_at_price: [null as number | null, Validators.min(0)],
+      is_available: [true],
+      is_visible: [true],
+      is_pinned: [false],
+    },
+    { validators: compareAtAbovePrice },
+  );
 
   /** Desde este largo el título usa letra más chica (si no, ocupa 4 renglones en el celular). */
   protected readonly longHeading = 22;
@@ -286,6 +326,7 @@ export class ItemForm implements OnDestroy {
         name: value.name.trim(),
         description: value.description.trim() || null,
         price: value.price ?? null,
+        compare_at_price: value.compare_at_price ?? null,
         photos,
       };
 
