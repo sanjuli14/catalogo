@@ -1,5 +1,5 @@
 // Genera src/environments/environment.ts a partir de las variables de entorno.
-// En local se leen de .env; en Vercel, de las variables del proyecto.
+// En local se leen de .env; en Cloudflare Pages, de las variables del proyecto.
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];

@@ -3,14 +3,11 @@
   "version": "0.0.0",
   "scripts": {
     "config": "node --env-file-if-exists=.env scripts/set-env.mjs",
-    "prestart": "npm run config",
     "ng": "ng",
-    "start": "ng serve",
-    "build": "ng build",
+    "start": "npm run config && ng serve",
+    "build": "npm run config && ng build",
     "watch": "ng build --watch --configuration development",
-    "test": "ng test",
-    "prebuild": "npm run config",
-    "pretest": "npm run config"
+    "test": "npm run config && ng test"
   },
   "private": true,
   "packageManager": "npm@11.16.0",
@@ -36,6 +33,6 @@
     "vitest": "^4.0.8"
   },
   "engines": {
-    "node": "24.x"
+    "node": "^22.22.3 || ^24.15.0"
   }
 }
