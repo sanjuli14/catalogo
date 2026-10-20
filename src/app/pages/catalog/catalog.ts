@@ -1,4 +1,14 @@
-import { Component, OnDestroy, OnInit, computed, inject, input, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 
@@ -20,9 +30,6 @@ const SOCIALS = {
   website: { label: 'Sitio web', icon: 'globe' },
 } as const satisfies Record<string, { label: string; icon: IconName }>;
 
-/** A partir de cuánto scroll aparecen la barra compacta y el botón flotante de WhatsApp. */
-const SCROLLED_AFTER_PX = 280;
-
 @Component({
   selector: 'app-catalog',
   imports: [RouterLink, Icon, ProductCard],
@@ -32,8 +39,6 @@ const SCROLLED_AFTER_PX = 280;
     '[style.--brand]': 'business()?.primary_color',
     '[style.--brand-2]': 'business()?.secondary_color',
     '[style.--on-brand]': 'onBrand()',
-    '[class.is-scrolled]': 'scrolled()',
-    '(window:scroll)': 'onScroll()',
   },
 })
 export class Catalog implements OnInit, OnDestroy {
@@ -55,8 +60,8 @@ export class Catalog implements OnInit, OnDestroy {
   protected readonly selectedGroup = signal<string | null>(null);
   protected readonly copied = signal(false);
   protected readonly generatingPdf = signal(false);
-  /** true cuando ya se pasó la portada: muestra la barra compacta y el botón flotante. */
-  protected readonly scrolled = signal(false);
+  private readonly searchInput = viewChild<ElementRef<HTMLInputElement>>('searchInput');
+  private readonly contactSection = viewChild<ElementRef<HTMLElement>>('contactSection');
 
   protected readonly onBrand = computed(() => {
     const color = this.business()?.primary_color;
@@ -177,12 +182,19 @@ export class Catalog implements OnInit, OnDestroy {
     }
   }
 
-  protected onScroll(): void {
-    this.scrolled.set(window.scrollY > SCROLLED_AFTER_PX);
-  }
-
+  // Acciones de la barra inferior.
   protected scrollToTop(): void {
     window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  protected focusSearch(): void {
+    const input = this.searchInput()?.nativeElement;
+    input?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input?.focus({ preventScroll: true });
+  }
+
+  protected scrollToContact(): void {
+    this.contactSection()?.nativeElement.scrollIntoView({ behavior: 'smooth' });
   }
 }
 

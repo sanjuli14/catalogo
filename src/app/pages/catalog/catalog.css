@@ -1,144 +1,202 @@
-/* Página del catálogo. La base compartida (colores, botones, barra, cuadrícula) está en catalog-theme.css. */
+/* Página del catálogo, al estilo de app de tienda. La base compartida está en catalog-theme.css. */
 
-/* La barra compacta solo aparece al bajar. */
-.topbar {
-  transform: translateY(-100%);
-  transition: transform 0.3s var(--ease);
+/* ---------- Encabezado: logo, nombre y acciones ---------- */
+.head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  justify-content: space-between;
+  padding-top: 20px;
 }
 
-.topbar.is-visible {
-  transform: none;
+.head__brand {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  min-width: 0;
 }
 
-/* ---------- Portada ---------- */
-.hero__cover {
-  position: relative;
-  height: 168px;
-  overflow: hidden;
-  background:
-    radial-gradient(
-      120% 140% at 0% 0%,
-      color-mix(in oklab, var(--brand) 80%, white) 0%,
-      transparent 55%
-    ),
-    linear-gradient(
-      135deg,
-      var(--brand) 0%,
-      color-mix(in oklab, var(--brand) 55%, var(--brand-2)) 100%
-    );
-}
-
-.hero__blob {
-  position: absolute;
-  border-radius: 50%;
-  opacity: 0.55;
-  filter: blur(40px);
-}
-
-.hero__blob--a {
-  top: -80px;
-  right: -60px;
-  width: 260px;
-  height: 260px;
-  background: var(--brand-2);
-}
-
-.hero__blob--b {
-  bottom: -140px;
-  left: 30%;
-  width: 200px;
-  height: 200px;
-  background: color-mix(in oklab, var(--brand-2) 60%, white);
-}
-
-.hero__body {
-  position: relative;
-  margin-top: -56px;
-}
-
-.hero__logo {
+.head__logo {
   display: grid;
+  flex: none;
   place-items: center;
-  width: 112px;
-  height: 112px;
+  width: 56px;
+  height: 56px;
   overflow: hidden;
-  border: 4px solid #ffffff;
-  border-radius: 32px;
-  background: #ffffff;
-  box-shadow: 0 18px 40px -18px rgb(19 17 28 / 0.45);
+  border-radius: 18px;
+  background: var(--brand-ink);
+  color: #ffffff;
+  font-size: 24px;
+  font-weight: 800;
 }
 
-.hero__logo img {
+.head__logo img {
   width: 100%;
   height: 100%;
+  background: #ffffff;
   object-fit: contain;
 }
 
-.hero__logo span {
+.head__text {
+  min-width: 0;
+}
+
+.head__text h1 {
+  margin: 0;
+  overflow: hidden;
+  color: var(--brand-ink);
+  font-size: 24px;
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.head__text p {
+  display: -webkit-box;
+  margin: 2px 0 0;
+  overflow: hidden;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.35;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 1;
+}
+
+.head__actions {
+  display: flex;
+  flex: none;
+  gap: 6px;
+}
+
+/* En el celular, "Enviar a un amigo" sobra: el menú de compartir del teléfono ya incluye WhatsApp. */
+.head__actions .icon-btn:first-child {
+  display: none;
+}
+
+.head .icon-btn {
+  width: 44px;
+  height: 44px;
+  border-color: var(--border);
+}
+
+.head .icon-btn:disabled {
+  opacity: 0.5;
+  cursor: wait;
+}
+
+/* ---------- Datos y tarjeta para pedir ---------- */
+.intro {
   display: grid;
-  place-items: center;
-  width: 100%;
-  height: 100%;
-  background: var(--brand);
-  color: var(--on-brand);
-  font-size: 44px;
-  font-weight: 800;
+  gap: 16px;
+  margin-top: 16px;
 }
 
-.hero__name {
-  margin: 18px 0 0;
-  font-size: clamp(30px, 7.5vw, 46px);
-  font-weight: 800;
-  line-height: 1.05;
-  letter-spacing: -0.035em;
-  text-wrap: balance;
-}
-
-.hero__description {
-  max-width: 62ch;
-  margin: 10px 0 0;
-  color: var(--ink-2);
-  font-size: 16px;
-  line-height: 1.55;
-}
-
-.hero__facts {
+.facts {
   display: flex;
   flex-wrap: wrap;
   gap: 8px 16px;
-  margin: 14px 0 0;
+  margin: 0;
   padding: 0;
   list-style: none;
-  color: var(--muted);
-  font-size: 14px;
+  color: var(--ink-2);
+  font-size: 13px;
 }
 
-.hero__facts li {
+.facts li {
   display: inline-flex;
   gap: 6px;
   align-items: center;
 }
 
-.hero__actions {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 8px;
-  margin-top: 22px;
+.promo {
+  position: relative;
+  display: flex;
+  gap: 16px;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px;
+  overflow: hidden;
+  border-radius: 24px;
+  background:
+    radial-gradient(
+      120% 140% at 100% 0%,
+      color-mix(in oklab, var(--brand) 60%, transparent),
+      transparent 60%
+    ),
+    var(--brand-ink);
+  color: #ffffff;
 }
 
-.hero__actions .btn--brand {
-  grid-column: 1 / -1;
+.promo__text {
+  position: relative;
+  z-index: 1;
 }
 
-.hero__actions .btn--ghost {
-  padding: 0 12px;
+.promo h2 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 800;
+  letter-spacing: -0.02em;
+}
+
+.promo p {
+  max-width: 30ch;
+  margin: 4px 0 0;
+  font-size: 14px;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
+.promo__btn {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  flex: none;
+  gap: 6px;
+  align-items: center;
+  height: 44px;
+  padding: 0 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--brand-ink);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: transform 0.15s var(--ease);
+}
+
+.promo__btn:active {
+  transform: scale(0.96);
+}
+
+.promo__ring {
+  position: absolute;
+  border: 1px solid rgb(255 255 255 / 0.14);
+  border-radius: 50%;
+}
+
+.promo__ring--a {
+  top: -60px;
+  right: 40px;
+  width: 160px;
+  height: 160px;
+}
+
+.promo__ring--b {
+  right: -50px;
+  bottom: -90px;
+  width: 200px;
+  height: 200px;
 }
 
 /* ---------- Búsqueda y categorías (fijas al bajar) ---------- */
 .catalog {
   display: grid;
   gap: 28px;
-  padding-top: 24px;
+  padding-top: 12px;
+  padding-bottom: 24px;
 }
 
 .filters {
@@ -149,33 +207,28 @@
   gap: 12px;
   margin: 0 -16px;
   padding: 12px 16px;
-  background: rgb(255 255 255 / 0.9);
+  background: color-mix(in oklab, var(--canvas) 88%, transparent);
   backdrop-filter: saturate(180%) blur(18px);
-  transition: top 0.3s var(--ease);
-}
-
-:host(.is-scrolled) .filters {
-  top: 60px;
 }
 
 .search {
   display: flex;
   gap: 10px;
   align-items: center;
-  height: 50px;
-  padding: 0 8px 0 16px;
-  border: 1px solid transparent;
-  border-radius: 16px;
-  background: var(--soft);
-  color: var(--muted);
+  height: 52px;
+  padding: 0 8px 0 18px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: #ffffff;
+  color: var(--brand-ink);
   transition:
     border-color 0.2s,
-    background-color 0.2s;
+    box-shadow 0.2s;
 }
 
 .search:focus-within {
-  border-color: color-mix(in oklab, var(--brand) 50%, transparent);
-  background: #ffffff;
+  border-color: color-mix(in oklab, var(--brand) 50%, var(--border));
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand) 14%, transparent);
 }
 
 .search input {
@@ -190,6 +243,10 @@
   outline: none;
 }
 
+.search input::placeholder {
+  color: var(--muted);
+}
+
 .search input::-webkit-search-cancel-button {
   display: none;
 }
@@ -197,11 +254,11 @@
 .search__clear {
   display: grid;
   place-items: center;
-  width: 32px;
-  height: 32px;
+  width: 34px;
+  height: 34px;
   border: none;
   border-radius: 50%;
-  background: #e6e5ec;
+  background: var(--panel);
   color: var(--ink-2);
   cursor: pointer;
 }
@@ -224,34 +281,30 @@
   font: inherit;
   display: inline-flex;
   flex: none;
-  gap: 6px;
   align-items: center;
-  height: 38px;
-  padding: 0 16px;
-  border: none;
+  height: 40px;
+  padding: 0 18px;
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: var(--soft);
-  color: var(--ink-2);
+  background: #ffffff;
+  color: var(--brand-ink);
   font-size: 14px;
   font-weight: 600;
   cursor: pointer;
   transition:
     background-color 0.2s,
-    color 0.2s;
+    color 0.2s,
+    border-color 0.2s;
 }
 
 .chip:hover {
-  background: #ebeaf0;
+  border-color: color-mix(in oklab, var(--brand) 35%, var(--border));
 }
 
 .chip.is-active {
-  background: var(--brand);
-  color: var(--on-brand);
-}
-
-.chip__count {
-  font-size: 12px;
-  opacity: 0.6;
+  border-color: var(--brand-ink);
+  background: var(--brand-ink);
+  color: #ffffff;
 }
 
 .group__title {
@@ -259,7 +312,8 @@
   gap: 10px;
   align-items: baseline;
   margin: 0 0 14px;
-  font-size: 22px;
+  color: var(--brand-ink);
+  font-size: 21px;
   font-weight: 800;
   letter-spacing: -0.025em;
 }
@@ -273,14 +327,16 @@
 
 /* ---------- Contacto ---------- */
 .footer {
-  margin-top: 56px;
-  padding: 40px 0 calc(32px + env(safe-area-inset-bottom));
-  background: #f7f7fa;
+  margin-top: 32px;
+  padding: 36px 0 calc(120px + env(safe-area-inset-bottom));
+  border-top: 1px solid var(--border);
+  background: #ffffff;
 }
 
 .footer__title {
   margin: 0 0 16px;
-  font-size: 22px;
+  color: var(--brand-ink);
+  font-size: 21px;
   font-weight: 800;
   letter-spacing: -0.025em;
 }
@@ -294,19 +350,19 @@
   display: flex;
   gap: 14px;
   align-items: center;
-  padding: 14px;
+  padding: 12px;
   overflow-wrap: anywhere;
+  border: 1px solid var(--border);
   border-radius: 18px;
-  background: #ffffff;
+  background: var(--canvas);
   color: var(--ink);
   font-size: 15px;
   font-weight: 600;
   text-decoration: none;
-  box-shadow: 0 1px 2px rgb(19 17 28 / 0.04);
 }
 
 a.contact:hover {
-  box-shadow: 0 0 0 1px color-mix(in oklab, var(--brand) 35%, transparent);
+  border-color: color-mix(in oklab, var(--brand) 35%, var(--border));
 }
 
 .contact small {
@@ -328,8 +384,8 @@ a.contact:hover {
   width: 44px;
   height: 44px;
   border-radius: 14px;
-  background: var(--brand-soft);
-  color: var(--brand-strong);
+  background: var(--brand-ink);
+  color: #ffffff;
 }
 
 .socials {
@@ -339,16 +395,20 @@ a.contact:hover {
   margin-top: 20px;
 }
 
+.socials .icon-btn {
+  color: var(--brand-ink);
+}
+
 .made-with {
   display: flex;
   gap: 8px;
   align-items: center;
   width: fit-content;
-  margin: 36px auto 0;
+  margin: 32px auto 0;
   padding: 8px 14px;
-  border: 1px solid var(--line);
+  border: 1px solid var(--border);
   border-radius: 999px;
-  background: #ffffff;
+  background: var(--canvas);
   color: var(--ink-2);
   font-size: 13px;
   font-weight: 600;
@@ -359,60 +419,113 @@ a.contact:hover {
   border-radius: 5px;
 }
 
-/* ---------- Botón flotante de WhatsApp ---------- */
-.fab {
+/* ---------- Barra de navegación flotante ---------- */
+.dock {
   position: fixed;
-  right: 18px;
-  bottom: calc(18px + env(safe-area-inset-bottom));
-  z-index: 15;
+  left: 50%;
+  bottom: calc(14px + env(safe-area-inset-bottom));
+  z-index: 30;
+  display: flex;
+  gap: 2px;
+  width: min(420px, 100% - 32px);
+  padding: 8px;
+  border-radius: 999px;
+  background: var(--brand-ink);
+  box-shadow: 0 20px 40px -16px rgb(13 11 20 / 0.55);
+  transform: translateX(-50%);
+  animation: fade-up 0.4s var(--ease);
+}
+
+.dock :is(a, button) {
+  font: inherit;
   display: grid;
-  place-items: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 50%;
-  background: #25d366;
+  flex: 1;
+  gap: 3px;
+  justify-items: center;
+  padding: 8px 4px 6px;
+  border: none;
+  border-radius: 999px;
+  background: none;
+  color: rgb(255 255 255 / 0.78);
+  font-size: 11px;
+  font-weight: 600;
+  text-decoration: none;
+  cursor: pointer;
+  transition:
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.dock :is(a, button):hover {
+  background: rgb(255 255 255 / 0.1);
   color: #ffffff;
-  box-shadow: 0 16px 34px -12px rgb(18 140 70 / 0.6);
-  animation: pop-in 0.35s var(--ease);
 }
 
 /* ---------- Esqueleto de carga ---------- */
-.skeleton__cover {
-  height: 168px;
+.skeleton {
+  padding-top: 20px;
+}
+
+.skeleton__head {
+  display: flex;
+  gap: 12px;
+  align-items: center;
 }
 
 .skeleton__logo {
-  width: 112px;
-  height: 112px;
-  margin-top: -56px;
-  border: 4px solid #ffffff;
-  border-radius: 32px;
+  width: 56px;
+  height: 56px;
+  border-radius: 18px;
 }
 
 .skeleton__line {
-  width: 70%;
-  height: 16px;
-  margin-top: 14px;
+  width: 180px;
+  height: 14px;
+  margin-top: 8px;
   border-radius: 8px;
 }
 
 .skeleton__line--title {
-  width: 50%;
-  height: 34px;
-  margin-top: 20px;
+  width: 140px;
+  height: 22px;
+  margin-top: 0;
 }
 
-.skeleton .grid {
-  margin-top: 36px;
+.skeleton__search {
+  height: 52px;
+  margin: 24px 0;
+  border-radius: 999px;
 }
 
 .skeleton__card {
   aspect-ratio: 0.78;
-  border-radius: var(--radius-lg);
+  border-radius: 20px;
 }
 
 /* ---------- Pantallas más grandes ---------- */
 @media (min-width: 640px) {
+  .head {
+    padding-top: 28px;
+  }
+
+  .head__logo {
+    width: 72px;
+    height: 72px;
+    border-radius: 22px;
+  }
+
+  .head__text h1 {
+    font-size: 30px;
+  }
+
+  .head__text p {
+    font-size: 15px;
+  }
+
+  .head__actions .icon-btn:first-child {
+    display: inline-grid;
+  }
+
   .filters {
     margin: 0 -24px;
     padding: 14px 24px;
@@ -423,13 +536,12 @@ a.contact:hover {
     padding: 0 24px;
   }
 
-  .hero__actions {
-    display: flex;
-    flex-wrap: wrap;
+  .promo {
+    padding: 28px 32px;
   }
 
-  .hero__actions .btn--ghost {
-    padding: 0 18px;
+  .promo h2 {
+    font-size: 24px;
   }
 
   .contact-grid {
@@ -438,41 +550,16 @@ a.contact:hover {
 }
 
 @media (min-width: 900px) {
-  .hero__cover,
-  .skeleton__cover {
-    height: 240px;
-  }
-
-  .hero__body {
-    display: grid;
-    grid-template-columns: auto 1fr;
-    gap: 0 28px;
-    align-items: end;
-    margin-top: -64px;
-  }
-
-  .hero__logo {
-    grid-row: span 2;
-    width: 144px;
-    height: 144px;
-    border-radius: 40px;
-  }
-
-  .hero__name {
-    margin-top: 0;
-    padding-top: 72px;
-  }
-
-  .hero__facts,
-  .hero__actions {
-    grid-column: 1 / -1;
-  }
-
   .contact-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
-  .fab {
+  .footer {
+    padding-bottom: 40px;
+  }
+
+  /* En computadora las acciones ya están arriba: la barra flotante es para el celular. */
+  .dock {
     display: none;
   }
 }

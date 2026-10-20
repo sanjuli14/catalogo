@@ -23,12 +23,14 @@ import {
   PublicCatalogData,
   contactUrl,
   itemPrice,
+  orderTotal,
   orderUrl,
   productUrl,
 } from './public-catalog';
 
 /** Cuántos productos se sugieren abajo ("Más en esta categoría"). */
 const RELATED_LIMIT = 8;
+const MAX_QUANTITY = 99;
 
 /** Página de un producto o servicio: /:slug/:itemId */
 @Component({
@@ -56,6 +58,9 @@ export class Product implements OnInit, OnDestroy {
   protected readonly error = signal<string | null>(null);
   protected readonly copied = signal(false);
   protected readonly photoIndex = signal(0);
+  /** Cantidad que se pide: va en el mensaje de WhatsApp junto al total. */
+  protected readonly quantity = signal(1);
+  protected readonly maxQuantity = MAX_QUANTITY;
   private readonly gallery = viewChild<ElementRef<HTMLElement>>('gallery');
 
   protected readonly business = computed(() => this.data()?.business ?? null);
@@ -98,7 +103,12 @@ export class Product implements OnInit, OnDestroy {
   protected readonly orderUrl = computed(() => {
     const business = this.business();
     const item = this.item();
-    return business && item ? orderUrl(business, item) : null;
+    return business && item ? orderUrl(business, item, this.quantity()) : null;
+  });
+  protected readonly total = computed(() => {
+    const business = this.business();
+    const item = this.item();
+    return business && item ? orderTotal(business, item, this.quantity()) : '';
   });
   /** Para un producto agotado: preguntar cuándo vuelve. */
   protected readonly askUrl = computed(() => {
@@ -127,6 +137,7 @@ export class Product implements OnInit, OnDestroy {
       const business = this.business();
       untracked(() => {
         this.photoIndex.set(0);
+        this.quantity.set(1);
         this.gallery()?.nativeElement.scrollTo({ left: 0 });
       });
       if (!item || !business) return;
@@ -184,6 +195,10 @@ export class Product implements OnInit, OnDestroy {
     await navigator.clipboard.writeText(url);
     this.copied.set(true);
     setTimeout(() => this.copied.set(false), 2500);
+  }
+
+  protected changeQuantity(delta: 1 | -1): void {
+    this.quantity.update((q) => Math.min(MAX_QUANTITY, Math.max(1, q + delta)));
   }
 
   /** La galería se desliza con el dedo; aquí se sabe qué foto se está viendo. */

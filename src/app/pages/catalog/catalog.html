@@ -1,16 +1,18 @@
 @if (loading()) {
   <!-- Esqueleto mientras carga: misma forma que la página, sin saltos al aparecer. -->
-  <div class="skeleton" aria-busy="true" aria-label="Cargando catálogo">
-    <div class="skeleton__cover shimmer"></div>
-    <div class="shell">
+  <div class="shell skeleton" aria-busy="true" aria-label="Cargando catálogo">
+    <div class="skeleton__head">
       <div class="skeleton__logo shimmer"></div>
-      <div class="skeleton__line skeleton__line--title shimmer"></div>
-      <div class="skeleton__line shimmer"></div>
-      <div class="grid">
-        @for (i of [1, 2, 3, 4]; track i) {
-          <div class="skeleton__card shimmer"></div>
-        }
+      <div>
+        <div class="skeleton__line skeleton__line--title shimmer"></div>
+        <div class="skeleton__line shimmer"></div>
       </div>
+    </div>
+    <div class="skeleton__search shimmer"></div>
+    <div class="grid">
+      @for (i of [1, 2, 3, 4]; track i) {
+        <div class="skeleton__card shimmer"></div>
+      }
     </div>
   </div>
 } @else if (!business()) {
@@ -23,7 +25,7 @@
       <h1>Este catálogo no existe</h1>
       <p>Revisa el enlace o pídele al negocio que te lo envíe de nuevo.</p>
     }
-    <a class="btn btn--dark" routerLink="/">Ir al inicio</a>
+    <a class="btn btn--ink" routerLink="/">Ir al inicio</a>
   </main>
 } @else {
   @let b = business()!;
@@ -37,45 +39,58 @@
     </p>
   }
 
-  <!-- Barra compacta: aparece al bajar, con el nombre y compartir siempre a mano. -->
-  <header class="topbar" [class.is-visible]="scrolled()">
-    <button type="button" class="topbar__brand" (click)="scrollToTop()">
-      @if (logoUrl(); as logo) {
-        <img [src]="logo" alt="" />
-      } @else {
-        <span class="topbar__initial">{{ b.name.charAt(0) }}</span>
-      }
-      <span>{{ b.name }}</span>
-    </button>
-    <button type="button" class="icon-btn" (click)="share()" aria-label="Compartir catálogo">
-      <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
-    </button>
-  </header>
-
-  <header class="hero">
-    <div class="hero__cover" aria-hidden="true">
-      <span class="hero__blob hero__blob--a"></span>
-      <span class="hero__blob hero__blob--b"></span>
-    </div>
-
-    <div class="shell hero__body">
-      <div class="hero__logo">
+  <header class="shell head">
+    <div class="head__brand">
+      <span class="head__logo">
         @if (logoUrl(); as logo) {
           <img [src]="logo" [alt]="'Logo de ' + b.name" />
         } @else {
-          <span>{{ b.name.charAt(0) }}</span>
+          {{ b.name.charAt(0) }}
+        }
+      </span>
+      <div class="head__text">
+        <h1>{{ b.name }}</h1>
+        @if (b.description) {
+          <p>{{ b.description }}</p>
         }
       </div>
+    </div>
+    <div class="head__actions">
+      <a
+        class="icon-btn"
+        [href]="shareOnWhatsappUrl()"
+        target="_blank"
+        rel="noopener"
+        aria-label="Enviar el catálogo a un amigo por WhatsApp"
+        title="Enviar a un amigo"
+      >
+        <app-icon name="send" [size]="18" />
+      </a>
+      <button
+        type="button"
+        class="icon-btn"
+        [disabled]="generatingPdf() || !groups().length"
+        (click)="downloadPdf()"
+        [attr.aria-label]="generatingPdf() ? 'Generando PDF' : 'Descargar catálogo en PDF'"
+        title="Descargar PDF"
+      >
+        <app-icon name="download" [size]="18" />
+      </button>
+      <button
+        type="button"
+        class="icon-btn"
+        (click)="share()"
+        aria-label="Compartir catálogo"
+        title="Compartir"
+      >
+        <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
+      </button>
+    </div>
+  </header>
 
-      <h1 class="hero__name">{{ b.name }}</h1>
-      @if (b.description) {
-        <p class="hero__description">{{ b.description }}</p>
-      }
-
-      <ul class="hero__facts">
-        @if (itemCount()) {
-          <li><app-icon name="tag" [size]="15" /> {{ itemCount() }} productos y servicios</li>
-        }
+  <div class="shell intro">
+    @if (b.address || b.schedule) {
+      <ul class="facts">
         @if (b.address) {
           <li><app-icon name="pin" [size]="15" /> {{ b.address }}</li>
         }
@@ -83,42 +98,26 @@
           <li><app-icon name="clock" [size]="15" /> {{ b.schedule.split('\n')[0] }}</li>
         }
       </ul>
+    }
 
-      <div class="hero__actions">
-        @if (contactUrl(); as url) {
-          <a class="btn btn--brand" [href]="url" target="_blank" rel="noopener">
-            <app-icon name="whatsapp" [size]="19" /> Escribir por WhatsApp
-          </a>
-        }
-        <a
-          class="btn btn--ghost"
-          [href]="shareOnWhatsappUrl()"
-          target="_blank"
-          rel="noopener"
-          aria-label="Enviar el catálogo a un amigo por WhatsApp"
-        >
-          <app-icon name="send" [size]="18" /> <span class="btn__label">Enviar</span>
+    @if (contactUrl(); as url) {
+      <section class="promo">
+        <div class="promo__text">
+          <h2>¿Te gustó algo?</h2>
+          <p>Pídelo por WhatsApp y te respondemos enseguida.</p>
+        </div>
+        <a class="promo__btn" [href]="url" target="_blank" rel="noopener">
+          <app-icon name="whatsapp" [size]="18" /> Escribir
         </a>
-        <button type="button" class="btn btn--ghost" (click)="share()">
-          <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
-          <span class="btn__label">{{ copied() ? 'Copiado' : 'Compartir' }}</span>
-        </button>
-        <button
-          type="button"
-          class="btn btn--ghost"
-          [disabled]="generatingPdf() || !groups().length"
-          (click)="downloadPdf()"
-        >
-          <app-icon name="download" [size]="18" />
-          <span class="btn__label">{{ generatingPdf() ? 'Generando…' : 'PDF' }}</span>
-        </button>
-      </div>
-    </div>
-  </header>
+        <span class="promo__ring promo__ring--a" aria-hidden="true"></span>
+        <span class="promo__ring promo__ring--b" aria-hidden="true"></span>
+      </section>
+    }
+  </div>
 
   <main class="shell catalog">
     @if (error(); as error) {
-      <p class="notice notice--error">{{ error }}</p>
+      <p class="notice--error">{{ error }}</p>
     }
 
     @if (!groups().length) {
@@ -130,10 +129,11 @@
     } @else {
       <div class="filters">
         <label class="search">
-          <app-icon name="search" [size]="18" />
+          <app-icon name="search" [size]="19" />
           <input
+            #searchInput
             type="search"
-            placeholder="Buscar en el catálogo"
+            placeholder="Buscar en {{ b.name }}…"
             aria-label="Buscar productos y servicios"
             [value]="search()"
             (input)="search.set($any($event.target).value)"
@@ -168,7 +168,6 @@
                 (click)="selectedGroup.set(group.id)"
               >
                 {{ group.name }}
-                <span class="chip__count">{{ group.items.length }}</span>
               </button>
             }
           </div>
@@ -200,7 +199,7 @@
     }
   </main>
 
-  <footer class="footer">
+  <footer class="footer" #contactSection>
     <div class="shell">
       <h2 class="footer__title">Contacto</h2>
       <div class="contact-grid">
@@ -260,9 +259,21 @@
     </div>
   </footer>
 
-  @if (scrolled() && contactUrl(); as url) {
-    <a class="fab" [href]="url" target="_blank" rel="noopener" aria-label="Escribir por WhatsApp">
-      <app-icon name="whatsapp" [size]="26" />
-    </a>
-  }
+  <!-- Barra de navegación flotante (celular), como en el diseño de referencia. -->
+  <nav class="dock" aria-label="Accesos rápidos">
+    <button type="button" (click)="scrollToTop()">
+      <app-icon name="store" [size]="21" /> Inicio
+    </button>
+    <button type="button" (click)="focusSearch()">
+      <app-icon name="search" [size]="21" /> Buscar
+    </button>
+    @if (contactUrl(); as url) {
+      <a [href]="url" target="_blank" rel="noopener">
+        <app-icon name="whatsapp" [size]="21" /> Pedir
+      </a>
+    }
+    <button type="button" (click)="scrollToContact()">
+      <app-icon name="phone" [size]="21" /> Contacto
+    </button>
+  </nav>
 }

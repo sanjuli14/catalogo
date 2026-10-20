@@ -40,6 +40,7 @@ const ICONS = {
   xsocial: ['M4 4l11.733 16h4.267L8.267 4z', 'M4 20l6.768-6.768', 'M20 4l-6.768 6.768'],
   close: ['M18 6 6 18', 'm6 6 12 12'],
   plus: ['M5 12h14', 'M12 5v14'],
+  minus: ['M5 12h14'],
   check: ['M20 6 9 17l-5-5'],
   arrowUpRight: ['M7 7h10v10', 'M7 17 17 7'],
   arrowLeft: ['m12 19-7-7 7-7', 'M19 12H5'],

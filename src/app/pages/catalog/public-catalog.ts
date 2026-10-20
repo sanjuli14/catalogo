@@ -65,13 +65,23 @@ export function itemPrice(business: Business, item: Item): string {
   return formatPrice(item.price, business.currency);
 }
 
-/** "Pedir por WhatsApp" con el mensaje ya escrito y el enlace al producto. null si no hay WhatsApp. */
-export function orderUrl(business: Business, item: Item): string | null {
+/**
+ * "Pedir por WhatsApp" con el mensaje ya escrito y el enlace al producto. null si no hay WhatsApp.
+ * Con cantidad mayor a 1, el mensaje la incluye junto al total.
+ */
+export function orderUrl(business: Business, item: Item, quantity = 1): string | null {
   if (!business.whatsapp) return null;
-  const message =
-    `¡Hola ${business.name}! Me interesa *${item.name}* (${itemPrice(business, item)}).\n` +
-    productUrl(business, item);
+  const detail =
+    quantity > 1
+      ? `${quantity} × *${item.name}* (${orderTotal(business, item, quantity)} en total)`
+      : `*${item.name}* (${itemPrice(business, item)})`;
+  const message = `¡Hola ${business.name}! Me interesa ${detail}.\n${productUrl(business, item)}`;
   return whatsappChatUrl(business.whatsapp, message);
+}
+
+/** Precio por la cantidad; "Precio a consultar" si el producto no tiene precio. */
+export function orderTotal(business: Business, item: Item, quantity: number): string {
+  return formatPrice(item.price === null ? null : item.price * quantity, business.currency);
 }
 
 /** Escribirle al negocio sin un producto concreto. null si no hay WhatsApp. */

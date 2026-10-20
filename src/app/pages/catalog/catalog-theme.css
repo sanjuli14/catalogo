@@ -6,22 +6,30 @@
   --brand: var(--color-primary);
   --brand-2: var(--purple-500);
   --on-brand: #ffffff;
-  /* Derivados del color del negocio: sirven igual para colores oscuros y claros. */
+  /*
+   * Derivados del color del negocio (estilo "app de tienda"): un tono oscuro para botones,
+   * títulos y la barra inferior, y neutros apenas teñidos con su color para fondo y paneles.
+   * Sirven igual para colores oscuros y claros.
+   */
   --brand-soft: color-mix(in oklab, var(--brand) 12%, white);
   --brand-strong: color-mix(in oklab, var(--brand) 58%, black);
+  --brand-ink: color-mix(in oklab, var(--brand) 52%, #0d0b14);
+  --canvas: color-mix(in oklab, var(--brand) 4%, #f4f4f0);
+  --panel: color-mix(in oklab, var(--brand) 7%, #e9e9e4);
+  --border: color-mix(in oklab, var(--brand) 10%, #e2e2dc);
 
-  --ink: #13111c;
+  --ink: #15131d;
   --ink-2: #4b4860;
-  --muted: #8b889c;
-  --line: #ececf2;
-  --soft: #f4f4f7;
+  --muted: #85828f;
+  --line: var(--border);
+  --soft: #ffffff;
   --radius-lg: 22px;
-  --shadow-card: 0 1px 2px rgb(19 17 28 / 0.04), 0 10px 30px -14px rgb(19 17 28 / 0.18);
+  --shadow-card: 0 1px 2px rgb(19 17 28 / 0.04);
   --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
 
   display: block;
   min-height: 100dvh;
-  background: #ffffff;
+  background: var(--canvas);
   color: var(--ink);
   -webkit-font-smoothing: antialiased;
 }
@@ -83,6 +91,16 @@
 
 .btn--ghost:hover:not(:disabled) {
   background: var(--soft);
+}
+
+.btn--ink {
+  background: var(--brand-ink);
+  color: #ffffff;
+  box-shadow: 0 12px 26px -14px color-mix(in oklab, var(--brand-ink) 80%, transparent);
+}
+
+.btn--ink:hover {
+  background: color-mix(in oklab, var(--brand-ink) 88%, white);
 }
 
 .btn--dark {
