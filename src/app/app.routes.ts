@@ -25,6 +25,10 @@ export const routes: Routes = [
     canActivate: [roleGuard('superadmin')],
     loadComponent: () => import('./pages/superadmin/superadmin').then((m) => m.Superadmin),
   },
-  // Debe ir al final: cualquier otro segmento es el slug de un negocio (/mi-tienda).
+  // Después de las rutas fijas: cualquier otro segmento es el slug de un negocio (/mi-tienda).
   { path: ':slug', loadComponent: () => import('./pages/catalog/catalog').then((m) => m.Catalog) },
+  {
+    path: '**',
+    loadComponent: () => import('./pages/not-found/not-found').then((m) => m.NotFound),
+  },
 ];

@@ -212,6 +212,15 @@ a {
   min-height: 65px;
 }
 
+.home {
+  max-width: 440px;
+  text-align: center;
+}
+
+.home h1 {
+  font-size: 28px;
+}
+
 .auth-card p {
   margin: 0;
 }

@@ -2,7 +2,7 @@
 // En local se leen de .env; en Cloudflare Pages, de las variables del proyecto.
 import { mkdirSync, writeFileSync } from 'node:fs';
 
-const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY'];
+const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'TURNSTILE_SITE_KEY'];
 const missing = required.filter((name) => !process.env[name]);
 
 if (missing.length) {
@@ -13,8 +13,8 @@ if (missing.length) {
 const environment = {
   supabaseUrl: process.env.SUPABASE_URL,
   supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
-  // Opcional: sin ella no se muestra el captcha (solo funciona si Supabase no lo exige).
-  turnstileSiteKey: process.env.TURNSTILE_SITE_KEY ?? '',
+  // Supabase exige el captcha de Turnstile al registrarse y al iniciar sesión.
+  turnstileSiteKey: process.env.TURNSTILE_SITE_KEY,
 };
 
 mkdirSync('src/environments', { recursive: true });
