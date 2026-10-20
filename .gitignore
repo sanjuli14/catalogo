@@ -46,3 +46,6 @@ Thumbs.db
 # Environment
 .env
 /src/environments/environment.ts
+
+# Supabase CLI
+/supabase/.temp
