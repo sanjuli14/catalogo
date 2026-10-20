@@ -10,14 +10,74 @@ import { CurrentBusiness } from '../current-business';
 @Component({
   selector: 'app-items',
   imports: [RouterLink, Icon],
+  styles: `
+    .list-title {
+      margin: 28px 0 4px;
+    }
+
+    /* Celular: los íconos en una fila pareja y "Marcar agotado" debajo, a todo el ancho. */
+    @media (max-width: 639px) {
+      .list__actions {
+        display: grid;
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+        width: 100%;
+      }
+
+      .list__actions .icon-button {
+        width: 100%;
+      }
+
+      .list__actions .button {
+        grid-column: 1 / -1;
+        order: 1;
+      }
+    }
+  `,
   template: `
     <section class="section-header">
       <div>
         <h2>Productos y servicios</h2>
         <p class="muted">Aparecen en tu catálogo en este orden.</p>
       </div>
-      <a class="button" routerLink="nuevo"><app-icon name="plus" [size]="18" /> Nuevo</a>
     </section>
+
+    <!-- Resumen en tablero: cifras del catálogo y accesos a lo más usado. -->
+    <section class="stats" aria-label="Resumen">
+      <div class="stat stat--wide">
+        <span class="kicker">En total</span>
+        <span class="stat__value">{{ loading() ? '–' : items().length }}</span>
+        <app-icon class="stat__icon" name="bag" [size]="20" />
+      </div>
+      <div class="stat">
+        <span class="kicker">Visibles</span>
+        <span class="stat__value">{{ loading() ? '–' : visibleCount() }}</span>
+        <app-icon class="stat__icon" name="eye" [size]="20" />
+      </div>
+      <div class="stat">
+        <span class="kicker">Agotados</span>
+        <span class="stat__value">{{ loading() ? '–' : soldOutCount() }}</span>
+        <app-icon class="stat__icon" name="tag" [size]="20" />
+      </div>
+      <a class="stat stat--wide stat--accent" routerLink="nuevo">
+        <span class="kicker">Agregar</span>
+        <span class="stat__title">Nuevo producto o servicio</span>
+        <app-icon class="stat__icon" name="plus" [size]="22" />
+      </a>
+      <div class="stat">
+        <span class="kicker">Categorías</span>
+        <span class="stat__value">{{ loading() ? '–' : categories().length }}</span>
+        <app-icon class="stat__icon" name="layers" [size]="20" />
+      </div>
+      @if (current.business(); as business) {
+        <a class="stat stat--ink" [href]="'/' + business.slug" target="_blank" rel="noopener">
+          <span class="kicker">Tu catálogo</span>
+          <span class="stat__title">Ver mi catálogo</span>
+          <app-icon class="stat__icon" name="arrowUpRight" [size]="20" />
+        </a>
+      }
+    </section>
+
+    <h3 class="kicker list-title">Lista en orden del catálogo</h3>
 
     @if (error(); as error) {
       <p class="alert">{{ error }}</p>
@@ -121,13 +181,18 @@ import { CurrentBusiness } from '../current-business';
 })
 export class Items {
   protected readonly api = inject(CatalogApi);
-  private readonly current = inject(CurrentBusiness);
+  protected readonly current = inject(CurrentBusiness);
   private readonly businessId = this.current.id()!;
 
   protected readonly items = signal<Item[]>([]);
-  private readonly categories = signal<Category[]>([]);
+  protected readonly categories = signal<Category[]>([]);
   protected readonly categoryNames = computed(
     () => new Map(this.categories().map((c) => [c.id, c.name])),
+  );
+  /** Cifras del tablero de resumen (solo lectura). */
+  protected readonly visibleCount = computed(() => this.items().filter((i) => i.is_visible).length);
+  protected readonly soldOutCount = computed(
+    () => this.items().filter((i) => !i.is_available).length,
   );
   protected readonly loading = signal(true);
   protected readonly busy = signal(false);

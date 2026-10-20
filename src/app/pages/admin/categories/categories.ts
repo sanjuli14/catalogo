@@ -10,6 +10,34 @@ import { CurrentBusiness } from '../current-business';
 @Component({
   selector: 'app-categories',
   imports: [FormsModule, Icon],
+  styles: `
+    .cat-board {
+      display: grid;
+      gap: var(--gap);
+      margin-bottom: 16px;
+    }
+
+    .cat-add {
+      display: grid;
+      align-content: space-between;
+      gap: 18px;
+    }
+
+    .cat-index {
+      width: 28px;
+      padding-left: 6px;
+      color: var(--color-muted);
+      font-size: 13px;
+      font-weight: 700;
+      font-variant-numeric: tabular-nums;
+    }
+
+    @media (min-width: 900px) {
+      .cat-board {
+        grid-template-columns: minmax(0, 3fr) minmax(0, 1fr);
+      }
+    }
+  `,
   template: `
     <section class="section-header">
       <div>
@@ -18,16 +46,30 @@ import { CurrentBusiness } from '../current-business';
       </div>
     </section>
 
-    <form class="inline-form" (ngSubmit)="add()">
-      <input
-        class="input"
-        name="newName"
-        placeholder="Nueva categoría, por ejemplo: Bebidas"
-        [(ngModel)]="newName"
-        maxlength="60"
-      />
-      <button type="submit" class="button" [disabled]="!newName.trim() || busy()">Agregar</button>
-    </form>
+    <!-- Tablero: agregar una categoría (tile ancho) y cuántas hay. -->
+    <div class="cat-board">
+      <form class="card cat-add" (ngSubmit)="add()">
+        <label class="kicker" for="new-category">Nueva categoría</label>
+        <div class="inline-form">
+          <input
+            id="new-category"
+            class="input"
+            name="newName"
+            placeholder="Por ejemplo: Bebidas"
+            [(ngModel)]="newName"
+            maxlength="60"
+          />
+          <button type="submit" class="button" [disabled]="!newName.trim() || busy()">
+            <app-icon name="plus" [size]="18" /> Agregar
+          </button>
+        </div>
+      </form>
+      <div class="stat">
+        <span class="kicker">Categorías</span>
+        <span class="stat__value">{{ loading() ? '–' : categories().length }}</span>
+        <app-icon class="stat__icon" name="layers" [size]="20" />
+      </div>
+    </div>
 
     @if (error(); as error) {
       <p class="alert">{{ error }}</p>
@@ -58,7 +100,8 @@ import { CurrentBusiness } from '../current-business';
                 </button>
               </form>
             } @else {
-              <span class="list__grow">{{ category.name }}</span>
+              <span class="cat-index" aria-hidden="true">{{ i < 9 ? '0' + (i + 1) : i + 1 }}</span>
+              <span class="list__grow list__title">{{ category.name }}</span>
               <div class="list__actions">
                 <button
                   type="button"

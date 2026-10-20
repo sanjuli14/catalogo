@@ -3,13 +3,26 @@ import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angula
 import { Router, RouterLink } from '@angular/router';
 
 import { Auth, homeFor } from '../../core/auth';
+import { Icon } from '../../shared/icon';
 import { Turnstile, captchaEnabled } from '../../shared/turnstile';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, Turnstile],
+  imports: [ReactiveFormsModule, RouterLink, Turnstile, Icon],
   template: `
     <main class="auth-page">
+      <!-- Tile de marca: solo en computadora (en el celular se ve solo el formulario). -->
+      <aside class="auth-brand">
+        <a class="auth-brand__top" routerLink="/">
+          <img src="icono/icono.png" alt="" width="36" height="36" /> Catálogo
+        </a>
+        <h2>Hola de nuevo. Tus clientes te esperan.</h2>
+        <ul class="auth-brand__list">
+          <li><app-icon name="whatsapp" [size]="20" /> Pedidos por WhatsApp</li>
+          <li><app-icon name="sparkles" [size]="20" /> Tu logo y tus colores</li>
+          <li><app-icon name="download" [size]="20" /> Un PDF para compartir</li>
+        </ul>
+      </aside>
       <form class="card auth-card" [formGroup]="form" (ngSubmit)="submit()">
         <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
         <h1>Iniciar sesión</h1>

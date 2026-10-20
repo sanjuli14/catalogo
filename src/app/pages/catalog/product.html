@@ -1,12 +1,12 @@
 @if (loading()) {
-  <div class="layout skeleton" aria-busy="true" aria-label="Cargando producto">
-    <div class="skeleton__stage shimmer"></div>
-    <div class="sheet">
+  <div class="shell layout skeleton" aria-busy="true" aria-label="Cargando producto">
+    <div class="stage skeleton__tile shimmer"></div>
+    <div class="tile info">
       <div class="skeleton__line skeleton__line--short shimmer"></div>
       <div class="skeleton__line skeleton__line--title shimmer"></div>
       <div class="skeleton__line shimmer"></div>
-      <div class="skeleton__line shimmer"></div>
     </div>
+    <div class="order skeleton__tile shimmer"></div>
   </div>
 } @else if (!business() || !item()) {
   <main class="state">
@@ -35,9 +35,9 @@
     </p>
   }
 
-  <div class="layout">
-    <!-- Escenario: la foto grande sobre el panel, con volver y compartir encima. -->
-    <section class="stage" aria-label="Fotos">
+  <!-- Tablero del producto: foto grande a la izquierda y tiles de información a la derecha. -->
+  <div class="shell layout">
+    <section class="tile stage" aria-label="Fotos">
       <div class="stage__bar">
         <a class="round-btn" [routerLink]="['/', b.slug]" aria-label="Volver al catálogo">
           <app-icon name="arrowLeft" [size]="20" />
@@ -68,10 +68,7 @@
       } @else {
         <div class="stage__placeholder" aria-hidden="true">{{ p.name.charAt(0) }}</div>
       }
-    </section>
 
-    <!-- Hoja blanca con la información, como en el diseño de referencia. -->
-    <section class="sheet">
       @if (p.photos.length > 1) {
         <div class="thumbs">
           @for (photo of p.photos; track photo; let i = $index) {
@@ -86,8 +83,10 @@
           }
         </div>
       }
+    </section>
 
-      <nav class="crumbs" aria-label="Ubicación">
+    <section class="tile info">
+      <nav class="crumbs label" aria-label="Ubicación">
         <a [routerLink]="['/', b.slug]">{{ b.name }}</a>
         @if (categoryName(); as category) {
           <span aria-hidden="true">/</span>
@@ -95,26 +94,25 @@
         }
       </nav>
 
-      <h1 class="name">{{ p.name }}</h1>
+      <h1 class="display name">{{ p.name }}</h1>
 
-      <div class="meta">
-        @if (p.is_available) {
-          <span class="status status--ok">Disponible</span>
-        } @else {
-          <span class="status status--out">Agotado por ahora</span>
-        }
-        <span class="meta__kind">{{ p.kind === 'service' ? 'Servicio' : 'Producto' }}</span>
+      <div class="info__foot">
+        <p class="price figure" [class.is-ask]="p.price === null">{{ price() }}</p>
+        <div class="meta">
+          @if (p.is_available) {
+            <span class="status status--ok">Disponible</span>
+          } @else {
+            <span class="status status--out">Agotado por ahora</span>
+          }
+          <span class="meta__kind">{{ p.kind === 'service' ? 'Servicio' : 'Producto' }}</span>
+        </div>
       </div>
+    </section>
 
-      <p class="price" [class.is-ask]="p.price === null">{{ price() }}</p>
-
-      @if (p.description) {
-        <p class="description">{{ p.description }}</p>
-      }
-
-      @if (p.is_available && orderUrl(); as url) {
+    @if (p.is_available && orderUrl(); as url) {
+      <section class="tile order" aria-label="Pedido">
         <div class="quantity">
-          <span>Cantidad</span>
+          <span class="label">Cantidad</span>
           <div class="quantity__stepper">
             <button
               type="button"
@@ -138,44 +136,53 @@
           </div>
         </div>
 
-        <div class="cta">
-          <a class="btn btn--ink btn--block" [href]="url" target="_blank" rel="noopener">
-            <app-icon name="whatsapp" [size]="20" />
-            Pedir por WhatsApp
-            @if (p.price !== null) {
-              <span class="cta__total">· {{ total() }}</span>
-            }
-          </a>
-        </div>
-      } @else if (!p.is_available && askUrl(); as url) {
-        <div class="cta">
-          <a class="btn btn--ghost btn--block" [href]="url" target="_blank" rel="noopener">
-            <app-icon name="whatsapp" [size]="20" /> Preguntar cuándo vuelve
-          </a>
-        </div>
-      }
+        <a class="btn btn--brand btn--block" [href]="url" target="_blank" rel="noopener">
+          <app-icon name="whatsapp" [size]="20" />
+          Pedir por WhatsApp
+          @if (p.price !== null) {
+            <span class="cta__total">· {{ total() }}</span>
+          }
+        </a>
+      </section>
+    } @else if (!p.is_available && askUrl(); as url) {
+      <section class="tile order" aria-label="Pedido">
+        <span class="label">Agotado por ahora</span>
+        <a class="btn btn--ghost btn--block" [href]="url" target="_blank" rel="noopener">
+          <app-icon name="whatsapp" [size]="20" /> Preguntar cuándo vuelve
+        </a>
+      </section>
+    }
 
-      <a class="seller" [routerLink]="['/', b.slug]">
-        @if (logoUrl(); as logo) {
-          <img class="seller__logo" [src]="logo" alt="" />
-        } @else {
-          <span class="seller__logo seller__logo--initial">{{ b.name.charAt(0) }}</span>
-        }
-        <span class="seller__text">
-          <strong>{{ b.name }}</strong>
-          <small>Ver el catálogo completo</small>
-        </span>
-        <app-icon name="arrowUpRight" [size]="18" />
-      </a>
-    </section>
+    @if (p.description) {
+      <section class="tile about">
+        <h2 class="label">Descripción</h2>
+        <p class="description">{{ p.description }}</p>
+      </section>
+    }
+
+    <a class="tile seller" [routerLink]="['/', b.slug]">
+      @if (logoUrl(); as logo) {
+        <img class="seller__logo" [src]="logo" alt="" />
+      } @else {
+        <span class="seller__logo seller__logo--initial">{{ b.name.charAt(0) }}</span>
+      }
+      <span class="seller__text">
+        <strong>{{ b.name }}</strong>
+        <small>Ver el catálogo completo</small>
+      </span>
+      <app-icon name="arrowUpRight" [size]="20" />
+    </a>
   </div>
 
   @if (related().length) {
     <section class="shell related">
-      <h2>{{ relatedTitle() }}</h2>
-      <div class="grid">
-        @for (other of related(); track other.id) {
-          <app-product-card [business]="b" [item]="other" />
+      <header class="related__head">
+        <h2 class="display">{{ relatedTitle() }}</h2>
+        <span class="label">{{ related().length }} más</span>
+      </header>
+      <div class="bento" [attr.data-count]="related().length">
+        @for (other of related(); track other.id; let first = $first) {
+          <app-product-card [class.is-featured]="first" [business]="b" [item]="other" />
         }
       </div>
     </section>

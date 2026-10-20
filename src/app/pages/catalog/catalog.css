@@ -1,201 +1,185 @@
-/* Página del catálogo, al estilo de app de tienda. La base compartida está en catalog-theme.css. */
+/* Página del catálogo en tablero bento. La base compartida está en catalog-theme.css. */
 
-/* ---------- Encabezado: logo, nombre y acciones ---------- */
-.head {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  justify-content: space-between;
-  padding-top: 20px;
-}
-
-.head__brand {
-  display: flex;
-  gap: 12px;
-  align-items: center;
-  min-width: 0;
-}
-
-.head__logo {
+/* ---------- Tablero de cabecera ---------- */
+.board {
   display: grid;
-  flex: none;
-  place-items: center;
-  width: 56px;
-  height: 56px;
-  overflow: hidden;
-  border-radius: 18px;
-  background: var(--brand-ink);
-  color: #ffffff;
-  font-size: 24px;
-  font-weight: 800;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  padding-top: 16px;
 }
 
-.head__logo img {
+/* Entrada escalonada de los tiles, sutil. */
+.board > *,
+.board__facts > * {
+  animation: fade-up 0.5s var(--ease) backwards;
+}
+
+.board > :nth-child(2) {
+  animation-delay: 0.05s;
+}
+
+.board > :nth-child(3) {
+  animation-delay: 0.1s;
+}
+
+.board__facts > * {
+  animation-delay: 0.15s;
+}
+
+.board__hero {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 40px;
+  min-height: 250px;
+  padding: 22px 20px 24px;
+}
+
+.board__name {
+  font-size: clamp(46px, 14.5vw, 96px);
+  overflow-wrap: break-word;
+}
+
+.board__desc {
+  max-width: 46ch;
+  margin: 16px 0 0;
+  color: var(--muted);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.board__logo {
+  display: grid;
+  place-items: center;
+  aspect-ratio: 1;
+  padding: 16%;
+  overflow: hidden;
+}
+
+.board__logo img {
   width: 100%;
   height: 100%;
-  background: #ffffff;
+  border-radius: 14px;
   object-fit: contain;
 }
 
-.head__text {
-  min-width: 0;
+/* Sin logo: la inicial en un tile de tinta. */
+.board__logo:has(.board__initial) {
+  border-color: var(--ink);
+  background: var(--ink);
 }
 
-.head__text h1 {
-  margin: 0;
-  overflow: hidden;
-  color: var(--brand-ink);
-  font-size: 24px;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.head__text p {
-  display: -webkit-box;
-  margin: 2px 0 0;
-  overflow: hidden;
-  color: var(--muted);
-  font-size: 14px;
-  line-height: 1.35;
-  -webkit-box-orient: vertical;
-  -webkit-line-clamp: 1;
-}
-
-.head__actions {
-  display: flex;
-  flex: none;
-  gap: 6px;
-}
-
-/* En el celular, "Enviar a un amigo" sobra: el menú de compartir del teléfono ya incluye WhatsApp. */
-.head__actions .icon-btn:first-child {
-  display: none;
-}
-
-.head .icon-btn {
-  width: 44px;
-  height: 44px;
-  border-color: var(--border);
-}
-
-.head .icon-btn:disabled {
-  opacity: 0.5;
-  cursor: wait;
-}
-
-/* ---------- Datos y tarjeta para pedir ---------- */
-.intro {
-  display: grid;
-  gap: 16px;
-  margin-top: 16px;
-}
-
-.facts {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px 16px;
-  margin: 0;
-  padding: 0;
-  list-style: none;
-  color: var(--ink-2);
-  font-size: 13px;
-}
-
-.facts li {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-}
-
-.promo {
-  position: relative;
-  display: flex;
-  gap: 16px;
-  align-items: center;
-  justify-content: space-between;
-  padding: 20px;
-  overflow: hidden;
-  border-radius: 24px;
-  background:
-    radial-gradient(
-      120% 140% at 100% 0%,
-      color-mix(in oklab, var(--brand) 60%, transparent),
-      transparent 60%
-    ),
-    var(--brand-ink);
+.board__initial {
   color: #ffffff;
-}
-
-.promo__text {
-  position: relative;
-  z-index: 1;
-}
-
-.promo h2 {
-  margin: 0;
-  font-size: 20px;
+  font-size: clamp(64px, 20vw, 120px);
   font-weight: 800;
-  letter-spacing: -0.02em;
+  line-height: 1;
+  letter-spacing: -0.06em;
 }
 
-.promo p {
-  max-width: 30ch;
-  margin: 4px 0 0;
-  font-size: 14px;
-  line-height: 1.4;
-  opacity: 0.8;
+.board__logo--tall {
+  grid-column: 1 / -1;
+  aspect-ratio: auto;
+  height: 168px;
+  padding: 24px;
 }
 
-.promo__btn {
-  position: relative;
-  z-index: 1;
-  display: inline-flex;
-  flex: none;
-  gap: 6px;
-  align-items: center;
-  height: 44px;
-  padding: 0 18px;
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--brand-ink);
-  font-size: 14px;
-  font-weight: 700;
+/* El único tile de color del tablero: pedir por WhatsApp. */
+.board__order {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  aspect-ratio: 1;
+  padding: 18px;
+  border-color: transparent;
+  background: var(--brand);
+  color: var(--on-brand);
   text-decoration: none;
-  transition: transform 0.15s var(--ease);
+  transition: transform 0.2s var(--ease);
 }
 
-.promo__btn:active {
-  transform: scale(0.96);
+.board__order:hover {
+  transform: translateY(-2px);
 }
 
-.promo__ring {
+.board__order:active {
+  transform: scale(0.98);
+}
+
+.board__order .label {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.board__order-top {
+  display: flex;
+  gap: 8px;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.board__order-title {
+  display: grid;
+  gap: 12px;
+  font-size: clamp(22px, 6.2vw, 36px);
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: -0.045em;
+}
+
+.board__facts {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+}
+
+.fact {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 18px;
+  min-height: 124px;
+  padding: 16px 16px 18px;
+}
+
+.fact__value {
+  margin: 0;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.3;
+  letter-spacing: -0.01em;
+}
+
+.fact__value--big {
+  font-size: 46px;
+  line-height: 0.85;
+}
+
+.fact__icon {
   position: absolute;
-  border: 1px solid rgb(255 255 255 / 0.14);
-  border-radius: 50%;
+  top: 14px;
+  right: 14px;
+  color: var(--muted);
 }
 
-.promo__ring--a {
-  top: -60px;
-  right: 40px;
-  width: 160px;
-  height: 160px;
+.fact__actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
-.promo__ring--b {
-  right: -50px;
-  bottom: -90px;
-  width: 200px;
-  height: 200px;
+.fact__actions .icon-btn {
+  width: 100%;
 }
 
 /* ---------- Búsqueda y categorías (fijas al bajar) ---------- */
 .catalog {
   display: grid;
-  gap: 28px;
-  padding-top: 12px;
+  gap: 56px;
+  padding-top: 20px;
   padding-bottom: 24px;
 }
 
@@ -204,10 +188,10 @@
   top: 0;
   z-index: 10;
   display: grid;
-  gap: 12px;
-  margin: 0 -16px;
+  gap: 10px;
+  margin: 0 -16px -32px;
   padding: 12px 16px;
-  background: color-mix(in oklab, var(--canvas) 88%, transparent);
+  background: color-mix(in oklab, var(--canvas) 90%, transparent);
   backdrop-filter: saturate(180%) blur(18px);
 }
 
@@ -216,19 +200,19 @@
   gap: 10px;
   align-items: center;
   height: 52px;
-  padding: 0 8px 0 18px;
+  padding: 0 8px 0 16px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: 16px;
   background: #ffffff;
-  color: var(--brand-ink);
+  color: var(--ink);
   transition:
     border-color 0.2s,
     box-shadow 0.2s;
 }
 
 .search:focus-within {
-  border-color: color-mix(in oklab, var(--brand) 50%, var(--border));
-  box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand) 14%, transparent);
+  border-color: var(--ink);
+  box-shadow: 0 0 0 4px color-mix(in oklab, var(--brand) 16%, transparent);
 }
 
 .search input {
@@ -254,18 +238,18 @@
 .search__clear {
   display: grid;
   place-items: center;
-  width: 34px;
-  height: 34px;
+  width: 36px;
+  height: 36px;
   border: none;
-  border-radius: 50%;
+  border-radius: 12px;
   background: var(--panel);
-  color: var(--ink-2);
+  color: var(--ink);
   cursor: pointer;
 }
 
 .chips {
   display: flex;
-  gap: 8px;
+  gap: 4px;
   margin: 0 -16px;
   padding: 0 16px;
   overflow-x: auto;
@@ -277,100 +261,108 @@
   display: none;
 }
 
+/* Categorías como texto; la activa, en un bloque de tinta. */
 .chip {
   font: inherit;
   display: inline-flex;
   flex: none;
   align-items: center;
   height: 40px;
-  padding: 0 18px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: #ffffff;
-  color: var(--brand-ink);
-  font-size: 14px;
-  font-weight: 600;
+  padding: 0 14px;
+  border: none;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--muted);
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
   cursor: pointer;
   transition:
     background-color 0.2s,
-    color 0.2s,
-    border-color 0.2s;
+    color 0.2s;
 }
 
 .chip:hover {
-  border-color: color-mix(in oklab, var(--brand) 35%, var(--border));
+  color: var(--ink);
 }
 
 .chip.is-active {
-  border-color: var(--brand-ink);
-  background: var(--brand-ink);
+  background: var(--ink);
   color: #ffffff;
+}
+
+/* ---------- Secciones ---------- */
+.group__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin-bottom: 18px;
+}
+
+.group__head .label {
+  padding-bottom: 6px;
 }
 
 .group__title {
   display: flex;
   gap: 10px;
-  align-items: baseline;
-  margin: 0 0 14px;
-  color: var(--brand-ink);
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.025em;
+  align-items: flex-start;
+  min-width: 0;
+  font-size: clamp(40px, 11vw, 80px);
+  overflow-wrap: anywhere;
 }
 
-.group__title span {
+.group__index {
+  padding-top: 0.5em;
   color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
-  letter-spacing: 0;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  font-variant-numeric: tabular-nums;
 }
 
 /* ---------- Contacto ---------- */
 .footer {
-  margin-top: 32px;
-  padding: 36px 0 calc(120px + env(safe-area-inset-bottom));
-  border-top: 1px solid var(--border);
-  background: #ffffff;
+  margin-top: 64px;
+  padding: 0 0 calc(124px + env(safe-area-inset-bottom));
 }
 
-.footer__title {
-  margin: 0 0 16px;
-  color: var(--brand-ink);
-  font-size: 21px;
-  font-weight: 800;
-  letter-spacing: -0.025em;
-}
-
-.contact-grid {
+.contact-board {
   display: grid;
-  gap: 10px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-auto-flow: row dense;
+  gap: var(--gap);
 }
 
 .contact {
   display: flex;
-  gap: 14px;
-  align-items: center;
-  padding: 12px;
-  overflow-wrap: anywhere;
-  border: 1px solid var(--border);
-  border-radius: 18px;
-  background: var(--canvas);
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 20px;
+  min-height: 132px;
+  padding: 16px 16px 18px;
   color: var(--ink);
-  font-size: 15px;
-  font-weight: 600;
   text-decoration: none;
+  transition: border-color 0.2s;
 }
 
 a.contact:hover {
-  border-color: color-mix(in oklab, var(--brand) 35%, var(--border));
+  border-color: var(--ink);
 }
 
-.contact small {
-  display: block;
-  margin-bottom: 2px;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 600;
+.contact__value {
+  font-size: 15px;
+  font-weight: 650;
+  line-height: 1.35;
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+
+.contact__value--big {
+  font-size: clamp(26px, 7.4vw, 44px);
+  line-height: 1;
 }
 
 .contact__multiline {
@@ -378,25 +370,37 @@ a.contact:hover {
 }
 
 .contact__icon {
-  display: grid;
-  flex: none;
-  place-items: center;
-  width: 44px;
-  height: 44px;
-  border-radius: 14px;
-  background: var(--brand-ink);
-  color: #ffffff;
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  color: var(--muted);
+}
+
+.contact--wa {
+  grid-column: span 2;
+  border-color: transparent;
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
+.contact--wa:hover {
+  border-color: transparent;
+  filter: brightness(1.05);
+}
+
+.contact--wa :is(.label, .contact__icon) {
+  color: inherit;
+  opacity: 0.85;
+}
+
+.contact--wide {
+  grid-column: span 2;
 }
 
 .socials {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.socials .icon-btn {
-  color: var(--brand-ink);
+  gap: 6px;
 }
 
 .made-with {
@@ -404,34 +408,39 @@ a.contact:hover {
   gap: 8px;
   align-items: center;
   width: fit-content;
-  margin: 32px auto 0;
+  margin: 40px auto 0;
   padding: 8px 14px;
   border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--canvas);
+  border-radius: 12px;
+  background: #ffffff;
   color: var(--ink-2);
   font-size: 13px;
   font-weight: 600;
   text-decoration: none;
 }
 
+.made-with:hover {
+  border-color: var(--ink);
+  color: var(--ink);
+}
+
 .made-with img {
   border-radius: 5px;
 }
 
-/* ---------- Barra de navegación flotante ---------- */
+/* ---------- Barra de accesos rápidos (celular) ---------- */
 .dock {
   position: fixed;
   left: 50%;
-  bottom: calc(14px + env(safe-area-inset-bottom));
+  bottom: calc(12px + env(safe-area-inset-bottom));
   z-index: 30;
   display: flex;
-  gap: 2px;
-  width: min(420px, 100% - 32px);
-  padding: 8px;
-  border-radius: 999px;
-  background: var(--brand-ink);
-  box-shadow: 0 20px 40px -16px rgb(13 11 20 / 0.55);
+  gap: 4px;
+  width: min(420px, 100% - 24px);
+  padding: 6px;
+  border-radius: 22px;
+  background: var(--ink);
+  box-shadow: 0 18px 40px -18px rgb(13 11 20 / 0.6);
   transform: translateX(-50%);
   animation: fade-up 0.4s var(--ease);
 }
@@ -442,13 +451,13 @@ a.contact:hover {
   flex: 1;
   gap: 3px;
   justify-items: center;
-  padding: 8px 4px 6px;
+  padding: 8px 4px 7px;
   border: none;
-  border-radius: 999px;
+  border-radius: 16px;
   background: none;
   color: rgb(255 255 255 / 0.78);
   font-size: 11px;
-  font-weight: 600;
+  font-weight: 650;
   text-decoration: none;
   cursor: pointer;
   transition:
@@ -461,104 +470,131 @@ a.contact:hover {
   color: #ffffff;
 }
 
+.dock .dock__order,
+.dock .dock__order:hover {
+  background: var(--brand);
+  color: var(--on-brand);
+}
+
 /* ---------- Esqueleto de carga ---------- */
 .skeleton {
-  padding-top: 20px;
+  display: grid;
+  gap: 56px;
 }
 
-.skeleton__head {
-  display: flex;
-  gap: 12px;
-  align-items: center;
+.skeleton__tile {
+  border-radius: var(--radius-tile);
 }
 
-.skeleton__logo {
-  width: 56px;
-  height: 56px;
-  border-radius: 18px;
-}
-
-.skeleton__line {
-  width: 180px;
-  height: 14px;
-  margin-top: 8px;
-  border-radius: 8px;
-}
-
-.skeleton__line--title {
-  width: 140px;
-  height: 22px;
-  margin-top: 0;
-}
-
-.skeleton__search {
-  height: 52px;
-  margin: 24px 0;
-  border-radius: 999px;
-}
-
-.skeleton__card {
-  aspect-ratio: 0.78;
-  border-radius: 20px;
+.skeleton .board__hero {
+  min-height: 250px;
 }
 
 /* ---------- Pantallas más grandes ---------- */
 @media (min-width: 640px) {
-  .head {
-    padding-top: 28px;
+  .board {
+    padding-top: 24px;
   }
 
-  .head__logo {
-    width: 72px;
-    height: 72px;
-    border-radius: 22px;
+  .board__hero {
+    padding: 28px 30px 30px;
   }
 
-  .head__text h1 {
-    font-size: 30px;
+  .board__facts {
+    grid-auto-columns: minmax(0, 1fr);
+    grid-auto-flow: column;
+    grid-template-columns: none;
   }
 
-  .head__text p {
-    font-size: 15px;
-  }
-
-  .head__actions .icon-btn:first-child {
-    display: inline-grid;
+  .fact {
+    padding: 20px 20px 22px;
   }
 
   .filters {
-    margin: 0 -24px;
+    display: flex;
+    gap: 16px;
+    align-items: center;
+    margin: 0 -24px -32px;
     padding: 14px 24px;
   }
 
+  .search {
+    flex: 0 0 min(360px, 45%);
+  }
+
   .chips {
-    margin: 0 -24px;
-    padding: 0 24px;
+    flex: 1;
+    margin: 0;
+    padding: 0;
   }
 
-  .promo {
-    padding: 28px 32px;
-  }
-
-  .promo h2 {
-    font-size: 24px;
-  }
-
-  .contact-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .contact {
+    padding: 20px 20px 22px;
   }
 }
 
 @media (min-width: 900px) {
-  .contact-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+  .board {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    grid-template-rows: repeat(2, minmax(190px, auto));
+  }
+
+  .board__hero {
+    grid-column: 1 / span 3;
+    grid-row: 1 / span 2;
+    padding: 32px 40px 40px;
+  }
+
+  .board__desc {
+    font-size: 17px;
+  }
+
+  .board__logo,
+  .board__order {
+    aspect-ratio: auto;
+  }
+
+  .board__logo {
+    padding: 36px;
+  }
+
+  .board__logo--tall {
+    grid-row: 1 / span 2;
+    grid-column: 4;
+    height: auto;
+  }
+
+  .board__order {
+    padding: 24px;
+  }
+
+  .board__order-title {
+    font-size: 30px;
+  }
+
+  .fact {
+    min-height: 136px;
+  }
+
+  .catalog {
+    gap: 80px;
+    padding-top: 28px;
+  }
+
+  .contact-board {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .contact {
+    min-height: 150px;
   }
 
   .footer {
-    padding-bottom: 40px;
+    margin-top: 96px;
+    padding-bottom: 48px;
   }
 
-  /* En computadora las acciones ya están arriba: la barra flotante es para el celular. */
+  /* En computadora el tablero ya tiene todo a mano: la barra es para el celular. */
   .dock {
     display: none;
   }

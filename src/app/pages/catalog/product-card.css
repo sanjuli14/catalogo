@@ -1,37 +1,44 @@
+/*
+ * Tile de producto. Vive dentro de la cuadrícula bento (filas de alto fijo), así que su
+ * tamaño lo decide la cuadrícula: con consultas de contenedor la tarjeta se acomoda
+ * a 1×1, 2×2 (destacado), alta (1×2) o ancha (2×1).
+ */
 :host {
   display: block;
   min-width: 0;
+  container: card / size;
 }
 
 .product {
+  position: relative;
   display: flex;
   flex-direction: column;
   height: 100%;
-  padding: 8px 8px 12px;
+  padding: 8px;
+  overflow: hidden;
   border: 1px solid var(--border);
-  border-radius: 20px;
+  border-radius: var(--radius-tile);
   background: #ffffff;
-  transition:
-    transform 0.25s var(--ease),
-    box-shadow 0.25s,
-    border-color 0.25s;
+  transition: border-color 0.25s;
 }
 
 .product__open {
   flex: 1;
   display: flex;
   flex-direction: column;
-  border-radius: 14px;
+  min-height: 0;
+  border-radius: calc(var(--radius-tile) - 8px);
   color: inherit;
   text-decoration: none;
 }
 
 .product__media {
   position: relative;
+  flex: 1;
   display: block;
-  aspect-ratio: 1 / 0.86;
+  min-height: 0;
   overflow: hidden;
-  border-radius: 14px;
+  border-radius: calc(var(--radius-tile) - 8px);
   background: var(--panel);
 }
 
@@ -40,7 +47,7 @@
   width: 100%;
   height: 100%;
   object-fit: cover;
-  transition: transform 0.5s var(--ease);
+  transition: transform 0.6s var(--ease);
 }
 
 .product__placeholder {
@@ -48,65 +55,91 @@
   place-items: center;
   width: 100%;
   height: 100%;
-  color: color-mix(in oklab, var(--brand-ink) 45%, var(--panel));
-  font-size: 44px;
+  color: color-mix(in oklab, var(--ink) 22%, var(--panel));
+  font-size: clamp(44px, 30cqi, 160px);
   font-weight: 800;
+  letter-spacing: -0.06em;
 }
 
 .tag {
   position: absolute;
-  top: 8px;
-  left: 8px;
+  top: 10px;
+  left: 10px;
   display: inline-flex;
   align-items: center;
-  height: 22px;
-  padding: 0 9px;
-  border-radius: 999px;
-  background: var(--brand-ink);
-  color: #ffffff;
-  font-size: 11px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 8px;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 10.5px;
   font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .tag--dark {
-  background: rgb(21 19 29 / 0.82);
+  background: var(--ink);
+  color: #ffffff;
 }
 
 .product.is-unavailable .product__media img,
 .product.is-unavailable .product__placeholder {
   filter: grayscale(1);
-  opacity: 0.55;
+  opacity: 0.5;
+}
+
+.product__body {
+  display: grid;
+  gap: 6px;
+  padding: 12px 6px 0;
+}
+
+.product__flag {
+  display: none;
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:host(.is-featured) .product__flag {
+  display: block;
 }
 
 .product__name {
   display: -webkit-box;
-  margin: 12px 4px 0;
   overflow: hidden;
-  color: var(--brand-ink);
+  color: var(--ink);
   font-size: 15px;
-  font-weight: 600;
-  line-height: 1.3;
-  letter-spacing: -0.01em;
+  font-weight: 650;
+  line-height: 1.25;
+  letter-spacing: -0.015em;
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
 }
 
 .product__foot {
   display: flex;
+  flex: none;
   gap: 8px;
   align-items: center;
   justify-content: space-between;
-  min-height: 38px;
-  margin: 6px 4px 0;
+  min-height: 40px;
+  padding: 6px 2px 2px 6px;
 }
 
 .product__price {
   min-width: 0;
+  overflow: hidden;
   color: var(--ink);
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 800;
-  letter-spacing: -0.02em;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .product__price.is-ask {
@@ -116,21 +149,34 @@
   letter-spacing: 0;
 }
 
-/* Botón redondo oscuro, como el de la bolsa en el diseño de referencia. */
+/* Botón de pedir: oscuro y discreto; el color del negocio aparece al pasar el mouse. */
 .product__order {
-  display: grid;
+  display: inline-flex;
   flex: none;
-  place-items: center;
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-  background: var(--brand-ink);
+  gap: 6px;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 14px;
+  background: var(--ink);
   color: #ffffff;
-  transition: transform 0.15s var(--ease);
+  font-size: 14px;
+  font-weight: 700;
+  text-decoration: none;
+  transition:
+    transform 0.15s var(--ease),
+    background-color 0.2s,
+    color 0.2s;
+}
+
+.product__order-text {
+  display: none;
 }
 
 .product__order:hover {
-  transform: scale(1.08);
+  background: var(--brand);
+  color: var(--on-brand);
 }
 
 .product__order:active {
@@ -138,18 +184,82 @@
 }
 
 :is(.product__open, .product__order):focus-visible {
-  outline: 3px solid color-mix(in oklab, var(--brand) 55%, transparent);
+  outline: 3px solid color-mix(in oklab, var(--brand) 60%, var(--ink));
   outline-offset: 2px;
 }
 
 @media (hover: hover) {
   .product:hover {
-    border-color: color-mix(in oklab, var(--brand) 25%, var(--border));
-    box-shadow: 0 18px 36px -22px rgb(19 17 28 / 0.35);
-    transform: translateY(-3px);
+    border-color: color-mix(in oklab, var(--ink) 30%, var(--border));
   }
 
   .product:hover .product__media img {
-    transform: scale(1.05);
+    transform: scale(1.04);
+  }
+}
+
+/* ---------- Ancha (2×1): foto a la izquierda, texto a la derecha ---------- */
+@container card (min-aspect-ratio: 5 / 4) {
+  .product__open {
+    flex-direction: row;
+  }
+
+  .product__media {
+    flex: 0 0 50%;
+  }
+
+  .product__body {
+    align-content: start;
+    padding: 12px 8px 56px 18px;
+  }
+
+  .product__name {
+    font-size: clamp(17px, 3.4cqi, 40px);
+    font-weight: 800;
+    line-height: 1.02;
+    letter-spacing: -0.04em;
+    -webkit-line-clamp: 3;
+  }
+
+  .product__foot {
+    position: absolute;
+    right: 10px;
+    bottom: 10px;
+    left: calc(50% + 14px);
+  }
+}
+
+/* ---------- Destacado (2×2): nombre y precio grandes ---------- */
+@container card (min-width: 330px) and (min-height: 500px) {
+  .product__body {
+    gap: 8px;
+    padding: 18px 10px 0;
+  }
+
+  .product__name {
+    font-size: clamp(26px, 6.4cqi, 44px);
+    font-weight: 800;
+    line-height: 1;
+    letter-spacing: -0.045em;
+  }
+
+  .product__foot {
+    padding: 12px 2px 4px 10px;
+  }
+
+  .product__price {
+    font-size: clamp(24px, 5cqi, 34px);
+    letter-spacing: -0.045em;
+  }
+
+  .product__order {
+    width: auto;
+    height: 48px;
+    padding: 0 18px;
+    border-radius: 16px;
+  }
+
+  .product__order-text {
+    display: inline;
   }
 }

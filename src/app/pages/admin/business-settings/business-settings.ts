@@ -27,6 +27,24 @@ const CURRENCIES = [
 @Component({
   selector: 'app-business-settings',
   imports: [ReactiveFormsModule],
+  styles: `
+    .settings__colors {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 14px;
+    }
+
+    .settings__bar {
+      grid-column: 1 / -1;
+    }
+
+    /* Computadora: tiles anchos a la izquierda y angostos a la derecha. */
+    @media (min-width: 900px) {
+      .settings {
+        grid-template-columns: minmax(0, 7fr) minmax(0, 5fr);
+      }
+    }
+  `,
   template: `
     <section class="section-header">
       <div>
@@ -38,139 +56,165 @@ const CURRENCIES = [
     @if (!current.business()) {
       <p class="muted">Cargando…</p>
     } @else {
-      <form class="card form-grid" [formGroup]="form" (ngSubmit)="save()">
-        <div class="field form-grid__full">
-          <span>Logo</span>
-          <div class="logo-picker">
-            @if (logoUrl(); as url) {
-              <img class="logo-picker__image" [src]="url" alt="Logo" />
-            } @else {
-              <span class="logo-picker__image logo-picker__image--empty">Sin logo</span>
-            }
-            <label class="button button--ghost">
-              <input
-                type="file"
-                accept="image/png,image/jpeg,image/webp"
-                (change)="pickLogo($event)"
-              />
-              {{ logoUrl() ? 'Cambiar' : 'Subir logo' }}
+      <form class="form-tiles settings" [formGroup]="form" (ngSubmit)="save()">
+        <section class="card form-tile">
+          <header class="form-tile__head">
+            <span class="kicker">01 · Identidad</span>
+            <h3>Quién eres</h3>
+          </header>
+          <div class="form-grid">
+            <div class="field form-grid__full">
+              <span>Logo</span>
+              <div class="logo-picker">
+                @if (logoUrl(); as url) {
+                  <img class="logo-picker__image" [src]="url" alt="Logo" />
+                } @else {
+                  <span class="logo-picker__image logo-picker__image--empty">Sin logo</span>
+                }
+                <label class="button button--ghost">
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp"
+                    (change)="pickLogo($event)"
+                  />
+                  {{ logoUrl() ? 'Cambiar' : 'Subir logo' }}
+                </label>
+                @if (logoUrl()) {
+                  <button type="button" class="button button--ghost" (click)="clearLogo()">
+                    Quitar
+                  </button>
+                }
+              </div>
+            </div>
+
+            <label class="field">
+              <span>Nombre</span>
+              <input formControlName="name" maxlength="80" />
             </label>
-            @if (logoUrl()) {
-              <button type="button" class="button button--ghost" (click)="clearLogo()">
-                Quitar
-              </button>
-            }
-          </div>
-        </div>
 
-        <label class="field">
-          <span>Nombre</span>
-          <input formControlName="name" maxlength="80" />
-        </label>
+            <label class="field">
+              <span>Dirección web</span>
+              <div class="input-prefix">
+                <span>{{ origin }}/</span>
+                <input formControlName="slug" maxlength="50" (blur)="normalizeSlug()" />
+              </div>
+              @if (form.controls.slug.invalid) {
+                <small class="error-text">
+                  De 3 a 50 caracteres: minúsculas, números y guiones. Ejemplo: mi-tienda
+                </small>
+              } @else if (form.controls.slug.value !== current.business()!.slug) {
+                <small>Ojo: el enlace anterior dejará de funcionar.</small>
+              }
+            </label>
 
-        <label class="field">
-          <span>Dirección web</span>
-          <div class="input-prefix">
-            <span>{{ origin }}/</span>
-            <input formControlName="slug" maxlength="50" (blur)="normalizeSlug()" />
+            <label class="field form-grid__full">
+              <span>Descripción corta</span>
+              <textarea formControlName="description" rows="3" maxlength="300"></textarea>
+            </label>
           </div>
-          @if (form.controls.slug.invalid) {
-            <small class="error-text">
-              De 3 a 50 caracteres: minúsculas, números y guiones. Ejemplo: mi-tienda
-            </small>
-          } @else if (form.controls.slug.value !== current.business()!.slug) {
-            <small>Ojo: el enlace anterior dejará de funcionar.</small>
+        </section>
+
+        <section class="card form-tile">
+          <header class="form-tile__head">
+            <span class="kicker">02 · Colores y moneda</span>
+            <h3>Cómo se ve</h3>
+          </header>
+          <div class="settings__colors">
+            <label class="field">
+              <span>Color principal</span>
+              <input type="color" formControlName="primary_color" />
+            </label>
+
+            <label class="field">
+              <span>Color secundario</span>
+              <input type="color" formControlName="secondary_color" />
+            </label>
+          </div>
+
+          <label class="field">
+            <span>Moneda de los precios</span>
+            <select formControlName="currency">
+              @for (currency of currencies; track currency[0]) {
+                <option [value]="currency[0]">{{ currency[0] }} · {{ currency[1] }}</option>
+              }
+            </select>
+          </label>
+        </section>
+
+        <section class="card form-tile">
+          <header class="form-tile__head">
+            <span class="kicker">03 · Contacto</span>
+            <h3>Cómo te encuentran</h3>
+          </header>
+          <div class="form-grid">
+            <label class="field">
+              <span>WhatsApp</span>
+              <input formControlName="whatsapp" inputmode="tel" placeholder="5355551234" />
+              <small
+                >Con código de país, sin + ni espacios. Lo usan los botones "Pedir por
+                WhatsApp".</small
+              >
+            </label>
+
+            <label class="field">
+              <span>Teléfono</span>
+              <input formControlName="phone" inputmode="tel" />
+            </label>
+
+            <label class="field">
+              <span>Correo</span>
+              <input type="email" formControlName="email" />
+            </label>
+
+            <label class="field">
+              <span>Dirección</span>
+              <input formControlName="address" />
+            </label>
+
+            <label class="field form-grid__full">
+              <span>Horario</span>
+              <textarea
+                formControlName="schedule"
+                rows="2"
+                placeholder="Lunes a viernes de 9:00 a 18:00"
+              ></textarea>
+            </label>
+          </div>
+        </section>
+
+        <section class="card form-tile">
+          <header class="form-tile__head">
+            <span class="kicker">04 · Redes sociales</span>
+            <h3>Dónde te siguen</h3>
+          </header>
+          <label class="field">
+            <span>Instagram</span>
+            <input formControlName="instagram" placeholder="https://instagram.com/mi-tienda" />
+          </label>
+
+          <label class="field">
+            <span>Facebook</span>
+            <input formControlName="facebook" placeholder="https://facebook.com/mi-tienda" />
+          </label>
+
+          <label class="field">
+            <span>TikTok</span>
+            <input formControlName="tiktok" placeholder="https://tiktok.com/@mi-tienda" />
+          </label>
+
+          <label class="field">
+            <span>Sitio web</span>
+            <input formControlName="website" placeholder="https://mi-tienda.com" />
+          </label>
+        </section>
+
+        <div class="form-bar settings__bar">
+          @if (error(); as error) {
+            <p class="alert">{{ error }}</p>
           }
-        </label>
-
-        <label class="field form-grid__full">
-          <span>Descripción corta</span>
-          <textarea formControlName="description" rows="3" maxlength="300"></textarea>
-        </label>
-
-        <label class="field">
-          <span>Color principal</span>
-          <input type="color" formControlName="primary_color" />
-        </label>
-
-        <label class="field">
-          <span>Color secundario</span>
-          <input type="color" formControlName="secondary_color" />
-        </label>
-
-        <label class="field">
-          <span>Moneda de los precios</span>
-          <select formControlName="currency">
-            @for (currency of currencies; track currency[0]) {
-              <option [value]="currency[0]">{{ currency[0] }} · {{ currency[1] }}</option>
-            }
-          </select>
-        </label>
-
-        <h3 class="form-grid__full">Contacto</h3>
-
-        <label class="field">
-          <span>WhatsApp</span>
-          <input formControlName="whatsapp" inputmode="tel" placeholder="5355551234" />
-          <small
-            >Con código de país, sin + ni espacios. Lo usan los botones "Pedir por WhatsApp".</small
-          >
-        </label>
-
-        <label class="field">
-          <span>Teléfono</span>
-          <input formControlName="phone" inputmode="tel" />
-        </label>
-
-        <label class="field">
-          <span>Correo</span>
-          <input type="email" formControlName="email" />
-        </label>
-
-        <label class="field">
-          <span>Dirección</span>
-          <input formControlName="address" />
-        </label>
-
-        <label class="field form-grid__full">
-          <span>Horario</span>
-          <textarea
-            formControlName="schedule"
-            rows="2"
-            placeholder="Lunes a viernes de 9:00 a 18:00"
-          ></textarea>
-        </label>
-
-        <h3 class="form-grid__full">Redes sociales</h3>
-
-        <label class="field">
-          <span>Instagram</span>
-          <input formControlName="instagram" placeholder="https://instagram.com/mi-tienda" />
-        </label>
-
-        <label class="field">
-          <span>Facebook</span>
-          <input formControlName="facebook" placeholder="https://facebook.com/mi-tienda" />
-        </label>
-
-        <label class="field">
-          <span>TikTok</span>
-          <input formControlName="tiktok" placeholder="https://tiktok.com/@mi-tienda" />
-        </label>
-
-        <label class="field">
-          <span>Sitio web</span>
-          <input formControlName="website" placeholder="https://mi-tienda.com" />
-        </label>
-
-        @if (error(); as error) {
-          <p class="alert form-grid__full">{{ error }}</p>
-        }
-        @if (saved()) {
-          <p class="success form-grid__full">Cambios guardados.</p>
-        }
-
-        <div class="form-actions form-grid__full">
+          @if (saved()) {
+            <p class="success">Cambios guardados.</p>
+          }
           <button type="submit" class="button" [disabled]="form.invalid || saving()">
             {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
           </button>

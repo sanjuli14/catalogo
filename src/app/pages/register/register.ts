@@ -6,6 +6,7 @@ import { Router, RouterLink } from '@angular/router';
 import { Auth } from '../../core/auth';
 import { errorMessage } from '../../core/format';
 import { SLUG_PATTERN, toSlug } from '../../core/slug';
+import { Icon } from '../../shared/icon';
 import { Turnstile, captchaEnabled } from '../../shared/turnstile';
 
 /**
@@ -17,9 +18,21 @@ type Step = 'loading' | 'account' | 'check-email' | 'business';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, Turnstile],
+  imports: [ReactiveFormsModule, RouterLink, Turnstile, Icon],
   template: `
     <main class="auth-page">
+      <!-- Tile de marca: solo en computadora (en el celular se ve solo el formulario). -->
+      <aside class="auth-brand">
+        <a class="auth-brand__top" routerLink="/">
+          <img src="icono/icono.png" alt="" width="36" height="36" /> Catálogo
+        </a>
+        <h2>Tu catálogo, en un enlace.</h2>
+        <ul class="auth-brand__list">
+          <li><app-icon name="whatsapp" [size]="20" /> Pedidos por WhatsApp</li>
+          <li><app-icon name="sparkles" [size]="20" /> Tu logo y tus colores</li>
+          <li><app-icon name="download" [size]="20" /> Un PDF para compartir</li>
+        </ul>
+      </aside>
       @switch (step()) {
         @case ('loading') {
           <p class="muted">Cargando…</p>

@@ -1,23 +1,21 @@
 @if (loading()) {
-  <!-- Esqueleto mientras carga: misma forma que la página, sin saltos al aparecer. -->
+  <!-- Esqueleto mientras carga: la misma forma del tablero, sin saltos al aparecer. -->
   <div class="shell skeleton" aria-busy="true" aria-label="Cargando catálogo">
-    <div class="skeleton__head">
-      <div class="skeleton__logo shimmer"></div>
-      <div>
-        <div class="skeleton__line skeleton__line--title shimmer"></div>
-        <div class="skeleton__line shimmer"></div>
-      </div>
+    <div class="board">
+      <div class="board__hero skeleton__tile shimmer"></div>
+      <div class="board__logo skeleton__tile shimmer"></div>
+      <div class="board__order skeleton__tile shimmer"></div>
     </div>
-    <div class="skeleton__search shimmer"></div>
-    <div class="grid">
+    <div class="bento" data-count="5">
+      <div class="is-featured skeleton__tile shimmer"></div>
       @for (i of [1, 2, 3, 4]; track i) {
-        <div class="skeleton__card shimmer"></div>
+        <div class="skeleton__tile shimmer"></div>
       }
     </div>
   </div>
 } @else if (!business()) {
   <main class="state">
-    <span class="state__icon"><app-icon name="bag" [size]="28" /></span>
+    <span class="state__icon"><app-icon name="bag" [size]="26" /></span>
     @if (error(); as error) {
       <h1>No pudimos abrir el catálogo</h1>
       <p>{{ error }}</p>
@@ -39,81 +37,95 @@
     </p>
   }
 
-  <header class="shell head">
-    <div class="head__brand">
-      <span class="head__logo">
-        @if (logoUrl(); as logo) {
-          <img [src]="logo" [alt]="'Logo de ' + b.name" />
-        } @else {
-          {{ b.name.charAt(0) }}
-        }
-      </span>
-      <div class="head__text">
-        <h1>{{ b.name }}</h1>
+  <!-- Tablero de cabecera: nombre gigante, logo, pedir por WhatsApp y datos del negocio. -->
+  <header class="shell board">
+    <section class="tile board__hero">
+      <p class="label">Catálogo</p>
+      <div>
+        <h1 class="display board__name">{{ b.name }}</h1>
         @if (b.description) {
-          <p>{{ b.description }}</p>
+          <p class="board__desc">{{ b.description }}</p>
         }
       </div>
-    </div>
-    <div class="head__actions">
-      <a
-        class="icon-btn"
-        [href]="shareOnWhatsappUrl()"
-        target="_blank"
-        rel="noopener"
-        aria-label="Enviar el catálogo a un amigo por WhatsApp"
-        title="Enviar a un amigo"
-      >
-        <app-icon name="send" [size]="18" />
-      </a>
-      <button
-        type="button"
-        class="icon-btn"
-        [disabled]="generatingPdf() || !groups().length"
-        (click)="downloadPdf()"
-        [attr.aria-label]="generatingPdf() ? 'Generando PDF' : 'Descargar catálogo en PDF'"
-        title="Descargar PDF"
-      >
-        <app-icon name="download" [size]="18" />
-      </button>
-      <button
-        type="button"
-        class="icon-btn"
-        (click)="share()"
-        aria-label="Compartir catálogo"
-        title="Compartir"
-      >
-        <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
-      </button>
-    </div>
-  </header>
+    </section>
 
-  <div class="shell intro">
-    @if (b.address || b.schedule) {
-      <ul class="facts">
-        @if (b.address) {
-          <li><app-icon name="pin" [size]="15" /> {{ b.address }}</li>
-        }
-        @if (b.schedule) {
-          <li><app-icon name="clock" [size]="15" /> {{ b.schedule.split('\n')[0] }}</li>
-        }
-      </ul>
-    }
+    <div class="tile board__logo" [class.board__logo--tall]="!contactUrl()">
+      @if (logoUrl(); as logo) {
+        <img [src]="logo" [alt]="'Logo de ' + b.name" />
+      } @else {
+        <span class="board__initial" aria-hidden="true">{{ b.name.charAt(0) }}</span>
+      }
+    </div>
 
     @if (contactUrl(); as url) {
-      <section class="promo">
-        <div class="promo__text">
-          <h2>¿Te gustó algo?</h2>
-          <p>Pídelo por WhatsApp y te respondemos enseguida.</p>
-        </div>
-        <a class="promo__btn" [href]="url" target="_blank" rel="noopener">
-          <app-icon name="whatsapp" [size]="18" /> Escribir
-        </a>
-        <span class="promo__ring promo__ring--a" aria-hidden="true"></span>
-        <span class="promo__ring promo__ring--b" aria-hidden="true"></span>
-      </section>
+      <a class="tile board__order" [href]="url" target="_blank" rel="noopener">
+        <span class="board__order-top">
+          <span class="label">¿Te gustó algo?</span>
+          <app-icon name="arrowUpRight" [size]="22" />
+        </span>
+        <span class="board__order-title">
+          <app-icon name="whatsapp" [size]="26" />
+          Pedir por WhatsApp
+        </span>
+      </a>
     }
-  </div>
+
+    <div class="board__facts">
+      @if (b.address) {
+        <div class="tile fact">
+          <span class="label">Dirección</span>
+          <p class="fact__value">{{ b.address }}</p>
+          <app-icon class="fact__icon" name="pin" [size]="18" />
+        </div>
+      }
+      @if (b.schedule) {
+        <div class="tile fact">
+          <span class="label">Horario</span>
+          <p class="fact__value">{{ b.schedule.split('\n')[0] }}</p>
+          <app-icon class="fact__icon" name="clock" [size]="18" />
+        </div>
+      }
+      <div class="tile fact">
+        <span class="label">Productos</span>
+        <p class="fact__value fact__value--big figure">{{ itemCount() }}</p>
+        <app-icon class="fact__icon" name="bag" [size]="18" />
+      </div>
+      <div class="tile fact">
+        <span class="label">Compartir</span>
+        <div class="fact__actions">
+          <a
+            class="icon-btn"
+            [href]="shareOnWhatsappUrl()"
+            target="_blank"
+            rel="noopener"
+            aria-label="Enviar el catálogo a un amigo por WhatsApp"
+            title="Enviar a un amigo"
+          >
+            <app-icon name="send" [size]="18" />
+          </a>
+          <button
+            type="button"
+            class="icon-btn"
+            [disabled]="generatingPdf() || !groups().length"
+            (click)="downloadPdf()"
+            [attr.aria-label]="generatingPdf() ? 'Generando PDF' : 'Descargar catálogo en PDF'"
+            title="Descargar PDF"
+          >
+            <app-icon name="download" [size]="18" />
+          </button>
+          <button
+            type="button"
+            class="icon-btn"
+            (click)="share()"
+            aria-label="Compartir catálogo"
+            title="Compartir"
+          >
+            <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
 
   <main class="shell catalog">
     @if (error(); as error) {
@@ -122,7 +134,7 @@
 
     @if (!groups().length) {
       <div class="state state--inline">
-        <span class="state__icon"><app-icon name="bag" [size]="28" /></span>
+        <span class="state__icon"><app-icon name="bag" [size]="26" /></span>
         <h2>Muy pronto</h2>
         <p>Este negocio todavía no ha publicado sus productos.</p>
       </div>
@@ -176,22 +188,31 @@
 
       @if (!resultCount()) {
         <div class="state state--inline">
-          <span class="state__icon"><app-icon name="search" [size]="26" /></span>
+          <span class="state__icon"><app-icon name="search" [size]="24" /></span>
           <h2>Sin resultados</h2>
           <p>No encontramos nada con "{{ search() }}". Prueba con otra palabra.</p>
         </div>
       }
 
-      @for (group of visibleGroups(); track group.id) {
+      @for (group of visibleGroups(); track group.id; let g = $index, odd = $odd) {
         <section class="group">
           @if (group.name) {
-            <h2 class="group__title">
-              {{ group.name }} <span>{{ group.items.length }}</span>
-            </h2>
+            <header class="group__head">
+              <h2 class="display group__title">
+                <span class="group__index" aria-hidden="true">{{
+                  g < 9 ? '0' + (g + 1) : g + 1
+                }}</span>
+                {{ group.name }}
+              </h2>
+              <span class="label">
+                {{ group.items.length }} {{ group.items.length === 1 ? 'producto' : 'productos' }}
+              </span>
+            </header>
           }
-          <div class="grid">
-            @for (item of group.items; track item.id) {
-              <app-product-card [business]="b" [item]="item" />
+          <!-- El primero de cada grupo va destacado (2×2); en los grupos impares, a la derecha. -->
+          <div class="bento" [class.bento--flip]="odd" [attr.data-count]="group.items.length">
+            @for (item of group.items; track item.id; let first = $first) {
+              <app-product-card [class.is-featured]="first" [business]="b" [item]="item" />
             }
           </div>
         </section>
@@ -201,56 +222,66 @@
 
   <footer class="footer" #contactSection>
     <div class="shell">
-      <h2 class="footer__title">Contacto</h2>
-      <div class="contact-grid">
+      <header class="group__head">
+        <h2 class="display group__title">Contacto</h2>
+        <span class="label">{{ b.name }}</span>
+      </header>
+      <div class="contact-board">
         @if (b.whatsapp) {
-          <a class="contact" [href]="contactUrl()" target="_blank" rel="noopener">
-            <span class="contact__icon"><app-icon name="whatsapp" /></span>
-            <span><small>WhatsApp</small>+{{ b.whatsapp }}</span>
+          <a class="tile contact contact--wa" [href]="contactUrl()" target="_blank" rel="noopener">
+            <span class="label">WhatsApp</span>
+            <span class="contact__value contact__value--big figure">+{{ b.whatsapp }}</span>
+            <app-icon class="contact__icon" name="whatsapp" [size]="22" />
           </a>
         }
         @if (b.phone) {
-          <a class="contact" [href]="'tel:' + b.phone">
-            <span class="contact__icon"><app-icon name="phone" /></span>
-            <span><small>Teléfono</small>{{ b.phone }}</span>
+          <a class="tile contact" [href]="'tel:' + b.phone">
+            <span class="label">Teléfono</span>
+            <span class="contact__value">{{ b.phone }}</span>
+            <app-icon class="contact__icon" name="phone" [size]="18" />
           </a>
         }
         @if (b.email) {
-          <a class="contact" [href]="'mailto:' + b.email">
-            <span class="contact__icon"><app-icon name="mail" /></span>
-            <span><small>Correo</small>{{ b.email }}</span>
+          <a class="tile contact" [href]="'mailto:' + b.email">
+            <span class="label">Correo</span>
+            <span class="contact__value">{{ b.email }}</span>
+            <app-icon class="contact__icon" name="mail" [size]="18" />
           </a>
         }
         @if (b.address) {
-          <div class="contact">
-            <span class="contact__icon"><app-icon name="pin" /></span>
-            <span><small>Dirección</small>{{ b.address }}</span>
+          <div class="tile contact">
+            <span class="label">Dirección</span>
+            <span class="contact__value">{{ b.address }}</span>
+            <app-icon class="contact__icon" name="pin" [size]="18" />
           </div>
         }
         @if (b.schedule) {
-          <div class="contact">
-            <span class="contact__icon"><app-icon name="clock" /></span>
-            <span class="contact__multiline"><small>Horario</small>{{ b.schedule }}</span>
+          <div class="tile contact contact--wide">
+            <span class="label">Horario</span>
+            <span class="contact__value contact__multiline">{{ b.schedule }}</span>
+            <app-icon class="contact__icon" name="clock" [size]="18" />
+          </div>
+        }
+        @if (socials().length) {
+          <div class="tile contact">
+            <span class="label">Redes</span>
+            <div class="socials">
+              @for (social of socials(); track social.label) {
+                <a
+                  class="icon-btn"
+                  [href]="social.url"
+                  target="_blank"
+                  rel="noopener"
+                  [attr.aria-label]="social.label"
+                  [title]="social.label"
+                >
+                  <app-icon [name]="social.icon" [size]="18" />
+                </a>
+              }
+            </div>
           </div>
         }
       </div>
-
-      @if (socials().length) {
-        <div class="socials">
-          @for (social of socials(); track social.label) {
-            <a
-              class="icon-btn icon-btn--lg"
-              [href]="social.url"
-              target="_blank"
-              rel="noopener"
-              [attr.aria-label]="social.label"
-              [title]="social.label"
-            >
-              <app-icon [name]="social.icon" />
-            </a>
-          }
-        </div>
-      }
 
       <a class="made-with" routerLink="/registro">
         <img src="icono/icono.png" alt="" width="18" height="18" />
@@ -259,21 +290,21 @@
     </div>
   </footer>
 
-  <!-- Barra de navegación flotante (celular), como en el diseño de referencia. -->
+  <!-- Accesos rápidos (solo celular): el tablero queda arriba al bajar por los productos. -->
   <nav class="dock" aria-label="Accesos rápidos">
     <button type="button" (click)="scrollToTop()">
-      <app-icon name="store" [size]="21" /> Inicio
+      <app-icon name="store" [size]="20" /> Inicio
     </button>
     <button type="button" (click)="focusSearch()">
-      <app-icon name="search" [size]="21" /> Buscar
+      <app-icon name="search" [size]="20" /> Buscar
     </button>
     @if (contactUrl(); as url) {
-      <a [href]="url" target="_blank" rel="noopener">
-        <app-icon name="whatsapp" [size]="21" /> Pedir
+      <a class="dock__order" [href]="url" target="_blank" rel="noopener">
+        <app-icon name="whatsapp" [size]="20" /> Pedir
       </a>
     }
     <button type="button" (click)="scrollToContact()">
-      <app-icon name="phone" [size]="21" /> Contacto
+      <app-icon name="phone" [size]="20" /> Contacto
     </button>
   </nav>
 }

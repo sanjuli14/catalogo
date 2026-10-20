@@ -28,7 +28,11 @@ import { PublicCatalog, itemPrice, orderUrl } from './public-catalog';
             <span class="tag">Servicio</span>
           }
         </span>
-        <span class="product__name">{{ item().name }}</span>
+        <span class="product__body">
+          <!-- Solo se ve en los destacados (2×2), que marca la cuadrícula del catálogo. -->
+          <span class="product__flag" aria-hidden="true">Destacado</span>
+          <span class="product__name">{{ item().name }}</span>
+        </span>
       </a>
       <div class="product__foot">
         <span class="product__price" [class.is-ask]="item().price === null">{{ price() }}</span>
@@ -42,6 +46,7 @@ import { PublicCatalog, itemPrice, orderUrl } from './public-catalog';
             [title]="'Pedir por WhatsApp'"
           >
             <app-icon name="whatsapp" [size]="18" />
+            <span class="product__order-text" aria-hidden="true">Pedir</span>
           </a>
         }
       </div>

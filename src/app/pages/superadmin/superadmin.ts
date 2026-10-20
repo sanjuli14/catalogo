@@ -82,19 +82,25 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
         <p class="alert">{{ error }}</p>
       }
 
+      <!-- Tablero de cifras: cada tile también filtra la lista por ese estado. -->
+      <div class="stats" role="group" aria-label="Filtrar por estado">
+        @for (option of filters; track option.value) {
+          <button
+            type="button"
+            class="stat filter"
+            [class.stat--accent]="option.value === 'pending'"
+            [class.stat--wide]="option.value === 'pending'"
+            [class.is-active]="filter() === option.value"
+            [attr.aria-pressed]="filter() === option.value"
+            (click)="filter.set(option.value)"
+          >
+            <span class="kicker">{{ option.label }}</span>
+            <span class="stat__value">{{ counts()[option.value] }}</span>
+          </button>
+        }
+      </div>
+
       <div class="toolbar">
-        <div class="filters-row" role="group" aria-label="Filtrar por estado">
-          @for (option of filters; track option.value) {
-            <button
-              type="button"
-              class="filter"
-              [class.is-active]="filter() === option.value"
-              (click)="filter.set(option.value)"
-            >
-              {{ option.label }} <span class="filter__count">{{ counts()[option.value] }}</span>
-            </button>
-          }
-        </div>
         <input
           class="input toolbar__search"
           type="search"
@@ -103,6 +109,7 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
           [ngModel]="search()"
           (ngModelChange)="search.set($event)"
         />
+        <span class="kicker">{{ visible().length }} en la lista</span>
       </div>
 
       @if (loading()) {
@@ -237,42 +244,60 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
     .toolbar {
       display: flex;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 12px 16px;
       align-items: center;
       justify-content: space-between;
+      margin: 12px 0 4px;
     }
 
     .toolbar__search {
       flex: 1 1 240px;
-      max-width: 360px;
+      max-width: 420px;
     }
 
-    .filters-row {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 6px;
+    /* Los tiles de cifras son los filtros: el activo lleva un anillo de tinta. */
+    .stats {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
     }
 
-    .filter {
-      font: inherit;
-      font-size: 14px;
-      padding: 8px 12px;
-      border: 1px solid var(--color-border);
-      border-radius: 999px;
-      background: var(--color-surface);
-      color: var(--color-text);
-      cursor: pointer;
+    .filter.stat--wide {
+      grid-column: 1 / -1;
+    }
+
+    .filter .stat__value {
+      font-size: clamp(36px, 9vw, 68px);
     }
 
     .filter.is-active {
-      border-color: var(--color-primary);
-      background: var(--color-primary);
-      color: var(--color-primary-text);
-      font-weight: 700;
+      border-color: var(--color-text);
+      box-shadow: inset 0 0 0 1px var(--color-text);
     }
 
-    .filter__count {
-      opacity: 0.75;
+    .filter.stat--accent.is-active {
+      box-shadow:
+        0 0 0 3px var(--color-bg),
+        0 0 0 5px var(--color-text);
+    }
+
+    .filter.is-active::after {
+      content: '';
+      position: absolute;
+      top: 18px;
+      right: 18px;
+      width: 10px;
+      height: 10px;
+      border-radius: 50%;
+      background: currentColor;
+    }
+
+    @media (min-width: 900px) {
+      .stats {
+        grid-template-columns: repeat(5, minmax(0, 1fr));
+      }
+
+      .filter.stat--wide {
+        grid-column: span 2;
+      }
     }
 
     .business-row {
