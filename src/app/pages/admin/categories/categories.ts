@@ -1,5 +1,6 @@
 import { Component, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { CatalogApi } from '../../../core/catalog-api';
 import { errorMessage } from '../../../core/format';
@@ -9,7 +10,7 @@ import { CurrentBusiness } from '../current-business';
 
 @Component({
   selector: 'app-categories',
-  imports: [FormsModule, Icon],
+  imports: [FormsModule, Icon, TranslocoDirective],
   styles: `
     .cat-board {
       display: grid;
@@ -39,115 +40,119 @@ import { CurrentBusiness } from '../current-business';
     }
   `,
   template: `
-    <section class="section-header">
-      <div>
-        <h2>Categorías</h2>
-        <p class="muted">Agrupan tus productos y servicios en el catálogo, en este orden.</p>
-      </div>
-    </section>
-
-    <!-- Tablero: agregar una categoría (tile ancho) y cuántas hay. -->
-    <div class="cat-board">
-      <form class="card cat-add" (ngSubmit)="add()">
-        <label class="kicker" for="new-category">Nueva categoría</label>
-        <div class="inline-form">
-          <input
-            id="new-category"
-            class="input"
-            name="newName"
-            placeholder="Por ejemplo: Bebidas"
-            [(ngModel)]="newName"
-            maxlength="60"
-          />
-          <button type="submit" class="button" [disabled]="!newName.trim() || busy()">
-            <app-icon name="plus" [size]="18" /> Agregar
-          </button>
+    <ng-container *transloco="let t">
+      <section class="section-header">
+        <div>
+          <h2>{{ t('admin.tabs.categories') }}</h2>
+          <p class="muted">{{ t('categories.lead') }}</p>
         </div>
-      </form>
-      <div class="stat">
-        <span class="kicker">Categorías</span>
-        <span class="stat__value">{{ loading() ? '–' : categories().length }}</span>
-        <app-icon class="stat__icon" name="layers" [size]="20" />
+      </section>
+
+      <!-- Tablero: agregar una categoría (tile ancho) y cuántas hay. -->
+      <div class="cat-board">
+        <form class="card cat-add" (ngSubmit)="add()">
+          <label class="kicker" for="new-category">{{ t('categories.new') }}</label>
+          <div class="inline-form">
+            <input
+              id="new-category"
+              class="input"
+              name="newName"
+              [placeholder]="t('categories.placeholder')"
+              [(ngModel)]="newName"
+              maxlength="60"
+            />
+            <button type="submit" class="button" [disabled]="!newName.trim() || busy()">
+              <app-icon name="plus" [size]="18" /> {{ t('categories.add') }}
+            </button>
+          </div>
+        </form>
+        <div class="stat">
+          <span class="kicker">{{ t('admin.tabs.categories') }}</span>
+          <span class="stat__value">{{ loading() ? '–' : categories().length }}</span>
+          <app-icon class="stat__icon" name="layers" [size]="20" />
+        </div>
       </div>
-    </div>
 
-    @if (error(); as error) {
-      <p class="alert">{{ error }}</p>
-    }
+      @if (error(); as error) {
+        <p class="alert">{{ error }}</p>
+      }
 
-    @if (loading()) {
-      <p class="muted">Cargando…</p>
-    } @else if (!categories().length) {
-      <p class="empty">Todavía no tienes categorías.</p>
-    } @else {
-      <ul class="list">
-        @for (category of categories(); track category.id; let i = $index, last = $last) {
-          <li class="list__row">
-            @if (editingId() === category.id) {
-              <form class="inline-form list__grow" (ngSubmit)="rename(category)">
-                <input
-                  class="input"
-                  name="editName"
-                  [(ngModel)]="editName"
-                  maxlength="60"
-                  aria-label="Nombre de la categoría"
-                />
-                <button type="submit" class="button" [disabled]="!editName.trim() || busy()">
-                  Guardar
-                </button>
-                <button type="button" class="button button--ghost" (click)="editingId.set(null)">
-                  Cancelar
-                </button>
-              </form>
-            } @else {
-              <span class="cat-index" aria-hidden="true">{{ i < 9 ? '0' + (i + 1) : i + 1 }}</span>
-              <span class="list__grow list__title">{{ category.name }}</span>
-              <div class="list__actions">
-                <button
-                  type="button"
-                  class="icon-button"
-                  [disabled]="i === 0 || busy()"
-                  (click)="move(i, -1)"
-                  aria-label="Subir"
-                  title="Subir"
-                >
-                  <app-icon name="chevronUp" [size]="18" />
-                </button>
-                <button
-                  type="button"
-                  class="icon-button"
-                  [disabled]="last || busy()"
-                  (click)="move(i, 1)"
-                  aria-label="Bajar"
-                  title="Bajar"
-                >
-                  <app-icon name="chevronDown" [size]="18" />
-                </button>
-                <button
-                  type="button"
-                  class="icon-button"
-                  (click)="startEdit(category)"
-                  aria-label="Renombrar"
-                  title="Renombrar"
-                >
-                  <app-icon name="pencil" [size]="16" />
-                </button>
-                <button
-                  type="button"
-                  class="icon-button icon-button--danger"
-                  [disabled]="busy()"
-                  (click)="remove(category)"
-                  aria-label="Eliminar"
-                  title="Eliminar"
-                >
-                  <app-icon name="trash" [size]="16" />
-                </button>
-              </div>
-            }
-          </li>
-        }
-      </ul>
-    }
+      @if (loading()) {
+        <p class="muted">{{ t('common.loading') }}</p>
+      } @else if (!categories().length) {
+        <p class="empty">{{ t('categories.empty') }}</p>
+      } @else {
+        <ul class="list">
+          @for (category of categories(); track category.id; let i = $index, last = $last) {
+            <li class="list__row">
+              @if (editingId() === category.id) {
+                <form class="inline-form list__grow" (ngSubmit)="rename(category)">
+                  <input
+                    class="input"
+                    name="editName"
+                    [(ngModel)]="editName"
+                    maxlength="60"
+                    [attr.aria-label]="t('categories.name')"
+                  />
+                  <button type="submit" class="button" [disabled]="!editName.trim() || busy()">
+                    {{ t('common.save') }}
+                  </button>
+                  <button type="button" class="button button--ghost" (click)="editingId.set(null)">
+                    {{ t('common.cancel') }}
+                  </button>
+                </form>
+              } @else {
+                <span class="cat-index" aria-hidden="true">{{
+                  i < 9 ? '0' + (i + 1) : i + 1
+                }}</span>
+                <span class="list__grow list__title">{{ category.name }}</span>
+                <div class="list__actions">
+                  <button
+                    type="button"
+                    class="icon-button"
+                    [disabled]="i === 0 || busy()"
+                    (click)="move(i, -1)"
+                    [attr.aria-label]="t('common.moveUp')"
+                    [title]="t('common.moveUp')"
+                  >
+                    <app-icon name="chevronUp" [size]="18" />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    [disabled]="last || busy()"
+                    (click)="move(i, 1)"
+                    [attr.aria-label]="t('common.moveDown')"
+                    [title]="t('common.moveDown')"
+                  >
+                    <app-icon name="chevronDown" [size]="18" />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-button"
+                    (click)="startEdit(category)"
+                    [attr.aria-label]="t('categories.rename')"
+                    [title]="t('categories.rename')"
+                  >
+                    <app-icon name="pencil" [size]="16" />
+                  </button>
+                  <button
+                    type="button"
+                    class="icon-button icon-button--danger"
+                    [disabled]="busy()"
+                    (click)="remove(category)"
+                    [attr.aria-label]="t('common.delete')"
+                    [title]="t('common.delete')"
+                  >
+                    <app-icon name="trash" [size]="16" />
+                  </button>
+                </div>
+              }
+            </li>
+          }
+        </ul>
+      }
+    </ng-container>
   `,
 })
 export class Categories {
@@ -199,9 +204,7 @@ export class Categories {
   }
 
   protected remove(category: Category): Promise<void> {
-    const ok = confirm(
-      `¿Eliminar la categoría "${category.name}"? Sus productos no se borran: quedan sin categoría.`,
-    );
+    const ok = confirm(translate('categories.confirmDelete', { name: category.name }));
     if (!ok) return Promise.resolve();
     return this.run(async () => {
       await this.api.deleteCategory(category.id);

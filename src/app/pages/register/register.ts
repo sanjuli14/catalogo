@@ -2,11 +2,13 @@ import { Component, inject, signal, viewChild } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { Auth } from '../../core/auth';
 import { errorMessage } from '../../core/format';
 import { SLUG_PATTERN, toSlug } from '../../core/slug';
 import { Icon } from '../../shared/icon';
+import { LangSwitch } from '../../shared/lang-switch';
 import { Turnstile, captchaEnabled } from '../../shared/turnstile';
 
 /**
@@ -18,68 +20,68 @@ type Step = 'loading' | 'account' | 'check-email' | 'business';
 
 @Component({
   selector: 'app-register',
-  imports: [ReactiveFormsModule, RouterLink, Turnstile, Icon],
+  imports: [ReactiveFormsModule, RouterLink, Turnstile, Icon, TranslocoDirective, LangSwitch],
   template: `
-    <main class="auth-page">
+    <main class="auth-page" *transloco="let t">
       <!-- Tile de marca: solo en computadora (en el celular se ve solo el formulario). -->
       <aside class="auth-brand">
         <a class="auth-brand__top" routerLink="/">
-          <img src="icono/icono.png" alt="" width="36" height="36" /> Catálogo
+          <img src="icono/icono.png" alt="" width="36" height="36" /> {{ t('common.appName') }}
         </a>
-        <h2>Tu catálogo, en un enlace.</h2>
+        <h2>{{ t('register.brandTitle') }}</h2>
         <ul class="auth-brand__list">
-          <li><app-icon name="whatsapp" [size]="20" /> Pedidos por WhatsApp</li>
-          <li><app-icon name="sparkles" [size]="20" /> Tu logo y tus colores</li>
-          <li><app-icon name="download" [size]="20" /> Un PDF para compartir</li>
+          <li><app-icon name="whatsapp" [size]="20" /> {{ t('brand.whatsapp') }}</li>
+          <li><app-icon name="sparkles" [size]="20" /> {{ t('brand.colors') }}</li>
+          <li><app-icon name="download" [size]="20" /> {{ t('brand.pdf') }}</li>
         </ul>
       </aside>
       @switch (step()) {
         @case ('loading') {
-          <p class="muted">Cargando…</p>
+          <p class="muted">{{ t('common.loading') }}</p>
         }
         @case ('check-email') {
           <section class="card auth-card">
             <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
-            <h1>Revisa tu correo</h1>
+            <h1>{{ t('register.checkTitle') }}</h1>
             <p>
-              Te enviamos un enlace a <strong>{{ form.controls.email.value }}</strong> para
-              confirmar tu cuenta. Al abrirlo terminamos de crear tu negocio.
+              {{ t('register.checkBefore') }} <strong>{{ form.controls.email.value }}</strong>
+              {{ t('register.checkAfter') }}
             </p>
           </section>
         }
         @default {
           <form class="card auth-card" [formGroup]="form" (ngSubmit)="submit()">
             <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
-            <h1>{{ step() === 'business' ? 'Crea tu negocio' : 'Crea tu catálogo' }}</h1>
+            <h1>
+              {{ step() === 'business' ? t('register.titleBusiness') : t('register.titleCatalog') }}
+            </h1>
 
             <label class="field">
-              <span>Nombre del negocio</span>
+              <span>{{ t('register.businessName') }}</span>
               <input formControlName="name" maxlength="80" />
             </label>
 
             <label class="field">
-              <span>Dirección web</span>
+              <span>{{ t('register.slug') }}</span>
               <div class="input-prefix">
                 <span>{{ origin }}/</span>
                 <input formControlName="slug" maxlength="50" (input)="slugEdited = true" />
               </div>
               @if (form.controls.slug.touched && form.controls.slug.invalid) {
-                <small class="error-text">
-                  De 3 a 50 caracteres: minúsculas, números y guiones.
-                </small>
+                <small class="error-text">{{ t('register.slugError') }}</small>
               }
             </label>
 
             @if (step() === 'account') {
               <label class="field">
-                <span>Correo</span>
+                <span>{{ t('common.email') }}</span>
                 <input type="email" formControlName="email" autocomplete="email" />
               </label>
 
               <label class="field">
-                <span>Contraseña</span>
+                <span>{{ t('common.password') }}</span>
                 <input type="password" formControlName="password" autocomplete="new-password" />
-                <small>Al menos 8 caracteres.</small>
+                <small>{{ t('common.passwordHint') }}</small>
               </label>
 
               @if (captchaEnabled) {
@@ -96,17 +98,18 @@ type Step = 'loading' | 'account' | 'check-email' | 'business';
               class="button"
               [disabled]="form.invalid || busy() || (needsCaptcha() && !captchaToken())"
             >
-              {{ busy() ? 'Creando…' : 'Crear' }}
+              {{ busy() ? t('register.creating') : t('register.create') }}
             </button>
 
-            <p class="muted">
-              Tu catálogo quedará en revisión hasta que lo aprobemos. Mientras tanto ya puedes
-              cargar tus productos.
-            </p>
+            <p class="muted">{{ t('register.review') }}</p>
 
             @if (step() === 'account') {
-              <p class="muted">¿Ya tienes cuenta? <a routerLink="/login">Inicia sesión</a></p>
+              <p class="muted">
+                {{ t('register.haveAccount') }}
+                <a routerLink="/login">{{ t('register.signIn') }}</a>
+              </p>
             }
+            <app-lang-switch />
           </form>
         }
       }
@@ -175,7 +178,7 @@ export class Register {
     this.error.set(null);
     try {
       if (!(await this.auth.slugAvailable(slug.value))) {
-        this.error.set('Esa dirección web ya está en uso. Elige otra.');
+        this.error.set(translate('errors.slugTaken'));
         return;
       }
       if (this.step() === 'business') {

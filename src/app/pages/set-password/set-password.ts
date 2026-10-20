@@ -7,6 +7,7 @@ import {
   Validators,
 } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { Auth, homeFor } from '../../core/auth';
 import { errorMessage } from '../../core/format';
@@ -22,37 +23,35 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
  */
 @Component({
   selector: 'app-set-password',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoDirective],
   template: `
-    <main class="auth-page">
+    <main class="auth-page" *transloco="let t">
       @if (!ready()) {
-        <p class="muted">Cargando…</p>
+        <p class="muted">{{ t('common.loading') }}</p>
       } @else if (!auth.session()) {
         <section class="card auth-card">
           <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
-          <h1>El enlace no es válido</h1>
-          <p class="muted">
-            Puede que haya vencido o que ya se haya usado. Pide uno nuevo para elegir tu contraseña.
-          </p>
-          <a class="button" routerLink="/recuperar">Pedir un enlace nuevo</a>
+          <h1>{{ t('setPassword.invalidTitle') }}</h1>
+          <p class="muted">{{ t('setPassword.invalidText') }}</p>
+          <a class="button" routerLink="/recuperar">{{ t('setPassword.requestNew') }}</a>
         </section>
       } @else {
         <form class="card auth-card" [formGroup]="form" (ngSubmit)="submit()">
           <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
-          <h1>Elige tu contraseña</h1>
-          <p class="muted">Para {{ auth.session()?.user?.email }}</p>
+          <h1>{{ t('setPassword.title') }}</h1>
+          <p class="muted">{{ t('setPassword.for', { email: auth.session()?.user?.email }) }}</p>
 
           <label class="field">
-            <span>Contraseña nueva</span>
+            <span>{{ t('setPassword.newPassword') }}</span>
             <input type="password" formControlName="password" autocomplete="new-password" />
-            <small>Al menos 8 caracteres.</small>
+            <small>{{ t('common.passwordHint') }}</small>
           </label>
 
           <label class="field">
-            <span>Repite la contraseña</span>
+            <span>{{ t('setPassword.repeat') }}</span>
             <input type="password" formControlName="confirm" autocomplete="new-password" />
             @if (form.hasError('mismatch') && form.controls.confirm.touched) {
-              <small class="error-text">Las contraseñas no coinciden.</small>
+              <small class="error-text">{{ t('setPassword.mismatch') }}</small>
             }
           </label>
 
@@ -61,7 +60,7 @@ function passwordsMatch(group: AbstractControl): ValidationErrors | null {
           }
 
           <button type="submit" class="button" [disabled]="form.invalid || busy()">
-            {{ busy() ? 'Guardando…' : 'Guardar y entrar' }}
+            {{ busy() ? t('common.saving') : t('setPassword.submit') }}
           </button>
         </form>
       }

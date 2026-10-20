@@ -1,4 +1,5 @@
 import { Injectable, inject, signal } from '@angular/core';
+import { translate } from '@jsverse/transloco';
 import { Session } from '@supabase/supabase-js';
 
 import { Profile, Role } from './models';
@@ -46,13 +47,13 @@ export class Auth {
     if (error) {
       switch (error.code) {
         case 'invalid_credentials':
-          return 'Correo o contraseña incorrectos.';
+          return translate('errors.invalidCredentials');
         case 'email_not_confirmed':
-          return 'Tu correo todavía no está confirmado.';
+          return translate('errors.emailNotConfirmed');
         case 'captcha_failed':
-          return 'No pudimos verificar que eres una persona. Inténtalo de nuevo.';
+          return translate('errors.captcha_failed');
         default:
-          return `No se pudo iniciar sesión: ${error.message}`;
+          return translate('errors.signIn', { message: error.message });
       }
     }
     await this.setSession(data.session);

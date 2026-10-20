@@ -7,238 +7,242 @@ import {
   Validators,
 } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { AdminApi, AdminBusiness } from '../../core/admin-api';
 import { CatalogApi } from '../../core/catalog-api';
-import { errorMessage } from '../../core/format';
+import { errorMessage, intlLocale } from '../../core/format';
 import { BusinessStatus } from '../../core/models';
 import { SLUG_PATTERN, toSlug } from '../../core/slug';
 import { PanelHeader } from '../../shared/panel-header';
 
 type Filter = BusinessStatus | 'all';
 
-const FILTERS: { value: Filter; label: string }[] = [
-  { value: 'pending', label: 'Pendientes' },
-  { value: 'active', label: 'Activos' },
-  { value: 'suspended', label: 'Suspendidos' },
-  { value: 'all', label: 'Todos' },
-];
-
-const STATUS_LABELS: Record<BusinessStatus, string> = {
-  pending: 'Pendiente',
-  active: 'Activo',
-  suspended: 'Suspendido',
-};
+/** Cada filtro lleva su título en superadmin.filters.{filtro}. */
+const FILTERS: Filter[] = ['pending', 'active', 'suspended', 'all'];
 
 @Component({
   selector: 'app-superadmin',
-  imports: [PanelHeader, RouterLink, ReactiveFormsModule, FormsModule],
+  imports: [PanelHeader, RouterLink, ReactiveFormsModule, FormsModule, TranslocoDirective],
   template: `
-    <app-panel-header title="Panel del superadmin" />
-    <main class="panel">
-      <section class="section-header">
-        <div>
-          <h2>Negocios</h2>
-          <p class="muted">Aprueba los nuevos registros y gestiona todos los catálogos.</p>
-        </div>
-        <button type="button" class="button" (click)="toggleCreate()">
-          {{ creating() ? 'Cancelar' : 'Nuevo negocio' }}
-        </button>
-      </section>
-
-      @if (creating()) {
-        <form class="card form-grid" [formGroup]="createForm" (ngSubmit)="create()">
-          <label class="field">
-            <span>Nombre del negocio</span>
-            <input formControlName="name" maxlength="80" />
-          </label>
-          <label class="field">
-            <span>Dirección web</span>
-            <div class="input-prefix">
-              <span>{{ origin }}/</span>
-              <input formControlName="slug" maxlength="50" (input)="slugEdited = true" />
-            </div>
-          </label>
-          <label class="field form-grid__full">
-            <span>Correo del dueño (opcional)</span>
-            <input type="email" formControlName="email" placeholder="dueno@correo.com" />
-            <small>
-              Si no tiene cuenta, le llega una invitación para definir su contraseña. Si ya tiene
-              cuenta, solo se le asigna el negocio.
-            </small>
-          </label>
-          <div class="form-actions form-grid__full">
-            <button type="submit" class="button" [disabled]="createForm.invalid || busy()">
-              {{ busy() ? 'Creando…' : 'Crear negocio' }}
-            </button>
+    <ng-container *transloco="let t">
+      <app-panel-header [title]="t('superadmin.title')" />
+      <main class="panel">
+        <section class="section-header">
+          <div>
+            <h2>{{ t('superadmin.businesses') }}</h2>
+            <p class="muted">{{ t('superadmin.lead') }}</p>
           </div>
-        </form>
-      }
-
-      @if (notice(); as notice) {
-        <p class="success">{{ notice }}</p>
-      }
-      @if (error(); as error) {
-        <p class="alert">{{ error }}</p>
-      }
-
-      <!-- Tablero de cifras: cada tile también filtra la lista por ese estado. -->
-      <div class="stats" role="group" aria-label="Filtrar por estado">
-        @for (option of filters; track option.value) {
-          <button
-            type="button"
-            class="stat filter"
-            [class.stat--accent]="option.value === 'pending'"
-            [class.stat--wide]="option.value === 'pending'"
-            [class.is-active]="filter() === option.value"
-            [attr.aria-pressed]="filter() === option.value"
-            (click)="filter.set(option.value)"
-          >
-            <span class="kicker">{{ option.label }}</span>
-            <span class="stat__value">{{ counts()[option.value] }}</span>
+          <button type="button" class="button" (click)="toggleCreate()">
+            {{ creating() ? t('common.cancel') : t('superadmin.new') }}
           </button>
+        </section>
+
+        @if (creating()) {
+          <form class="card form-grid" [formGroup]="createForm" (ngSubmit)="create()">
+            <label class="field">
+              <span>{{ t('register.businessName') }}</span>
+              <input formControlName="name" maxlength="80" />
+            </label>
+            <label class="field">
+              <span>{{ t('register.slug') }}</span>
+              <div class="input-prefix">
+                <span>{{ origin }}/</span>
+                <input formControlName="slug" maxlength="50" (input)="slugEdited = true" />
+              </div>
+            </label>
+            <label class="field form-grid__full">
+              <span>{{ t('superadmin.ownerEmailOptional') }}</span>
+              <input
+                type="email"
+                formControlName="email"
+                [placeholder]="t('superadmin.ownerEmailPlaceholder')"
+              />
+              <small>{{ t('superadmin.ownerHint') }}</small>
+            </label>
+            <div class="form-actions form-grid__full">
+              <button type="submit" class="button" [disabled]="createForm.invalid || busy()">
+                {{ busy() ? t('register.creating') : t('superadmin.create') }}
+              </button>
+            </div>
+          </form>
         }
-      </div>
 
-      <div class="toolbar">
-        <input
-          class="input toolbar__search"
-          type="search"
-          placeholder="Buscar por nombre o dirección"
-          aria-label="Buscar negocio"
-          [ngModel]="search()"
-          (ngModelChange)="search.set($event)"
-        />
-        <span class="kicker">{{ visible().length }} en la lista</span>
-      </div>
+        @if (notice(); as notice) {
+          <p class="success">{{ notice }}</p>
+        }
+        @if (error(); as error) {
+          <p class="alert">{{ error }}</p>
+        }
 
-      @if (loading()) {
-        <p class="muted">Cargando…</p>
-      } @else if (!visible().length) {
-        <p class="empty">No hay negocios en esta lista.</p>
-      } @else {
-        <ul class="list">
-          @for (business of visible(); track business.id) {
-            <li class="list__row business-row">
-              @if (business.logo_path) {
-                <img class="thumb" [src]="catalog.imageUrl(business.logo_path)" alt="" />
-              } @else {
-                <span class="thumb thumb--empty" aria-hidden="true">{{
-                  business.name.charAt(0)
-                }}</span>
-              }
+        <!-- Tablero de cifras: cada tile también filtra la lista por ese estado. -->
+        <div class="stats" role="group" [attr.aria-label]="t('superadmin.filterLabel')">
+          @for (option of filters; track option) {
+            <button
+              type="button"
+              class="stat filter"
+              [class.stat--accent]="option === 'pending'"
+              [class.stat--wide]="option === 'pending'"
+              [class.is-active]="filter() === option"
+              [attr.aria-pressed]="filter() === option"
+              (click)="filter.set(option)"
+            >
+              <span class="kicker">{{ t('superadmin.filters.' + option) }}</span>
+              <span class="stat__value">{{ counts()[option] }}</span>
+            </button>
+          }
+        </div>
 
-              <div class="list__grow">
-                <span class="list__title">{{ business.name }}</span>
-                <div class="list__meta">
-                  <span class="badge" [class]="'badge status--' + business.status">
-                    {{ statusLabels[business.status] }}
-                  </span>
-                  <a [href]="'/' + business.slug" target="_blank" rel="noopener"
-                    >/{{ business.slug }} ↗</a
-                  >
-                  <span>Creado el {{ formatDate(business.created_at) }}</span>
-                </div>
-                <div class="owners">
-                  @for (owner of business.owners; track owner.user_id) {
-                    <span class="owner">
-                      <span class="owner__email">{{ owner.email }}</span>
+        <div class="toolbar">
+          <input
+            class="input toolbar__search"
+            type="search"
+            [placeholder]="t('superadmin.searchPlaceholder')"
+            [attr.aria-label]="t('superadmin.searchLabel')"
+            [ngModel]="search()"
+            (ngModelChange)="search.set($event)"
+          />
+          <span class="kicker">{{ t('superadmin.inList', { count: visible().length }) }}</span>
+        </div>
+
+        @if (loading()) {
+          <p class="muted">{{ t('common.loading') }}</p>
+        } @else if (!visible().length) {
+          <p class="empty">{{ t('superadmin.empty') }}</p>
+        } @else {
+          <ul class="list">
+            @for (business of visible(); track business.id) {
+              <li class="list__row business-row">
+                @if (business.logo_path) {
+                  <img class="thumb" [src]="catalog.imageUrl(business.logo_path)" alt="" />
+                } @else {
+                  <span class="thumb thumb--empty" aria-hidden="true">{{
+                    business.name.charAt(0)
+                  }}</span>
+                }
+
+                <div class="list__grow">
+                  <span class="list__title">{{ business.name }}</span>
+                  <div class="list__meta">
+                    <span class="badge" [class]="'badge status--' + business.status">
+                      {{ t('superadmin.status.' + business.status) }}
+                    </span>
+                    <a [href]="'/' + business.slug" target="_blank" rel="noopener"
+                      >/{{ business.slug }} ↗</a
+                    >
+                    <span>{{
+                      t('superadmin.createdOn', { date: formatDate(business.created_at) })
+                    }}</span>
+                  </div>
+                  <div class="owners">
+                    @for (owner of business.owners; track owner.user_id) {
+                      <span class="owner">
+                        <span class="owner__email">{{ owner.email }}</span>
+                        <button
+                          type="button"
+                          class="owner__remove"
+                          [disabled]="busy()"
+                          (click)="removeOwner(business, owner)"
+                          [attr.aria-label]="
+                            t('superadmin.removeOwnerLabel', { email: owner.email })
+                          "
+                        >
+                          ×
+                        </button>
+                      </span>
+                    } @empty {
+                      <span class="muted">{{ t('superadmin.noOwner') }}</span>
+                    }
+                  </div>
+
+                  @if (addingOwnerTo() === business.id) {
+                    <form class="inline-form owner-form" (ngSubmit)="addOwner(business)">
+                      <input
+                        class="input"
+                        type="email"
+                        name="ownerEmail"
+                        [placeholder]="t('superadmin.ownerEmail')"
+                        [(ngModel)]="ownerEmail"
+                        required
+                      />
+                      <button
+                        type="submit"
+                        class="button"
+                        [disabled]="!ownerEmail.trim() || busy()"
+                      >
+                        {{ t('categories.add') }}
+                      </button>
                       <button
                         type="button"
-                        class="owner__remove"
-                        [disabled]="busy()"
-                        (click)="removeOwner(business, owner)"
-                        [attr.aria-label]="'Quitar a ' + owner.email"
+                        class="button button--ghost"
+                        (click)="addingOwnerTo.set(null)"
                       >
-                        ×
+                        {{ t('common.cancel') }}
                       </button>
-                    </span>
-                  } @empty {
-                    <span class="muted">Sin dueño</span>
+                    </form>
                   }
                 </div>
 
-                @if (addingOwnerTo() === business.id) {
-                  <form class="inline-form owner-form" (ngSubmit)="addOwner(business)">
-                    <input
-                      class="input"
-                      type="email"
-                      name="ownerEmail"
-                      placeholder="Correo del dueño"
-                      [(ngModel)]="ownerEmail"
-                      required
-                    />
-                    <button type="submit" class="button" [disabled]="!ownerEmail.trim() || busy()">
-                      Agregar
-                    </button>
-                    <button
-                      type="button"
-                      class="button button--ghost"
-                      (click)="addingOwnerTo.set(null)"
-                    >
-                      Cancelar
-                    </button>
-                  </form>
-                }
-              </div>
-
-              <div class="list__actions">
-                @switch (business.status) {
-                  @case ('pending') {
-                    <button
-                      type="button"
-                      class="button button--sm"
-                      [disabled]="busy()"
-                      (click)="setStatus(business, 'active')"
-                    >
-                      Aprobar
-                    </button>
+                <div class="list__actions">
+                  @switch (business.status) {
+                    @case ('pending') {
+                      <button
+                        type="button"
+                        class="button button--sm"
+                        [disabled]="busy()"
+                        (click)="setStatus(business, 'active')"
+                      >
+                        {{ t('superadmin.approve') }}
+                      </button>
+                    }
+                    @case ('active') {
+                      <button
+                        type="button"
+                        class="button button--ghost button--sm"
+                        [disabled]="busy()"
+                        (click)="setStatus(business, 'suspended')"
+                      >
+                        {{ t('superadmin.suspend') }}
+                      </button>
+                    }
+                    @case ('suspended') {
+                      <button
+                        type="button"
+                        class="button button--sm"
+                        [disabled]="busy()"
+                        (click)="setStatus(business, 'active')"
+                      >
+                        {{ t('superadmin.reactivate') }}
+                      </button>
+                    }
                   }
-                  @case ('active') {
-                    <button
-                      type="button"
-                      class="button button--ghost button--sm"
-                      [disabled]="busy()"
-                      (click)="setStatus(business, 'suspended')"
-                    >
-                      Suspender
-                    </button>
-                  }
-                  @case ('suspended') {
-                    <button
-                      type="button"
-                      class="button button--sm"
-                      [disabled]="busy()"
-                      (click)="setStatus(business, 'active')"
-                    >
-                      Reactivar
-                    </button>
-                  }
-                }
-                <a class="button button--ghost button--sm" [routerLink]="['negocios', business.id]"
-                  >Administrar</a
-                >
-                <button
-                  type="button"
-                  class="button button--ghost button--sm"
-                  (click)="startAddOwner(business)"
-                >
-                  Agregar dueño
-                </button>
-                <button
-                  type="button"
-                  class="button button--danger button--sm"
-                  [disabled]="busy()"
-                  (click)="remove(business)"
-                >
-                  Eliminar
-                </button>
-              </div>
-            </li>
-          }
-        </ul>
-      }
-    </main>
+                  <a
+                    class="button button--ghost button--sm"
+                    [routerLink]="['negocios', business.id]"
+                    >{{ t('superadmin.manage') }}</a
+                  >
+                  <button
+                    type="button"
+                    class="button button--ghost button--sm"
+                    (click)="startAddOwner(business)"
+                  >
+                    {{ t('superadmin.addOwner') }}
+                  </button>
+                  <button
+                    type="button"
+                    class="button button--danger button--sm"
+                    [disabled]="busy()"
+                    (click)="remove(business)"
+                  >
+                    {{ t('common.delete') }}
+                  </button>
+                </div>
+              </li>
+            }
+          </ul>
+        }
+      </main>
+    </ng-container>
   `,
   styles: `
     .toolbar {
@@ -382,7 +386,6 @@ export class Superadmin {
 
   protected readonly origin = location.origin;
   protected readonly filters = FILTERS;
-  protected readonly statusLabels = STATUS_LABELS;
 
   private readonly businesses = signal<AdminBusiness[]>([]);
   protected readonly loading = signal(true);
@@ -433,7 +436,7 @@ export class Superadmin {
   }
 
   protected formatDate(iso: string): string {
-    return new Date(iso).toLocaleDateString('es', {
+    return new Date(iso).toLocaleDateString(intlLocale(), {
       day: 'numeric',
       month: 'short',
       year: 'numeric',
@@ -453,13 +456,13 @@ export class Superadmin {
       if (email.trim()) {
         const invited = await this.api.inviteOwner({ ...business, email: email.trim() });
         this.notice.set(
-          invited
-            ? `Negocio creado. Enviamos una invitación a ${email.trim()}.`
-            : `Negocio creado y asignado a ${email.trim()}, que ya tenía cuenta.`,
+          translate(invited ? 'superadmin.createdInvited' : 'superadmin.createdAssigned', {
+            email: email.trim(),
+          }),
         );
       } else {
         await this.api.createBusiness(business.name, business.slug);
-        this.notice.set('Negocio creado. Puedes agregarle un dueño cuando quieras.');
+        this.notice.set(translate('superadmin.created'));
       }
       this.creating.set(false);
       this.filter.set('all');
@@ -470,7 +473,7 @@ export class Superadmin {
   protected setStatus(business: AdminBusiness, status: BusinessStatus): Promise<void> {
     if (
       status === 'suspended' &&
-      !confirm(`¿Suspender "${business.name}"? El público dejará de verlo.`)
+      !confirm(translate('superadmin.confirmSuspend', { name: business.name }))
     ) {
       return Promise.resolve();
     }
@@ -479,7 +482,12 @@ export class Superadmin {
       this.businesses.update((list) =>
         list.map((b) => (b.id === business.id ? { ...b, status } : b)),
       );
-      this.notice.set(`"${business.name}" ahora está ${STATUS_LABELS[status].toLowerCase()}.`);
+      this.notice.set(
+        translate('superadmin.statusChanged', {
+          name: business.name,
+          status: translate(`superadmin.status.${status}`).toLowerCase(),
+        }),
+      );
     });
   }
 
@@ -493,9 +501,10 @@ export class Superadmin {
       const email = this.ownerEmail.trim();
       const invited = await this.api.inviteOwner({ businessId: business.id, email });
       this.notice.set(
-        invited
-          ? `Enviamos una invitación a ${email} para administrar "${business.name}".`
-          : `${email} ya tenía cuenta: ahora administra "${business.name}".`,
+        translate(invited ? 'superadmin.ownerInvited' : 'superadmin.ownerAssigned', {
+          email,
+          name: business.name,
+        }),
       );
       this.addingOwnerTo.set(null);
       await this.reload();
@@ -506,7 +515,11 @@ export class Superadmin {
     business: AdminBusiness,
     owner: { user_id: string; email: string },
   ): Promise<void> {
-    if (!confirm(`¿Quitar a ${owner.email} de "${business.name}"? Su cuenta no se borra.`)) {
+    if (
+      !confirm(
+        translate('superadmin.confirmRemoveOwner', { email: owner.email, name: business.name }),
+      )
+    ) {
       return Promise.resolve();
     }
     return this.run(async () => {
@@ -517,14 +530,13 @@ export class Superadmin {
 
   protected remove(business: AdminBusiness): Promise<void> {
     const typed = prompt(
-      `Esto borra "${business.name}" con todos sus productos y fotos, y no se puede deshacer.\n` +
-        `Escribe ${business.slug} para confirmar:`,
+      translate('superadmin.confirmDelete', { name: business.name, slug: business.slug }),
     );
     if (typed?.trim() !== business.slug) return Promise.resolve();
     return this.run(async () => {
       await this.api.deleteBusiness(business.id);
       this.businesses.update((list) => list.filter((b) => b.id !== business.id));
-      this.notice.set(`"${business.name}" fue eliminado.`);
+      this.notice.set(translate('superadmin.deleted', { name: business.name }));
     });
   }
 

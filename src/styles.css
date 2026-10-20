@@ -1173,3 +1173,13 @@ a.list__title:hover {
     transition-duration: 0.01ms !important;
   }
 }
+
+/* ---------- Selector de idioma ---------- */
+.auth-card .lang-switch {
+  justify-self: center;
+}
+
+.auth-card .lang-switch .button {
+  min-height: 36px;
+  font-size: 14px;
+}

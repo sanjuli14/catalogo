@@ -1,32 +1,33 @@
 import { Component, OnDestroy, effect, inject, signal, untracked } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { CatalogApi } from '../../../core/catalog-api';
-import { errorMessage } from '../../../core/format';
+import { errorMessage, intlLocale } from '../../../core/format';
 import { Business } from '../../../core/models';
 import { SLUG_PATTERN, toSlug } from '../../../core/slug';
 import { CurrentBusiness } from '../current-business';
 
 const CURRENCIES = [
-  ['USD', 'Dólar estadounidense'],
-  ['EUR', 'Euro'],
-  ['MXN', 'Peso mexicano'],
-  ['COP', 'Peso colombiano'],
-  ['ARS', 'Peso argentino'],
-  ['CLP', 'Peso chileno'],
-  ['CUP', 'Peso cubano'],
-  ['DOP', 'Peso dominicano'],
-  ['UYU', 'Peso uruguayo'],
-  ['PEN', 'Sol peruano'],
-  ['BOB', 'Boliviano'],
-  ['GTQ', 'Quetzal'],
-  ['PYG', 'Guaraní'],
-  ['VES', 'Bolívar'],
+  'USD',
+  'EUR',
+  'MXN',
+  'COP',
+  'ARS',
+  'CLP',
+  'CUP',
+  'DOP',
+  'UYU',
+  'PEN',
+  'BOB',
+  'GTQ',
+  'PYG',
+  'VES',
 ] as const;
 
 @Component({
   selector: 'app-business-settings',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, TranslocoDirective],
   styles: `
     .settings__colors {
       display: grid;
@@ -46,181 +47,180 @@ const CURRENCIES = [
     }
   `,
   template: `
-    <section class="section-header">
-      <div>
-        <h2>Mi negocio</h2>
-        <p class="muted">Así se presenta tu negocio en el catálogo.</p>
-      </div>
-    </section>
+    <ng-container *transloco="let t">
+      <section class="section-header">
+        <div>
+          <h2>{{ t('admin.tabs.business') }}</h2>
+          <p class="muted">{{ t('settings.lead') }}</p>
+        </div>
+      </section>
 
-    @if (!current.business()) {
-      <p class="muted">Cargando…</p>
-    } @else {
-      <form class="form-tiles settings" [formGroup]="form" (ngSubmit)="save()">
-        <section class="card form-tile">
-          <header class="form-tile__head">
-            <span class="kicker">01 · Identidad</span>
-            <h3>Quién eres</h3>
-          </header>
-          <div class="form-grid">
-            <div class="field form-grid__full">
-              <span>Logo</span>
-              <div class="logo-picker">
-                @if (logoUrl(); as url) {
-                  <img class="logo-picker__image" [src]="url" alt="Logo" />
-                } @else {
-                  <span class="logo-picker__image logo-picker__image--empty">Sin logo</span>
-                }
-                <label class="button button--ghost">
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    (change)="pickLogo($event)"
-                  />
-                  {{ logoUrl() ? 'Cambiar' : 'Subir logo' }}
-                </label>
-                @if (logoUrl()) {
-                  <button type="button" class="button button--ghost" (click)="clearLogo()">
-                    Quitar
-                  </button>
-                }
+      @if (!current.business()) {
+        <p class="muted">{{ t('common.loading') }}</p>
+      } @else {
+        <form class="form-tiles settings" [formGroup]="form" (ngSubmit)="save()">
+          <section class="card form-tile">
+            <header class="form-tile__head">
+              <span class="kicker">01 · {{ t('settings.identity') }}</span>
+              <h3>{{ t('settings.identityTitle') }}</h3>
+            </header>
+            <div class="form-grid">
+              <div class="field form-grid__full">
+                <span>{{ t('settings.logo') }}</span>
+                <div class="logo-picker">
+                  @if (logoUrl(); as url) {
+                    <img class="logo-picker__image" [src]="url" [alt]="t('settings.logo')" />
+                  } @else {
+                    <span class="logo-picker__image logo-picker__image--empty">{{
+                      t('settings.noLogo')
+                    }}</span>
+                  }
+                  <label class="button button--ghost">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      (change)="pickLogo($event)"
+                    />
+                    {{ t(logoUrl() ? 'settings.changeLogo' : 'settings.uploadLogo') }}
+                  </label>
+                  @if (logoUrl()) {
+                    <button type="button" class="button button--ghost" (click)="clearLogo()">
+                      {{ t('settings.removeLogo') }}
+                    </button>
+                  }
+                </div>
               </div>
+
+              <label class="field">
+                <span>{{ t('itemForm.name') }}</span>
+                <input formControlName="name" maxlength="80" />
+              </label>
+
+              <label class="field">
+                <span>{{ t('register.slug') }}</span>
+                <div class="input-prefix">
+                  <span>{{ origin }}/</span>
+                  <input formControlName="slug" maxlength="50" (blur)="normalizeSlug()" />
+                </div>
+                @if (form.controls.slug.invalid) {
+                  <small class="error-text">{{ t('settings.slugError') }}</small>
+                } @else if (form.controls.slug.value !== current.business()!.slug) {
+                  <small>{{ t('settings.slugWarning') }}</small>
+                }
+              </label>
+
+              <label class="field form-grid__full">
+                <span>{{ t('settings.description') }}</span>
+                <textarea formControlName="description" rows="3" maxlength="300"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="card form-tile">
+            <header class="form-tile__head">
+              <span class="kicker">02 · {{ t('settings.look') }}</span>
+              <h3>{{ t('itemForm.photosTitle') }}</h3>
+            </header>
+            <div class="settings__colors">
+              <label class="field">
+                <span>{{ t('settings.primaryColor') }}</span>
+                <input type="color" formControlName="primary_color" />
+              </label>
+
+              <label class="field">
+                <span>{{ t('settings.secondaryColor') }}</span>
+                <input type="color" formControlName="secondary_color" />
+              </label>
             </div>
 
             <label class="field">
-              <span>Nombre</span>
-              <input formControlName="name" maxlength="80" />
+              <span>{{ t('settings.currency') }}</span>
+              <select formControlName="currency">
+                @for (currency of currencies; track currency) {
+                  <option [value]="currency">{{ currency }} · {{ currencyName(currency) }}</option>
+                }
+              </select>
+            </label>
+          </section>
+
+          <section class="card form-tile">
+            <header class="form-tile__head">
+              <span class="kicker">03 · {{ t('settings.contact') }}</span>
+              <h3>{{ t('settings.contactTitle') }}</h3>
+            </header>
+            <div class="form-grid">
+              <label class="field">
+                <span>WhatsApp</span>
+                <input formControlName="whatsapp" inputmode="tel" placeholder="5355551234" />
+                <small>{{ t('settings.whatsappHint') }}</small>
+              </label>
+
+              <label class="field">
+                <span>{{ t('settings.phone') }}</span>
+                <input formControlName="phone" inputmode="tel" />
+              </label>
+
+              <label class="field">
+                <span>{{ t('common.email') }}</span>
+                <input type="email" formControlName="email" />
+              </label>
+
+              <label class="field">
+                <span>{{ t('settings.address') }}</span>
+                <input formControlName="address" />
+              </label>
+
+              <label class="field form-grid__full">
+                <span>{{ t('settings.schedule') }}</span>
+                <textarea
+                  formControlName="schedule"
+                  rows="2"
+                  [placeholder]="t('settings.schedulePlaceholder')"
+                ></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="card form-tile">
+            <header class="form-tile__head">
+              <span class="kicker">04 · {{ t('settings.socials') }}</span>
+              <h3>{{ t('settings.socialsTitle') }}</h3>
+            </header>
+            <label class="field">
+              <span>Instagram</span>
+              <input formControlName="instagram" placeholder="https://instagram.com/mi-tienda" />
             </label>
 
             <label class="field">
-              <span>Dirección web</span>
-              <div class="input-prefix">
-                <span>{{ origin }}/</span>
-                <input formControlName="slug" maxlength="50" (blur)="normalizeSlug()" />
-              </div>
-              @if (form.controls.slug.invalid) {
-                <small class="error-text">
-                  De 3 a 50 caracteres: minúsculas, números y guiones. Ejemplo: mi-tienda
-                </small>
-              } @else if (form.controls.slug.value !== current.business()!.slug) {
-                <small>Ojo: el enlace anterior dejará de funcionar.</small>
-              }
+              <span>Facebook</span>
+              <input formControlName="facebook" placeholder="https://facebook.com/mi-tienda" />
             </label>
 
-            <label class="field form-grid__full">
-              <span>Descripción corta</span>
-              <textarea formControlName="description" rows="3" maxlength="300"></textarea>
+            <label class="field">
+              <span>TikTok</span>
+              <input formControlName="tiktok" placeholder="https://tiktok.com/@mi-tienda" />
             </label>
+
+            <label class="field">
+              <span>{{ t('settings.website') }}</span>
+              <input formControlName="website" placeholder="https://mi-tienda.com" />
+            </label>
+          </section>
+
+          <div class="form-bar settings__bar">
+            @if (error(); as error) {
+              <p class="alert">{{ error }}</p>
+            }
+            @if (saved()) {
+              <p class="success">{{ t('settings.saved') }}</p>
+            }
+            <button type="submit" class="button" [disabled]="form.invalid || saving()">
+              {{ saving() ? t('common.saving') : t('settings.save') }}
+            </button>
           </div>
-        </section>
-
-        <section class="card form-tile">
-          <header class="form-tile__head">
-            <span class="kicker">02 · Colores y moneda</span>
-            <h3>Cómo se ve</h3>
-          </header>
-          <div class="settings__colors">
-            <label class="field">
-              <span>Color principal</span>
-              <input type="color" formControlName="primary_color" />
-            </label>
-
-            <label class="field">
-              <span>Color secundario</span>
-              <input type="color" formControlName="secondary_color" />
-            </label>
-          </div>
-
-          <label class="field">
-            <span>Moneda de los precios</span>
-            <select formControlName="currency">
-              @for (currency of currencies; track currency[0]) {
-                <option [value]="currency[0]">{{ currency[0] }} · {{ currency[1] }}</option>
-              }
-            </select>
-          </label>
-        </section>
-
-        <section class="card form-tile">
-          <header class="form-tile__head">
-            <span class="kicker">03 · Contacto</span>
-            <h3>Cómo te encuentran</h3>
-          </header>
-          <div class="form-grid">
-            <label class="field">
-              <span>WhatsApp</span>
-              <input formControlName="whatsapp" inputmode="tel" placeholder="5355551234" />
-              <small
-                >Con código de país, sin + ni espacios. Lo usan los botones "Pedir por
-                WhatsApp".</small
-              >
-            </label>
-
-            <label class="field">
-              <span>Teléfono</span>
-              <input formControlName="phone" inputmode="tel" />
-            </label>
-
-            <label class="field">
-              <span>Correo</span>
-              <input type="email" formControlName="email" />
-            </label>
-
-            <label class="field">
-              <span>Dirección</span>
-              <input formControlName="address" />
-            </label>
-
-            <label class="field form-grid__full">
-              <span>Horario</span>
-              <textarea
-                formControlName="schedule"
-                rows="2"
-                placeholder="Lunes a viernes de 9:00 a 18:00"
-              ></textarea>
-            </label>
-          </div>
-        </section>
-
-        <section class="card form-tile">
-          <header class="form-tile__head">
-            <span class="kicker">04 · Redes sociales</span>
-            <h3>Dónde te siguen</h3>
-          </header>
-          <label class="field">
-            <span>Instagram</span>
-            <input formControlName="instagram" placeholder="https://instagram.com/mi-tienda" />
-          </label>
-
-          <label class="field">
-            <span>Facebook</span>
-            <input formControlName="facebook" placeholder="https://facebook.com/mi-tienda" />
-          </label>
-
-          <label class="field">
-            <span>TikTok</span>
-            <input formControlName="tiktok" placeholder="https://tiktok.com/@mi-tienda" />
-          </label>
-
-          <label class="field">
-            <span>Sitio web</span>
-            <input formControlName="website" placeholder="https://mi-tienda.com" />
-          </label>
-        </section>
-
-        <div class="form-bar settings__bar">
-          @if (error(); as error) {
-            <p class="alert">{{ error }}</p>
-          }
-          @if (saved()) {
-            <p class="success">Cambios guardados.</p>
-          }
-          <button type="submit" class="button" [disabled]="form.invalid || saving()">
-            {{ saving() ? 'Guardando…' : 'Guardar cambios' }}
-          </button>
-        </div>
-      </form>
-    }
+        </form>
+      }
+    </ng-container>
   `,
 })
 export class BusinessSettings implements OnDestroy {
@@ -253,6 +253,12 @@ export class BusinessSettings implements OnDestroy {
     tiktok: [''],
     website: [''],
   });
+
+  /** "Peso cubano", "Cuban Peso"...: el nombre de la moneda en el idioma activo. */
+  protected currencyName(code: string): string {
+    const name = new Intl.DisplayNames(intlLocale(), { type: 'currency' }).of(code) ?? code;
+    return name.charAt(0).toLocaleUpperCase() + name.slice(1);
+  }
 
   constructor() {
     // Llena el formulario cuando el negocio termina de cargar.

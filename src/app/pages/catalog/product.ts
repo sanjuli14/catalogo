@@ -14,10 +14,12 @@ import {
 import { Meta, Title } from '@angular/platform-browser';
 import { NgTemplateOutlet } from '@angular/common';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { readableTextColor } from '../../core/color';
 import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
+import { Language } from '../../core/i18n';
 import { Icon } from '../../shared/icon';
 import { Cart, MAX_QUANTITY } from './cart';
 import { CartSheet } from './cart-sheet';
@@ -39,7 +41,15 @@ const RELATED_LIMIT = 8;
 /** Página de un producto o servicio: /:slug/:itemId */
 @Component({
   selector: 'app-product',
-  imports: [NgTemplateOutlet, RouterLink, Icon, ProductCard, CartSheet, CustomerSheet],
+  imports: [
+    NgTemplateOutlet,
+    RouterLink,
+    Icon,
+    ProductCard,
+    CartSheet,
+    CustomerSheet,
+    TranslocoDirective,
+  ],
   templateUrl: './product.html',
   styleUrls: ['./catalog-theme.css', './product.css'],
   host: {
@@ -54,6 +64,8 @@ export class Product implements OnInit, OnDestroy {
   private readonly meta = inject(Meta);
   protected readonly customer = inject(CustomerProfile);
   protected readonly cart = inject(Cart);
+  /** Los textos armados en el código (precios, mensajes) se rehacen al cambiar de idioma. */
+  private readonly language = inject(Language);
 
   /** Vienen de la ruta /:slug/:itemId */
   readonly slug = input.required<string>();
@@ -101,22 +113,25 @@ export class Product implements OnInit, OnDestroy {
     const rest = others.filter((i) => !sameCategory.includes(i));
     return [...sameCategory, ...rest].slice(0, RELATED_LIMIT);
   });
-  protected readonly relatedTitle = computed(() =>
-    this.categoryName() && this.related()[0]?.category_id === this.item()?.category_id
-      ? `Más en ${this.categoryName()}`
-      : 'También te puede interesar',
-  );
+  protected readonly relatedTitle = computed(() => {
+    this.language.current();
+    return this.categoryName() && this.related()[0]?.category_id === this.item()?.category_id
+      ? translate('product.moreIn', { category: this.categoryName() })
+      : translate('product.alsoLike');
+  });
 
   protected readonly onBrand = computed(() => {
     const color = this.business()?.primary_color;
     return color ? readableTextColor(color) : null;
   });
   protected readonly price = computed(() => {
+    this.language.current();
     const business = this.business();
     const item = this.item();
     return business && item ? itemPrice(business, item) : '';
   });
   protected readonly orderUrl = computed(() => {
+    this.language.current();
     const business = this.business();
     const item = this.item();
     if (!business || !item) return null;
@@ -125,12 +140,14 @@ export class Product implements OnInit, OnDestroy {
     return orderUrl(business, item, this.customer.data(), quantity);
   });
   protected readonly total = computed(() => {
+    this.language.current();
     const business = this.business();
     const item = this.item();
     return business && item ? orderTotal(business, item, this.quantity()) : '';
   });
   /** Para un producto agotado: preguntar cuándo vuelve. */
   protected readonly askUrl = computed(() => {
+    this.language.current();
     const business = this.business();
     const item = this.item();
     return business && item ? askAvailabilityUrl(business, item, this.customer.data()) : null;
@@ -159,7 +176,9 @@ export class Product implements OnInit, OnDestroy {
       this.title.setTitle(`${item.name} · ${business.name}`);
       this.meta.updateTag({
         name: 'description',
-        content: item.description ?? `${item.name} en ${business.name}`,
+        content:
+          item.description ??
+          translate<string>('product.itemAt', { item: item.name, name: business.name }),
       });
       this.meta.updateTag({ name: 'theme-color', content: business.primary_color });
     });
@@ -204,7 +223,8 @@ export class Product implements OnInit, OnDestroy {
     const url = productUrl(business, item);
     if (navigator.share) {
       try {
-        await navigator.share({ title: item.name, text: `${item.name} en ${business.name}`, url });
+        const text = translate('product.itemAt', { item: item.name, name: business.name });
+        await navigator.share({ title: item.name, text, url });
       } catch {
         // La persona cerró el menú de compartir.
       }

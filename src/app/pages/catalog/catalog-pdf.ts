@@ -1,3 +1,5 @@
+import { translate } from '@jsverse/transloco';
+
 import { readableTextColor } from '../../core/color';
 import { formatPrice } from '../../core/format';
 import { Business } from '../../core/models';
@@ -75,7 +77,7 @@ export async function downloadCatalogPdf(input: CatalogPdfInput): Promise<void> 
   let y = HEADER_HEIGHT + 8;
   const contact = [
     business.whatsapp && `WhatsApp: +${business.whatsapp}`,
-    business.phone && `Tel: ${business.phone}`,
+    business.phone && translate('pdf.phone', { phone: business.phone }),
     business.email,
     business.address,
     business.schedule?.replace(/\s*\n\s*/g, ', '),
@@ -141,7 +143,7 @@ export async function downloadCatalogPdf(input: CatalogPdfInput): Promise<void> 
       }
       if (!item.is_available) {
         doc.setTextColor(164, 22, 26);
-        doc.text('No disponible', x, y + THUMB - 0.5);
+        doc.text(translate('items.unavailable'), x, y + THUMB - 0.5);
       }
       y += ROW_HEIGHT;
     }

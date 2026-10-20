@@ -1,6 +1,7 @@
 import { Component, OnDestroy, inject, input, signal } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { ActivatedRoute, Router, RouterLink } from '@angular/router';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { CatalogApi } from '../../../core/catalog-api';
 import { errorMessage } from '../../../core/format';
@@ -18,129 +19,140 @@ interface PhotoDraft {
 
 @Component({
   selector: 'app-item-form',
-  imports: [ReactiveFormsModule, RouterLink],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoDirective],
   template: `
-    <section class="section-header">
-      <div>
-        <span class="kicker">{{ id() ? 'Editar' : 'Agregar' }}</span>
-        <h2 [class.is-long]="heading().length > longHeading">{{ heading() }}</h2>
-      </div>
-      <a class="button button--ghost" routerLink="..">Volver</a>
-    </section>
-
-    @if (loading()) {
-      <p class="muted">Cargando…</p>
-    } @else {
-      <form class="form-tiles item-form" [formGroup]="form" (ngSubmit)="save()">
-        <section class="card form-tile item-form__info">
-          <header class="form-tile__head">
-            <span class="kicker">01 · Información</span>
-            <h3>Qué es y cómo se llama</h3>
-          </header>
-          <div class="form-grid">
-            <label class="field">
-              <span>Tipo</span>
-              <select formControlName="kind">
-                <option value="product">Producto</option>
-                <option value="service">Servicio</option>
-              </select>
-            </label>
-
-            <label class="field">
-              <span>Categoría</span>
-              <select formControlName="category_id">
-                <option [ngValue]="null">Sin categoría</option>
-                @for (category of categories(); track category.id) {
-                  <option [ngValue]="category.id">{{ category.name }}</option>
-                }
-              </select>
-            </label>
-
-            <label class="field form-grid__full">
-              <span>Nombre</span>
-              <input formControlName="name" maxlength="120" />
-            </label>
-
-            <label class="field form-grid__full">
-              <span>Descripción</span>
-              <textarea formControlName="description" rows="5" maxlength="1000"></textarea>
-            </label>
-          </div>
-        </section>
-
-        <section class="card form-tile">
-          <header class="form-tile__head">
-            <span class="kicker">02 · Precio</span>
-            <h3>Cuánto cuesta</h3>
-          </header>
-          <label class="field">
-            <span>Precio ({{ current.business()?.currency }})</span>
-            <input type="number" formControlName="price" min="0" step="0.01" inputmode="decimal" />
-            <small>Déjalo vacío para mostrar "Precio a consultar".</small>
-          </label>
-        </section>
-
-        <section class="card form-tile">
-          <header class="form-tile__head">
-            <span class="kicker">03 · Estado</span>
-            <h3>Quién lo ve</h3>
-          </header>
-          <div class="field">
-            <label class="check">
-              <input type="checkbox" formControlName="is_available" /> Disponible
-            </label>
-            <label class="check">
-              <input type="checkbox" formControlName="is_visible" /> Visible en el catálogo
-            </label>
-          </div>
-        </section>
-
-        <section class="card form-tile item-form__photos">
-          <header class="form-tile__head">
-            <span class="kicker">04 · Fotos · {{ photos().length }} de {{ maxPhotos }}</span>
-            <h3>Cómo se ve</h3>
-          </header>
-          <div class="field">
-            <div class="photos">
-              @for (photo of photos(); track photo.url; let i = $index) {
-                <div class="photos__item">
-                  <img [src]="photo.url" alt="" />
-                  <button
-                    type="button"
-                    class="photos__remove"
-                    (click)="removePhoto(i)"
-                    aria-label="Quitar foto"
-                  >
-                    ×
-                  </button>
-                </div>
-              }
-              @if (photos().length < maxPhotos) {
-                <label class="photos__add">
-                  <input
-                    type="file"
-                    accept="image/png,image/jpeg,image/webp"
-                    multiple
-                    (change)="addPhotos($event)"
-                  />
-                  + Agregar
-                </label>
-              }
-            </div>
-            <small>La primera foto es la principal.</small>
-          </div>
-        </section>
-
-        <div class="form-bar item-form__bar">
-          @if (error(); as error) {
-            <p class="alert">{{ error }}</p>
-          }
-          <button type="submit" class="button" [disabled]="form.invalid || saving()">
-            {{ saving() ? 'Guardando…' : 'Guardar' }}
-          </button>
+    <ng-container *transloco="let t">
+      <section class="section-header">
+        <div>
+          <span class="kicker">{{ t(id() ? 'items.edit' : 'items.add') }}</span>
+          <h2 [class.is-long]="heading().length > longHeading">{{ heading() }}</h2>
         </div>
-      </form>
-    }
+        <a class="button button--ghost" routerLink="..">{{ t('itemForm.back') }}</a>
+      </section>
+
+      @if (loading()) {
+        <p class="muted">{{ t('common.loading') }}</p>
+      } @else {
+        <form class="form-tiles item-form" [formGroup]="form" (ngSubmit)="save()">
+          <section class="card form-tile item-form__info">
+            <header class="form-tile__head">
+              <span class="kicker">01 · {{ t('itemForm.info') }}</span>
+              <h3>{{ t('itemForm.infoTitle') }}</h3>
+            </header>
+            <div class="form-grid">
+              <label class="field">
+                <span>{{ t('itemForm.kind') }}</span>
+                <select formControlName="kind">
+                  <option value="product">{{ t('kind.product') }}</option>
+                  <option value="service">{{ t('kind.service') }}</option>
+                </select>
+              </label>
+
+              <label class="field">
+                <span>{{ t('itemForm.category') }}</span>
+                <select formControlName="category_id">
+                  <option [ngValue]="null">{{ t('itemForm.noCategory') }}</option>
+                  @for (category of categories(); track category.id) {
+                    <option [ngValue]="category.id">{{ category.name }}</option>
+                  }
+                </select>
+              </label>
+
+              <label class="field form-grid__full">
+                <span>{{ t('itemForm.name') }}</span>
+                <input formControlName="name" maxlength="120" />
+              </label>
+
+              <label class="field form-grid__full">
+                <span>{{ t('itemForm.description') }}</span>
+                <textarea formControlName="description" rows="5" maxlength="1000"></textarea>
+              </label>
+            </div>
+          </section>
+
+          <section class="card form-tile">
+            <header class="form-tile__head">
+              <span class="kicker">02 · {{ t('itemForm.price') }}</span>
+              <h3>{{ t('itemForm.priceTitle') }}</h3>
+            </header>
+            <label class="field">
+              <span>{{ t('itemForm.price') }} ({{ current.business()?.currency }})</span>
+              <input
+                type="number"
+                formControlName="price"
+                min="0"
+                step="0.01"
+                inputmode="decimal"
+              />
+              <small>{{ t('itemForm.priceHint') }}</small>
+            </label>
+          </section>
+
+          <section class="card form-tile">
+            <header class="form-tile__head">
+              <span class="kicker">03 · {{ t('itemForm.status') }}</span>
+              <h3>{{ t('itemForm.statusTitle') }}</h3>
+            </header>
+            <div class="field">
+              <label class="check">
+                <input type="checkbox" formControlName="is_available" />
+                {{ t('itemForm.available') }}
+              </label>
+              <label class="check">
+                <input type="checkbox" formControlName="is_visible" /> {{ t('itemForm.visible') }}
+              </label>
+            </div>
+          </section>
+
+          <section class="card form-tile item-form__photos">
+            <header class="form-tile__head">
+              <span class="kicker"
+                >04 · {{ t('itemForm.photos', { count: photos().length, max: maxPhotos }) }}</span
+              >
+              <h3>{{ t('itemForm.photosTitle') }}</h3>
+            </header>
+            <div class="field">
+              <div class="photos">
+                @for (photo of photos(); track photo.url; let i = $index) {
+                  <div class="photos__item">
+                    <img [src]="photo.url" alt="" />
+                    <button
+                      type="button"
+                      class="photos__remove"
+                      (click)="removePhoto(i)"
+                      [attr.aria-label]="t('itemForm.removePhoto')"
+                    >
+                      ×
+                    </button>
+                  </div>
+                }
+                @if (photos().length < maxPhotos) {
+                  <label class="photos__add">
+                    <input
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp"
+                      multiple
+                      (change)="addPhotos($event)"
+                    />
+                    + {{ t('itemForm.addPhoto') }}
+                  </label>
+                }
+              </div>
+              <small>{{ t('itemForm.photosHint') }}</small>
+            </div>
+          </section>
+
+          <div class="form-bar item-form__bar">
+            @if (error(); as error) {
+              <p class="alert">{{ error }}</p>
+            }
+            <button type="submit" class="button" [disabled]="form.invalid || saving()">
+              {{ saving() ? t('common.saving') : t('common.save') }}
+            </button>
+          </div>
+        </form>
+      }
+    </ng-container>
   `,
   styles: `
     .item-form__info,
@@ -197,7 +209,9 @@ export class ItemForm implements OnDestroy {
 
   /** Título de la página: el nombre mientras se edita. */
   protected heading(): string {
-    return this.id() ? this.form.controls.name.value || 'Editar' : 'Nuevo producto o servicio';
+    return this.id()
+      ? this.form.controls.name.value || translate('items.edit')
+      : translate('items.new');
   }
 
   constructor() {
@@ -218,7 +232,7 @@ export class ItemForm implements OnDestroy {
       this.nextPosition = items.length;
 
       const item = items.find((i) => i.id === this.id());
-      if (this.id() && !item) throw new Error('No se encontró este producto.');
+      if (this.id() && !item) throw new Error(translate('itemForm.notFound'));
       if (item) {
         this.form.patchValue({ ...item, description: item.description ?? '' });
         this.photos.set(item.photos.map((path) => ({ path, url: this.api.imageUrl(path) })));

@@ -445,6 +445,12 @@ a.contact:hover {
   border-radius: 5px;
 }
 
+.footer .lang-switch {
+  display: flex;
+  justify-content: center;
+  margin-top: 12px;
+}
+
 /* ---------- Barra de accesos rápidos (celular) ---------- */
 .dock {
   position: fixed;

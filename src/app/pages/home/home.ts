@@ -1,98 +1,99 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { Auth, homeFor } from '../../core/auth';
 import { Icon, IconName } from '../../shared/icon';
+import { LangSwitch } from '../../shared/lang-switch';
 
-const FEATURES: { icon: IconName; title: string; text: string }[] = [
-  {
-    icon: 'whatsapp',
-    title: 'Pedidos por WhatsApp',
-    text: 'Cada producto con su botón y el mensaje ya escrito.',
-  },
-  {
-    icon: 'sparkles',
-    title: 'Con tu marca',
-    text: 'Tu logo, tus colores y tu propia dirección web.',
-  },
-  {
-    icon: 'download',
-    title: 'Comparte como quieras',
-    text: 'Enlace, WhatsApp o un PDF listo para enviar.',
-  },
+/** key: home.features.{key}.title / .text en los archivos de traducción. */
+const FEATURES: { icon: IconName; key: string }[] = [
+  { icon: 'whatsapp', key: 'whatsapp' },
+  { icon: 'sparkles', key: 'brand' },
+  { icon: 'download', key: 'share' },
 ];
 
 /** Productos de muestra de la maqueta de celular. */
 const PREVIEW = [
-  { name: 'Capuchino', price: '$2.75', tone: 'a' },
-  { name: 'Cake de fresa', price: '$18.00', tone: 'b' },
-  { name: 'Croissant', price: '$1.50', tone: 'c' },
-  { name: 'Limonada', price: '$2.00', tone: 'd' },
+  { name: 'cappuccino', price: '$2.75', tone: 'a' },
+  { name: 'cake', price: '$18.00', tone: 'b' },
+  { name: 'croissant', price: '$1.50', tone: 'c' },
+  { name: 'lemonade', price: '$2.00', tone: 'd' },
 ];
 
 @Component({
   selector: 'app-home',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, TranslocoDirective, LangSwitch],
   template: `
-    <div class="landing">
+    <div class="landing" *transloco="let t">
       <header class="nav">
         <a class="nav__brand" routerLink="/">
           <img src="icono/icono.png" alt="" width="34" height="34" />
-          Catálogo
+          {{ t('common.appName') }}
         </a>
-        @if (auth.profile(); as profile) {
-          <a class="button button--sm" [routerLink]="homeFor(profile.role)">Ir a mi panel</a>
-        } @else {
-          <a class="button button--ghost button--sm" routerLink="/login">Iniciar sesión</a>
-        }
+        <div class="nav__actions">
+          <app-lang-switch />
+          @if (auth.profile(); as profile) {
+            <a class="button button--sm" [routerLink]="homeFor(profile.role)">{{
+              t('common.goToPanel')
+            }}</a>
+          } @else {
+            <a class="button button--ghost button--sm" routerLink="/login">{{
+              t('common.signIn')
+            }}</a>
+          }
+        </div>
       </header>
 
       <!-- Tablero bento: titular gigante, maqueta, beneficios y llamada final. -->
       <main class="board">
         <section class="tile hero">
-          <span class="kicker">Gratis para empezar</span>
+          <span class="kicker">{{ t('home.kicker') }}</span>
           <div>
-            <h1 class="headline">Tu catálogo en un enlace, <span>listo para vender.</span></h1>
-            <p class="hero__lead">
-              Muestra tus productos y servicios con fotos, precios y tu marca. Tus clientes lo abren
-              desde WhatsApp y te piden con un toque.
-            </p>
+            <h1 class="headline">
+              {{ t('home.headline') }} <span>{{ t('home.headlineAccent') }}</span>
+            </h1>
+            <p class="hero__lead">{{ t('home.lead') }}</p>
             <div class="hero__cta">
               @if (auth.profile(); as profile) {
                 <a class="button button--lg" [routerLink]="homeFor(profile.role)">
-                  Ir a mi panel <app-icon name="arrowUpRight" [size]="18" />
+                  {{ t('common.goToPanel') }} <app-icon name="arrowUpRight" [size]="18" />
                 </a>
               } @else {
                 <a class="button button--lg" routerLink="/registro">
-                  Crear mi catálogo <app-icon name="arrowUpRight" [size]="18" />
+                  {{ t('home.create') }} <app-icon name="arrowUpRight" [size]="18" />
                 </a>
-                <a class="button button--ghost button--lg" routerLink="/login">Ya tengo cuenta</a>
+                <a class="button button--ghost button--lg" routerLink="/login">{{
+                  t('home.haveAccount')
+                }}</a>
               }
             </div>
           </div>
         </section>
 
-        <section class="tile phone-tile" aria-label="Ejemplo de catálogo">
+        <section class="tile phone-tile" [attr.aria-label]="t('home.previewLabel')">
           <div class="phone">
             <div class="phone__screen">
               <div class="phone__board">
                 <div class="phone__hero">
-                  <span class="phone__kicker">Catálogo</span>
-                  <p class="phone__name">Café Doña Ana</p>
+                  <span class="phone__kicker">{{ t('home.preview.kicker') }}</span>
+                  <p class="phone__name">{{ t('home.preview.business') }}</p>
                 </div>
                 <div class="phone__logo">A</div>
                 <span class="phone__cta"
-                  ><app-icon name="whatsapp" [size]="13" /> Pedir por WhatsApp</span
+                  ><app-icon name="whatsapp" [size]="13" /> {{ t('home.preview.order') }}</span
                 >
               </div>
               <div class="phone__chips">
-                <span class="is-active">Todo</span><span>Bebidas</span><span>Postres</span>
+                <span class="is-active">{{ t('home.preview.all') }}</span
+                ><span>{{ t('home.preview.drinks') }}</span
+                ><span>{{ t('home.preview.desserts') }}</span>
               </div>
               <div class="phone__grid">
                 @for (product of preview; track product.name; let first = $first) {
                   <div class="phone__card" [class.is-featured]="first">
                     <span [class]="'phone__img tone-' + product.tone"></span>
-                    <span class="phone__pname">{{ product.name }}</span>
+                    <span class="phone__pname">{{ t('home.preview.' + product.name) }}</span>
                     <span class="phone__price">{{ product.price }}</span>
                   </div>
                 }
@@ -101,26 +102,28 @@ const PREVIEW = [
           </div>
         </section>
 
-        @for (feature of features; track feature.title; let i = $index) {
+        @for (feature of features; track feature.key; let i = $index) {
           <section class="tile feature">
             <span class="feature__icon"><app-icon [name]="feature.icon" [size]="20" /></span>
             <div>
               <span class="kicker">0{{ i + 1 }}</span>
-              <h2>{{ feature.title }}</h2>
-              <p>{{ feature.text }}</p>
+              <h2>{{ t('home.features.' + feature.key + '.title') }}</h2>
+              <p>{{ t('home.features.' + feature.key + '.text') }}</p>
             </div>
           </section>
         }
 
         <section class="tile closing">
-          <h2 class="headline">Empieza hoy. <span>Es gratis.</span></h2>
+          <h2 class="headline">
+            {{ t('home.closing') }} <span>{{ t('home.closingAccent') }}</span>
+          </h2>
           @if (auth.profile(); as profile) {
             <a class="button button--lg closing__button" [routerLink]="homeFor(profile.role)">
-              Ir a mi panel <app-icon name="arrowUpRight" [size]="18" />
+              {{ t('common.goToPanel') }} <app-icon name="arrowUpRight" [size]="18" />
             </a>
           } @else {
             <a class="button button--lg closing__button" routerLink="/registro">
-              Crear mi catálogo <app-icon name="arrowUpRight" [size]="18" />
+              {{ t('home.create') }} <app-icon name="arrowUpRight" [size]="18" />
             </a>
           }
         </section>
@@ -141,6 +144,12 @@ const PREVIEW = [
       max-width: 1240px;
       margin: 0 auto;
       padding: 16px;
+    }
+
+    .nav__actions {
+      display: flex;
+      gap: 8px;
+      align-items: center;
     }
 
     .nav__brand {

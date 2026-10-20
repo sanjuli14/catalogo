@@ -1,3 +1,5 @@
+import { translate } from '@jsverse/transloco';
+
 import { Category, Item } from '../../core/models';
 
 export interface ItemGroup {
@@ -9,9 +11,14 @@ export interface ItemGroup {
 /** "3 productos", "1 servicio" o, si el grupo mezcla ambos, "4 en total". */
 export function countLabel(items: Item[]): string {
   const n = items.length;
-  if (items.every((i) => i.kind === 'service')) return `${n} ${n === 1 ? 'servicio' : 'servicios'}`;
-  if (items.every((i) => i.kind === 'product')) return `${n} ${n === 1 ? 'producto' : 'productos'}`;
-  return `${n} en total`;
+  const one = n === 1;
+  if (items.every((i) => i.kind === 'service')) {
+    return translate(one ? 'group.service' : 'group.services', { n });
+  }
+  if (items.every((i) => i.kind === 'product')) {
+    return translate(one ? 'group.product' : 'group.products', { n });
+  }
+  return translate('group.total', { n });
 }
 
 /** Agrupa los productos por categoría, en el orden del dueño; los que no tienen van al final. */
@@ -27,7 +34,7 @@ export function groupItems(categories: Category[], items: Item[]): ItemGroup[] {
   if (uncategorized.length) {
     groups.push({
       id: 'otros',
-      name: categories.length ? 'Otros' : 'Catálogo',
+      name: translate(categories.length ? 'group.others' : 'group.catalog'),
       items: uncategorized,
     });
   }

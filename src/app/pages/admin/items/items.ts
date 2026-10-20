@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { CatalogApi } from '../../../core/catalog-api';
 import { errorMessage, formatPrice } from '../../../core/format';
@@ -9,7 +10,7 @@ import { CurrentBusiness } from '../current-business';
 
 @Component({
   selector: 'app-items',
-  imports: [RouterLink, Icon],
+  imports: [RouterLink, Icon, TranslocoDirective],
   styles: `
     .list-title {
       margin: 28px 0 4px;
@@ -39,149 +40,155 @@ import { CurrentBusiness } from '../current-business';
     }
   `,
   template: `
-    <section class="section-header">
-      <div>
-        <h2>Productos y servicios</h2>
-        <p class="muted">Aparecen en tu catálogo en este orden.</p>
-      </div>
-    </section>
+    <ng-container *transloco="let t">
+      <section class="section-header">
+        <div>
+          <h2>{{ t('items.title') }}</h2>
+          <p class="muted">{{ t('items.lead') }}</p>
+        </div>
+      </section>
 
-    <!-- Resumen en tablero: cifras del catálogo y accesos a lo más usado. -->
-    <section class="stats" aria-label="Resumen">
-      <div class="stat stat--wide">
-        <span class="kicker">En total</span>
-        <span class="stat__value">{{ loading() ? '–' : items().length }}</span>
-        <app-icon class="stat__icon" name="bag" [size]="20" />
-      </div>
-      <div class="stat">
-        <span class="kicker">Visibles</span>
-        <span class="stat__value">{{ loading() ? '–' : visibleCount() }}</span>
-        <app-icon class="stat__icon" name="eye" [size]="20" />
-      </div>
-      <div class="stat">
-        <span class="kicker">Agotados</span>
-        <span class="stat__value">{{ loading() ? '–' : soldOutCount() }}</span>
-        <app-icon class="stat__icon" name="tag" [size]="20" />
-      </div>
-      <a class="stat stat--wide stat--accent" routerLink="nuevo">
-        <span class="kicker">Agregar</span>
-        <span class="stat__title">Nuevo producto o servicio</span>
-        <app-icon class="stat__icon" name="plus" [size]="22" />
-      </a>
-      <div class="stat">
-        <span class="kicker">Categorías</span>
-        <span class="stat__value">{{ loading() ? '–' : categories().length }}</span>
-        <app-icon class="stat__icon" name="layers" [size]="20" />
-      </div>
-      @if (current.business(); as business) {
-        <a class="stat stat--ink" [href]="'/' + business.slug" target="_blank" rel="noopener">
-          <span class="kicker">Tu catálogo</span>
-          <span class="stat__title">Ver mi catálogo</span>
-          <app-icon class="stat__icon" name="arrowUpRight" [size]="20" />
+      <!-- Resumen en tablero: cifras del catálogo y accesos a lo más usado. -->
+      <section class="stats" [attr.aria-label]="t('items.summary')">
+        <div class="stat stat--wide">
+          <span class="kicker">{{ t('items.total') }}</span>
+          <span class="stat__value">{{ loading() ? '–' : items().length }}</span>
+          <app-icon class="stat__icon" name="bag" [size]="20" />
+        </div>
+        <div class="stat">
+          <span class="kicker">{{ t('items.visible') }}</span>
+          <span class="stat__value">{{ loading() ? '–' : visibleCount() }}</span>
+          <app-icon class="stat__icon" name="eye" [size]="20" />
+        </div>
+        <div class="stat">
+          <span class="kicker">{{ t('items.soldOut') }}</span>
+          <span class="stat__value">{{ loading() ? '–' : soldOutCount() }}</span>
+          <app-icon class="stat__icon" name="tag" [size]="20" />
+        </div>
+        <a class="stat stat--wide stat--accent" routerLink="nuevo">
+          <span class="kicker">{{ t('items.add') }}</span>
+          <span class="stat__title">{{ t('items.new') }}</span>
+          <app-icon class="stat__icon" name="plus" [size]="22" />
         </a>
-      }
-    </section>
-
-    <h3 class="kicker list-title">Lista en orden del catálogo</h3>
-
-    @if (error(); as error) {
-      <p class="alert">{{ error }}</p>
-    }
-
-    @if (loading()) {
-      <p class="muted">Cargando…</p>
-    } @else if (!items().length) {
-      <p class="empty">
-        Todavía no tienes productos ni servicios. <a routerLink="nuevo">Agrega el primero</a>.
-      </p>
-    } @else {
-      <ul class="list">
-        @for (item of items(); track item.id; let i = $index, last = $last) {
-          <li class="list__row" [class.is-muted]="!item.is_visible">
-            @if (item.photos.length) {
-              <img class="thumb" [src]="api.imageUrl(item.photos[0])" alt="" />
-            } @else {
-              <span class="thumb thumb--empty" aria-hidden="true"
-                ><app-icon name="image" [size]="22"
-              /></span>
-            }
-
-            <div class="list__grow">
-              <a class="list__title" [routerLink]="item.id">{{ item.name }}</a>
-              <div class="list__meta">
-                <span class="badge">{{ item.kind === 'service' ? 'Servicio' : 'Producto' }}</span>
-                @if (item.category_id) {
-                  <span>{{ categoryNames().get(item.category_id) }}</span>
-                }
-                <span>{{ price(item) }}</span>
-                @if (!item.is_available) {
-                  <span class="badge badge--warn">No disponible</span>
-                }
-                @if (!item.is_visible) {
-                  <span class="badge badge--muted">Oculto</span>
-                }
-              </div>
-            </div>
-
-            <div class="list__actions">
-              <button
-                type="button"
-                class="icon-button"
-                [disabled]="i === 0 || busy()"
-                (click)="move(i, -1)"
-                aria-label="Subir"
-                title="Subir"
-              >
-                <app-icon name="chevronUp" [size]="18" />
-              </button>
-              <button
-                type="button"
-                class="icon-button"
-                [disabled]="last || busy()"
-                (click)="move(i, 1)"
-                aria-label="Bajar"
-                title="Bajar"
-              >
-                <app-icon name="chevronDown" [size]="18" />
-              </button>
-              <button
-                type="button"
-                class="icon-button"
-                [disabled]="busy()"
-                (click)="toggle(item, 'is_visible')"
-                [attr.aria-label]="
-                  item.is_visible ? 'Ocultar del catálogo' : 'Mostrar en el catálogo'
-                "
-                [title]="item.is_visible ? 'Ocultar del catálogo' : 'Mostrar en el catálogo'"
-              >
-                <app-icon [name]="item.is_visible ? 'eye' : 'eyeOff'" [size]="18" />
-              </button>
-              <button
-                type="button"
-                class="button button--ghost button--sm"
-                [disabled]="busy()"
-                (click)="toggle(item, 'is_available')"
-              >
-                {{ item.is_available ? 'Marcar agotado' : 'Marcar disponible' }}
-              </button>
-              <a class="icon-button" [routerLink]="item.id" aria-label="Editar" title="Editar">
-                <app-icon name="pencil" [size]="16" />
-              </a>
-              <button
-                type="button"
-                class="icon-button icon-button--danger"
-                [disabled]="busy()"
-                (click)="remove(item)"
-                aria-label="Eliminar"
-                title="Eliminar"
-              >
-                <app-icon name="trash" [size]="16" />
-              </button>
-            </div>
-          </li>
+        <div class="stat">
+          <span class="kicker">{{ t('admin.tabs.categories') }}</span>
+          <span class="stat__value">{{ loading() ? '–' : categories().length }}</span>
+          <app-icon class="stat__icon" name="layers" [size]="20" />
+        </div>
+        @if (current.business(); as business) {
+          <a class="stat stat--ink" [href]="'/' + business.slug" target="_blank" rel="noopener">
+            <span class="kicker">{{ t('items.yourCatalog') }}</span>
+            <span class="stat__title">{{ t('admin.viewCatalog') }}</span>
+            <app-icon class="stat__icon" name="arrowUpRight" [size]="20" />
+          </a>
         }
-      </ul>
-    }
+      </section>
+
+      <h3 class="kicker list-title">{{ t('items.listTitle') }}</h3>
+
+      @if (error(); as error) {
+        <p class="alert">{{ error }}</p>
+      }
+
+      @if (loading()) {
+        <p class="muted">{{ t('common.loading') }}</p>
+      } @else if (!items().length) {
+        <p class="empty">
+          {{ t('items.empty') }} <a routerLink="nuevo">{{ t('items.addFirst') }}</a
+          >.
+        </p>
+      } @else {
+        <ul class="list">
+          @for (item of items(); track item.id; let i = $index, last = $last) {
+            <li class="list__row" [class.is-muted]="!item.is_visible">
+              @if (item.photos.length) {
+                <img class="thumb" [src]="api.imageUrl(item.photos[0])" alt="" />
+              } @else {
+                <span class="thumb thumb--empty" aria-hidden="true"
+                  ><app-icon name="image" [size]="22"
+                /></span>
+              }
+
+              <div class="list__grow">
+                <a class="list__title" [routerLink]="item.id">{{ item.name }}</a>
+                <div class="list__meta">
+                  <span class="badge">{{ t('kind.' + item.kind) }}</span>
+                  @if (item.category_id) {
+                    <span>{{ categoryNames().get(item.category_id) }}</span>
+                  }
+                  <span>{{ price(item) }}</span>
+                  @if (!item.is_available) {
+                    <span class="badge badge--warn">{{ t('items.unavailable') }}</span>
+                  }
+                  @if (!item.is_visible) {
+                    <span class="badge badge--muted">{{ t('items.hidden') }}</span>
+                  }
+                </div>
+              </div>
+
+              <div class="list__actions">
+                <button
+                  type="button"
+                  class="icon-button"
+                  [disabled]="i === 0 || busy()"
+                  (click)="move(i, -1)"
+                  [attr.aria-label]="t('common.moveUp')"
+                  [title]="t('common.moveUp')"
+                >
+                  <app-icon name="chevronUp" [size]="18" />
+                </button>
+                <button
+                  type="button"
+                  class="icon-button"
+                  [disabled]="last || busy()"
+                  (click)="move(i, 1)"
+                  [attr.aria-label]="t('common.moveDown')"
+                  [title]="t('common.moveDown')"
+                >
+                  <app-icon name="chevronDown" [size]="18" />
+                </button>
+                <button
+                  type="button"
+                  class="icon-button"
+                  [disabled]="busy()"
+                  (click)="toggle(item, 'is_visible')"
+                  [attr.aria-label]="t(item.is_visible ? 'items.hide' : 'items.show')"
+                  [title]="t(item.is_visible ? 'items.hide' : 'items.show')"
+                >
+                  <app-icon [name]="item.is_visible ? 'eye' : 'eyeOff'" [size]="18" />
+                </button>
+                <button
+                  type="button"
+                  class="button button--ghost button--sm"
+                  [disabled]="busy()"
+                  (click)="toggle(item, 'is_available')"
+                >
+                  {{ t(item.is_available ? 'items.markSoldOut' : 'items.markAvailable') }}
+                </button>
+                <a
+                  class="icon-button"
+                  [routerLink]="item.id"
+                  [attr.aria-label]="t('items.edit')"
+                  [title]="t('items.edit')"
+                >
+                  <app-icon name="pencil" [size]="16" />
+                </a>
+                <button
+                  type="button"
+                  class="icon-button icon-button--danger"
+                  [disabled]="busy()"
+                  (click)="remove(item)"
+                  [attr.aria-label]="t('common.delete')"
+                  [title]="t('common.delete')"
+                >
+                  <app-icon name="trash" [size]="16" />
+                </button>
+              </div>
+            </li>
+          }
+        </ul>
+      }
+    </ng-container>
   `,
 })
 export class Items {
@@ -230,7 +237,7 @@ export class Items {
   }
 
   protected remove(item: Item): Promise<void> {
-    if (!confirm(`¿Eliminar "${item.name}"? Esta acción no se puede deshacer.`)) {
+    if (!confirm(translate('items.confirmDelete', { name: item.name }))) {
       return Promise.resolve();
     }
     return this.run(async () => {

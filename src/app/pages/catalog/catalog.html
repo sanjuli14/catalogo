@@ -1,352 +1,353 @@
-@if (loading()) {
-  <!-- Esqueleto mientras carga: la misma forma del tablero, sin saltos al aparecer. -->
-  <div class="shell skeleton" aria-busy="true" aria-label="Cargando catálogo">
-    <div class="board">
-      <div class="board__hero skeleton__tile shimmer"></div>
-      <div class="board__logo skeleton__tile shimmer"></div>
-      <div class="board__order skeleton__tile shimmer"></div>
-    </div>
-    <div class="bento" data-count="5">
-      <div class="is-featured skeleton__tile shimmer"></div>
-      @for (i of [1, 2, 3, 4]; track i) {
-        <div class="skeleton__tile shimmer"></div>
-      }
-    </div>
-  </div>
-} @else if (!business()) {
-  <main class="state">
-    <span class="state__icon"><app-icon name="bag" [size]="26" /></span>
-    @if (error(); as error) {
-      <h1>No pudimos abrir el catálogo</h1>
-      <p>{{ error }}</p>
-    } @else {
-      <h1>Este catálogo no existe</h1>
-      <p>Revisa el enlace o pídele al negocio que te lo envíe de nuevo.</p>
-    }
-    <a class="btn btn--ink" routerLink="/">Ir al inicio</a>
-  </main>
-} @else {
-  @let b = business()!;
-
-  @if (isPreview()) {
-    <p class="preview-banner">
-      <app-icon name="eye" [size]="16" />
-      Vista previa · este catálogo todavía no es público ({{
-        b.status === 'pending' ? 'en revisión' : 'suspendido'
-      }})
-    </p>
-  }
-
-  <!-- Tablero de cabecera: nombre gigante, logo, pedir por WhatsApp y datos del negocio. -->
-  <header class="shell board">
-    <section class="tile board__hero">
-      <p class="label">Catálogo</p>
-      <div>
-        <h1 class="display fit board__name" [style.--chars]="b.name.length">{{ b.name }}</h1>
-        @if (b.description) {
-          <p class="board__desc">{{ b.description }}</p>
+<ng-container *transloco="let t">
+  @if (loading()) {
+    <!-- Esqueleto mientras carga: la misma forma del tablero, sin saltos al aparecer. -->
+    <div class="shell skeleton" aria-busy="true" [attr.aria-label]="t('catalog.loading')">
+      <div class="board">
+        <div class="board__hero skeleton__tile shimmer"></div>
+        <div class="board__logo skeleton__tile shimmer"></div>
+        <div class="board__order skeleton__tile shimmer"></div>
+      </div>
+      <div class="bento" data-count="5">
+        <div class="is-featured skeleton__tile shimmer"></div>
+        @for (i of [1, 2, 3, 4]; track i) {
+          <div class="skeleton__tile shimmer"></div>
         }
       </div>
-    </section>
-
-    <div class="tile board__logo" [class.board__logo--tall]="!contactUrl()">
-      @if (logoUrl(); as logo) {
-        <img [src]="logo" [alt]="'Logo de ' + b.name" />
+    </div>
+  } @else if (!business()) {
+    <main class="state">
+      <span class="state__icon"><app-icon name="bag" [size]="26" /></span>
+      @if (error(); as error) {
+        <h1>{{ t('catalog.loadError') }}</h1>
+        <p>{{ error }}</p>
       } @else {
-        <span class="board__initial" aria-hidden="true">{{ b.name.charAt(0) }}</span>
+        <h1>{{ t('catalog.notFound') }}</h1>
+        <p>{{ t('catalog.notFoundText') }}</p>
       }
-    </div>
+      <a class="btn btn--ink" routerLink="/">{{ t('notFound.home') }}</a>
+    </main>
+  } @else {
+    @let b = business()!;
 
-    @if (contactUrl(); as url) {
-      <a
-        class="tile board__order"
-        [href]="url"
-        target="_blank"
-        rel="noopener"
-        (click)="customer.interceptOrder($event)"
-      >
-        <span class="board__order-top">
-          <span class="label">¿Te gustó algo?</span>
-          <app-icon name="arrowUpRight" [size]="22" />
-        </span>
-        <span class="board__order-title">
-          <app-icon name="whatsapp" [size]="26" />
-          Pedir por WhatsApp
-        </span>
-      </a>
+    @if (isPreview()) {
+      <p class="preview-banner">
+        <app-icon name="eye" [size]="16" />
+        {{ t('catalog.preview.' + (b.status === 'pending' ? 'pending' : 'suspended')) }}
+      </p>
     }
 
-    <div class="board__facts">
-      @if (b.address) {
-        <div class="tile fact">
-          <span class="label">Dirección</span>
-          <p class="fact__value">{{ b.address }}</p>
-          <app-icon class="fact__icon" name="pin" [size]="18" />
+    <!-- Tablero de cabecera: nombre gigante, logo, pedir por WhatsApp y datos del negocio. -->
+    <header class="shell board">
+      <section class="tile board__hero">
+        <p class="label">{{ t('group.catalog') }}</p>
+        <div>
+          <h1 class="display fit board__name" [style.--chars]="b.name.length">{{ b.name }}</h1>
+          @if (b.description) {
+            <p class="board__desc">{{ b.description }}</p>
+          }
         </div>
-      }
-      @if (b.schedule) {
-        <div class="tile fact">
-          <span class="label">Horario</span>
-          <p class="fact__value">{{ b.schedule.split('\n')[0] }}</p>
-          <app-icon class="fact__icon" name="clock" [size]="18" />
-        </div>
-      }
-      <div class="tile fact">
-        <span class="label">{{ itemsLabel() }}</span>
-        <p class="fact__value fact__value--big figure">{{ itemCount() }}</p>
-        <app-icon class="fact__icon" name="bag" [size]="18" />
-      </div>
-      <div class="tile fact">
-        <span class="label">Compartir</span>
-        <div class="fact__actions">
-          <a
-            class="icon-btn"
-            [href]="shareOnWhatsappUrl()"
-            target="_blank"
-            rel="noopener"
-            aria-label="Enviar el catálogo a un amigo por WhatsApp"
-            title="Enviar a un amigo"
-          >
-            <app-icon name="send" [size]="18" />
-          </a>
-          <button
-            type="button"
-            class="icon-btn"
-            [disabled]="generatingPdf() || !groups().length"
-            (click)="downloadPdf()"
-            [attr.aria-label]="generatingPdf() ? 'Generando PDF' : 'Descargar catálogo en PDF'"
-            title="Descargar PDF"
-          >
-            <app-icon name="download" [size]="18" />
-          </button>
-          <button
-            type="button"
-            class="icon-btn"
-            (click)="share()"
-            aria-label="Compartir catálogo"
-            title="Compartir"
-          >
-            <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
-          </button>
-        </div>
-      </div>
-    </div>
+      </section>
 
-    @if (b.whatsapp) {
-      <div class="tile delivery board__delivery">
-        <app-icon name="pin" [size]="18" />
-        @if (customer.data(); as c) {
-          <span class="delivery__text"
-            >Tus datos: <strong>{{ c.name }}</strong> · {{ c.address }}</span
-          >
-          <button type="button" (click)="customer.edit()">Cambiar</button>
+      <div class="tile board__logo" [class.board__logo--tall]="!contactUrl()">
+        @if (logoUrl(); as logo) {
+          <img [src]="logo" [alt]="t('catalog.logoOf', { name: b.name })" />
         } @else {
-          <span class="delivery__text"
-            >Agrega tu nombre y dirección para que el negocio sepa quién le escribe.</span
-          >
-          <button type="button" (click)="customer.edit()">Agregar</button>
-        }
-      </div>
-    }
-  </header>
-
-  <main class="shell catalog">
-    @if (error(); as error) {
-      <p class="notice--error">{{ error }}</p>
-    }
-
-    @if (!groups().length) {
-      <div class="state state--inline">
-        <span class="state__icon"><app-icon name="bag" [size]="26" /></span>
-        <h2>Muy pronto</h2>
-        <p>Este negocio todavía no ha publicado sus productos.</p>
-      </div>
-    } @else {
-      <div class="filters">
-        <label class="search">
-          <app-icon name="search" [size]="19" />
-          <input
-            #searchInput
-            type="search"
-            placeholder="Buscar en {{ b.name }}…"
-            aria-label="Buscar productos y servicios"
-            [value]="search()"
-            (input)="search.set($any($event.target).value)"
-          />
-          @if (search()) {
-            <button
-              type="button"
-              class="search__clear"
-              (click)="search.set('')"
-              aria-label="Borrar búsqueda"
-            >
-              <app-icon name="close" [size]="16" />
-            </button>
-          }
-        </label>
-
-        @if (groups().length > 1) {
-          <div class="chips" role="group" aria-label="Categorías">
-            <button
-              type="button"
-              class="chip"
-              [class.is-active]="selectedGroup() === null"
-              (click)="selectedGroup.set(null)"
-            >
-              Todo
-            </button>
-            @for (group of groups(); track group.id) {
-              <button
-                type="button"
-                class="chip"
-                [class.is-active]="selectedGroup() === group.id"
-                (click)="selectedGroup.set(group.id)"
-              >
-                {{ group.name }}
-              </button>
-            }
-          </div>
+          <span class="board__initial" aria-hidden="true">{{ b.name.charAt(0) }}</span>
         }
       </div>
 
-      @if (!resultCount()) {
-        <div class="state state--inline">
-          <span class="state__icon"><app-icon name="search" [size]="24" /></span>
-          <h2>Sin resultados</h2>
-          <p>No encontramos nada con "{{ search() }}". Prueba con otra palabra.</p>
-        </div>
+      @if (contactUrl(); as url) {
+        <a
+          class="tile board__order"
+          [href]="url"
+          target="_blank"
+          rel="noopener"
+          (click)="customer.interceptOrder($event)"
+        >
+          <span class="board__order-top">
+            <span class="label">{{ t('catalog.likedSomething') }}</span>
+            <app-icon name="arrowUpRight" [size]="22" />
+          </span>
+          <span class="board__order-title">
+            <app-icon name="whatsapp" [size]="26" />
+            {{ t('catalog.orderWhatsapp') }}
+          </span>
+        </a>
       }
 
-      @for (group of visibleGroups(); track group.id; let g = $index, odd = $odd) {
-        <section class="group">
-          @if (group.name) {
-            <header class="group__head">
-              <h2 class="display fit group__title" [style.--chars]="group.name.length">
-                <span class="group__index" aria-hidden="true">{{
-                  g < 9 ? '0' + (g + 1) : g + 1
-                }}</span>
-                {{ group.name }}
-              </h2>
-              <span class="label">
-                {{ countLabel(group.items) }}
-              </span>
-            </header>
-          }
-          <!-- El primero de cada grupo va destacado (2×2); en los grupos impares, a la derecha. -->
-          <div class="bento" [class.bento--flip]="odd" [attr.data-count]="group.items.length">
-            @for (item of group.items; track item.id; let first = $first) {
-              <app-product-card [class.is-featured]="first" [business]="b" [item]="item" />
-            }
-          </div>
-        </section>
-      }
-    }
-  </main>
-
-  <footer class="footer" #contactSection>
-    <div class="shell">
-      <header class="group__head">
-        <h2 class="display group__title">Contacto</h2>
-        <span class="label">{{ b.name }}</span>
-      </header>
-      <div class="contact-board">
-        @if (b.whatsapp) {
-          <a
-            class="tile contact contact--wa"
-            [href]="contactUrl()"
-            target="_blank"
-            rel="noopener"
-            (click)="customer.interceptOrder($event)"
-          >
-            <span class="label">WhatsApp</span>
-            <span class="contact__value contact__value--big figure">+{{ b.whatsapp }}</span>
-            <app-icon class="contact__icon" name="whatsapp" [size]="22" />
-          </a>
-        }
-        @if (b.phone) {
-          <a class="tile contact" [href]="'tel:' + b.phone">
-            <span class="label">Teléfono</span>
-            <span class="contact__value">{{ b.phone }}</span>
-            <app-icon class="contact__icon" name="phone" [size]="18" />
-          </a>
-        }
-        @if (b.email) {
-          <a class="tile contact" [href]="'mailto:' + b.email">
-            <span class="label">Correo</span>
-            <span class="contact__value">{{ b.email }}</span>
-            <app-icon class="contact__icon" name="mail" [size]="18" />
-          </a>
-        }
+      <div class="board__facts">
         @if (b.address) {
-          <div class="tile contact">
-            <span class="label">Dirección</span>
-            <span class="contact__value">{{ b.address }}</span>
-            <app-icon class="contact__icon" name="pin" [size]="18" />
+          <div class="tile fact">
+            <span class="label">{{ t('settings.address') }}</span>
+            <p class="fact__value">{{ b.address }}</p>
+            <app-icon class="fact__icon" name="pin" [size]="18" />
           </div>
         }
         @if (b.schedule) {
-          <div class="tile contact contact--wide">
-            <span class="label">Horario</span>
-            <span class="contact__value contact__multiline">{{ b.schedule }}</span>
-            <app-icon class="contact__icon" name="clock" [size]="18" />
+          <div class="tile fact">
+            <span class="label">{{ t('settings.schedule') }}</span>
+            <p class="fact__value">{{ b.schedule.split('\n')[0] }}</p>
+            <app-icon class="fact__icon" name="clock" [size]="18" />
           </div>
         }
-        @if (socials().length) {
-          <div class="tile contact">
-            <span class="label">Redes</span>
-            <div class="socials">
-              @for (social of socials(); track social.label) {
-                <a
-                  class="icon-btn"
-                  [href]="social.url"
-                  target="_blank"
-                  rel="noopener"
-                  [attr.aria-label]="social.label"
-                  [title]="social.label"
-                >
-                  <app-icon [name]="social.icon" [size]="18" />
-                </a>
-              }
-            </div>
+        <div class="tile fact">
+          <span class="label">{{ t(itemsLabel()) }}</span>
+          <p class="fact__value fact__value--big figure">{{ itemCount() }}</p>
+          <app-icon class="fact__icon" name="bag" [size]="18" />
+        </div>
+        <div class="tile fact">
+          <span class="label">{{ t('catalog.share') }}</span>
+          <div class="fact__actions">
+            <a
+              class="icon-btn"
+              [href]="shareOnWhatsappUrl()"
+              target="_blank"
+              rel="noopener"
+              [attr.aria-label]="t('catalog.sendFriendLabel')"
+              [title]="t('catalog.sendFriend')"
+            >
+              <app-icon name="send" [size]="18" />
+            </a>
+            <button
+              type="button"
+              class="icon-btn"
+              [disabled]="generatingPdf() || !groups().length"
+              (click)="downloadPdf()"
+              [attr.aria-label]="
+                t(generatingPdf() ? 'catalog.generatingPdf' : 'catalog.downloadPdfLabel')
+              "
+              [title]="t('catalog.downloadPdf')"
+            >
+              <app-icon name="download" [size]="18" />
+            </button>
+            <button
+              type="button"
+              class="icon-btn"
+              (click)="share()"
+              [attr.aria-label]="t('catalog.shareLabel')"
+              [title]="t('catalog.share')"
+            >
+              <app-icon [name]="copied() ? 'check' : 'share'" [size]="18" />
+            </button>
           </div>
-        }
+        </div>
       </div>
 
-      <a class="made-with" routerLink="/registro">
-        <img src="icono/icono.png" alt="" width="18" height="18" />
-        Crea tu catálogo gratis
-      </a>
-    </div>
-  </footer>
+      @if (b.whatsapp) {
+        <div class="tile delivery board__delivery">
+          <app-icon name="pin" [size]="18" />
+          @if (customer.data(); as c) {
+            <span class="delivery__text"
+              >{{ t('catalog.yourDetails') }} <strong>{{ c.name }}</strong> · {{ c.address }}</span
+            >
+            <button type="button" (click)="customer.edit()">{{ t('settings.changeLogo') }}</button>
+          } @else {
+            <span class="delivery__text">{{ t('catalog.addDetails') }}</span>
+            <button type="button" (click)="customer.edit()">{{ t('categories.add') }}</button>
+          }
+        </div>
+      }
+    </header>
 
-  <!-- Accesos rápidos (solo celular): el tablero queda arriba al bajar por los productos. -->
-  <nav class="dock" aria-label="Accesos rápidos">
-    <button type="button" (click)="scrollToTop()">
-      <app-icon name="store" [size]="20" /> Inicio
-    </button>
-    <button type="button" (click)="focusSearch()">
-      <app-icon name="search" [size]="20" /> Buscar
-    </button>
-    @if (cartCount()) {
-      <button type="button" class="dock__order" (click)="cart.sheetOpen.set(true)">
-        <app-icon name="bag" [size]="20" /> Pedido ({{ cartCount() }})
+    <main class="shell catalog">
+      @if (error(); as error) {
+        <p class="notice--error">{{ error }}</p>
+      }
+
+      @if (!groups().length) {
+        <div class="state state--inline">
+          <span class="state__icon"><app-icon name="bag" [size]="26" /></span>
+          <h2>{{ t('catalog.soon') }}</h2>
+          <p>{{ t('catalog.soonText') }}</p>
+        </div>
+      } @else {
+        <div class="filters">
+          <label class="search">
+            <app-icon name="search" [size]="19" />
+            <input
+              #searchInput
+              type="search"
+              [placeholder]="t('catalog.searchIn', { name: b.name })"
+              [attr.aria-label]="t('catalog.searchLabel')"
+              [value]="search()"
+              (input)="search.set($any($event.target).value)"
+            />
+            @if (search()) {
+              <button
+                type="button"
+                class="search__clear"
+                (click)="search.set('')"
+                [attr.aria-label]="t('catalog.clearSearch')"
+              >
+                <app-icon name="close" [size]="16" />
+              </button>
+            }
+          </label>
+
+          @if (groups().length > 1) {
+            <div class="chips" role="group" [attr.aria-label]="t('admin.tabs.categories')">
+              <button
+                type="button"
+                class="chip"
+                [class.is-active]="selectedGroup() === null"
+                (click)="selectedGroup.set(null)"
+              >
+                {{ t('home.preview.all') }}
+              </button>
+              @for (group of groups(); track group.id) {
+                <button
+                  type="button"
+                  class="chip"
+                  [class.is-active]="selectedGroup() === group.id"
+                  (click)="selectedGroup.set(group.id)"
+                >
+                  {{ group.name }}
+                </button>
+              }
+            </div>
+          }
+        </div>
+
+        @if (!resultCount()) {
+          <div class="state state--inline">
+            <span class="state__icon"><app-icon name="search" [size]="24" /></span>
+            <h2>{{ t('catalog.noResults') }}</h2>
+            <p>{{ t('catalog.noResultsText', { query: search() }) }}</p>
+          </div>
+        }
+
+        @for (group of visibleGroups(); track group.id; let g = $index, odd = $odd) {
+          <section class="group">
+            @if (group.name) {
+              <header class="group__head">
+                <h2 class="display fit group__title" [style.--chars]="group.name.length">
+                  <span class="group__index" aria-hidden="true">{{
+                    g < 9 ? '0' + (g + 1) : g + 1
+                  }}</span>
+                  {{ group.name }}
+                </h2>
+                <span class="label">
+                  {{ countLabel(group.items) }}
+                </span>
+              </header>
+            }
+            <!-- El primero de cada grupo va destacado (2×2); en los grupos impares, a la derecha. -->
+            <div class="bento" [class.bento--flip]="odd" [attr.data-count]="group.items.length">
+              @for (item of group.items; track item.id; let first = $first) {
+                <app-product-card [class.is-featured]="first" [business]="b" [item]="item" />
+              }
+            </div>
+          </section>
+        }
+      }
+    </main>
+
+    <footer class="footer" #contactSection>
+      <div class="shell">
+        <header class="group__head">
+          <h2 class="display group__title">{{ t('catalog.contact') }}</h2>
+          <span class="label">{{ b.name }}</span>
+        </header>
+        <div class="contact-board">
+          @if (b.whatsapp) {
+            <a
+              class="tile contact contact--wa"
+              [href]="contactUrl()"
+              target="_blank"
+              rel="noopener"
+              (click)="customer.interceptOrder($event)"
+            >
+              <span class="label">WhatsApp</span>
+              <span class="contact__value contact__value--big figure">+{{ b.whatsapp }}</span>
+              <app-icon class="contact__icon" name="whatsapp" [size]="22" />
+            </a>
+          }
+          @if (b.phone) {
+            <a class="tile contact" [href]="'tel:' + b.phone">
+              <span class="label">{{ t('settings.phone') }}</span>
+              <span class="contact__value">{{ b.phone }}</span>
+              <app-icon class="contact__icon" name="phone" [size]="18" />
+            </a>
+          }
+          @if (b.email) {
+            <a class="tile contact" [href]="'mailto:' + b.email">
+              <span class="label">{{ t('common.email') }}</span>
+              <span class="contact__value">{{ b.email }}</span>
+              <app-icon class="contact__icon" name="mail" [size]="18" />
+            </a>
+          }
+          @if (b.address) {
+            <div class="tile contact">
+              <span class="label">{{ t('settings.address') }}</span>
+              <span class="contact__value">{{ b.address }}</span>
+              <app-icon class="contact__icon" name="pin" [size]="18" />
+            </div>
+          }
+          @if (b.schedule) {
+            <div class="tile contact contact--wide">
+              <span class="label">{{ t('settings.schedule') }}</span>
+              <span class="contact__value contact__multiline">{{ b.schedule }}</span>
+              <app-icon class="contact__icon" name="clock" [size]="18" />
+            </div>
+          }
+          @if (socials().length) {
+            <div class="tile contact">
+              <span class="label">{{ t('catalog.socials') }}</span>
+              <div class="socials">
+                @for (social of socials(); track social.icon) {
+                  <a
+                    class="icon-btn"
+                    [href]="social.url"
+                    target="_blank"
+                    rel="noopener"
+                    [attr.aria-label]="social.label ?? t('settings.website')"
+                    [title]="social.label ?? t('settings.website')"
+                  >
+                    <app-icon [name]="social.icon" [size]="18" />
+                  </a>
+                }
+              </div>
+            </div>
+          }
+        </div>
+
+        <a class="made-with" routerLink="/registro">
+          <img src="icono/icono.png" alt="" width="18" height="18" />
+          {{ t('catalog.madeWith') }}
+        </a>
+        <app-lang-switch />
+      </div>
+    </footer>
+
+    <!-- Accesos rápidos (solo celular): el tablero queda arriba al bajar por los productos. -->
+    <nav class="dock" [attr.aria-label]="t('catalog.dock.label')">
+      <button type="button" (click)="scrollToTop()">
+        <app-icon name="store" [size]="20" /> {{ t('catalog.dock.home') }}
       </button>
-    } @else if (contactUrl(); as url) {
-      <a
-        class="dock__order"
-        [href]="url"
-        target="_blank"
-        rel="noopener"
-        (click)="customer.interceptOrder($event)"
-      >
-        <app-icon name="whatsapp" [size]="20" /> Pedir
-      </a>
-    }
-    <button type="button" (click)="scrollToContact()">
-      <app-icon name="phone" [size]="20" /> Contacto
-    </button>
-  </nav>
+      <button type="button" (click)="focusSearch()">
+        <app-icon name="search" [size]="20" /> {{ t('catalog.dock.search') }}
+      </button>
+      @if (cartCount()) {
+        <button type="button" class="dock__order" (click)="cart.sheetOpen.set(true)">
+          <app-icon name="bag" [size]="20" /> {{ t('catalog.dock.order', { count: cartCount() }) }}
+        </button>
+      } @else if (contactUrl(); as url) {
+        <a
+          class="dock__order"
+          [href]="url"
+          target="_blank"
+          rel="noopener"
+          (click)="customer.interceptOrder($event)"
+        >
+          <app-icon name="whatsapp" [size]="20" /> {{ t('catalog.dock.ask') }}
+        </a>
+      }
+      <button type="button" (click)="scrollToContact()">
+        <app-icon name="phone" [size]="20" /> {{ t('catalog.contact') }}
+      </button>
+    </nav>
 
-  <app-cart-sheet [business]="b" [items]="allItems()" [raised]="true" />
-  <app-customer-sheet [businessName]="b.name" />
-}
+    <app-cart-sheet [business]="b" [items]="allItems()" [raised]="true" />
+    <app-customer-sheet [businessName]="b.name" />
+  }
+</ng-container>

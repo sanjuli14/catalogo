@@ -1,255 +1,262 @@
-@if (loading()) {
-  <div class="shell layout skeleton" aria-busy="true" aria-label="Cargando producto">
-    <div class="stage skeleton__tile shimmer"></div>
-    <div class="tile info">
-      <div class="skeleton__line skeleton__line--short shimmer"></div>
-      <div class="skeleton__line skeleton__line--title shimmer"></div>
-      <div class="skeleton__line shimmer"></div>
+<ng-container *transloco="let t">
+  @if (loading()) {
+    <div class="shell layout skeleton" aria-busy="true" [attr.aria-label]="t('product.loading')">
+      <div class="stage skeleton__tile shimmer"></div>
+      <div class="tile info">
+        <div class="skeleton__line skeleton__line--short shimmer"></div>
+        <div class="skeleton__line skeleton__line--title shimmer"></div>
+        <div class="skeleton__line shimmer"></div>
+      </div>
+      <div class="order skeleton__tile shimmer"></div>
     </div>
-    <div class="order skeleton__tile shimmer"></div>
-  </div>
-} @else if (!business() || !item()) {
-  <main class="state">
-    <span class="state__icon"><app-icon name="bag" [size]="28" /></span>
-    @if (error(); as error) {
-      <h1>No pudimos abrir este producto</h1>
-      <p>{{ error }}</p>
-    } @else {
-      <h1>Este producto ya no está disponible</h1>
-      <p>Puede que el negocio lo haya quitado de su catálogo.</p>
-    }
-    @if (business(); as b) {
-      <a class="btn btn--ink" [routerLink]="['/', b.slug]">Ver el catálogo de {{ b.name }}</a>
-    } @else {
-      <a class="btn btn--ink" routerLink="/">Ir al inicio</a>
-    }
-  </main>
-} @else {
-  @let b = business()!;
-  @let p = item()!;
+  } @else if (!business() || !item()) {
+    <main class="state">
+      <span class="state__icon"><app-icon name="bag" [size]="28" /></span>
+      @if (error(); as error) {
+        <h1>{{ t('product.loadError') }}</h1>
+        <p>{{ error }}</p>
+      } @else {
+        <h1>{{ t('product.gone') }}</h1>
+        <p>{{ t('product.goneText') }}</p>
+      }
+      @if (business(); as b) {
+        <a class="btn btn--ink" [routerLink]="['/', b.slug]">{{
+          t('product.viewCatalogOf', { name: b.name })
+        }}</a>
+      } @else {
+        <a class="btn btn--ink" routerLink="/">{{ t('notFound.home') }}</a>
+      }
+    </main>
+  } @else {
+    @let b = business()!;
+    @let p = item()!;
 
-  @if (isPreview()) {
-    <p class="preview-banner">
-      <app-icon name="eye" [size]="16" />
-      Vista previa · este catálogo todavía no es público
-    </p>
-  }
+    @if (isPreview()) {
+      <p class="preview-banner">
+        <app-icon name="eye" [size]="16" />
+        {{ t('product.preview') }}
+      </p>
+    }
 
-  <!-- Tablero del producto: foto grande a la izquierda y tiles de información a la derecha. -->
-  <div class="shell layout">
-    <section class="tile stage" aria-label="Fotos">
-      <div class="stage__bar">
-        <a class="round-btn" [routerLink]="['/', b.slug]" aria-label="Volver al catálogo">
-          <app-icon name="arrowLeft" [size]="20" />
-        </a>
+    <!-- Tablero del producto: foto grande a la izquierda y tiles de información a la derecha. -->
+    <div class="shell layout">
+      <section class="tile stage" [attr.aria-label]="t('product.photos')">
+        <div class="stage__bar">
+          <a class="round-btn" [routerLink]="['/', b.slug]" [attr.aria-label]="t('product.back')">
+            <app-icon name="arrowLeft" [size]="20" />
+          </a>
+          @if (p.photos.length > 1) {
+            <div class="dots" role="group" [attr.aria-label]="t('product.photos')">
+              @for (photo of p.photos; track photo; let i = $index) {
+                <button
+                  type="button"
+                  [class.is-active]="photoIndex() === i"
+                  (click)="goToPhoto(i)"
+                  [attr.aria-label]="t('product.viewPhoto', { n: i + 1 })"
+                ></button>
+              }
+            </div>
+          }
+          <button
+            type="button"
+            class="round-btn"
+            (click)="share()"
+            [attr.aria-label]="t('product.share')"
+          >
+            <app-icon [name]="copied() ? 'check' : 'share'" [size]="19" />
+          </button>
+        </div>
+
+        @if (p.photos.length) {
+          <div #gallery class="gallery" (scroll)="onGalleryScroll($event)">
+            @for (photo of p.photos; track photo) {
+              <img [src]="imageUrl(photo)" [alt]="p.name" />
+            }
+          </div>
+        } @else {
+          <div class="stage__placeholder" aria-hidden="true">{{ p.name.charAt(0) }}</div>
+        }
+
         @if (p.photos.length > 1) {
-          <div class="dots" role="group" aria-label="Fotos">
+          <div class="thumbs">
             @for (photo of p.photos; track photo; let i = $index) {
               <button
                 type="button"
                 [class.is-active]="photoIndex() === i"
                 (click)="goToPhoto(i)"
-                [attr.aria-label]="'Ver foto ' + (i + 1)"
-              ></button>
+                [attr.aria-label]="t('product.viewPhoto', { n: i + 1 })"
+              >
+                <img [src]="imageUrl(photo)" alt="" />
+              </button>
             }
           </div>
         }
-        <button type="button" class="round-btn" (click)="share()" aria-label="Compartir producto">
-          <app-icon [name]="copied() ? 'check' : 'share'" [size]="19" />
-        </button>
-      </div>
+      </section>
 
-      @if (p.photos.length) {
-        <div #gallery class="gallery" (scroll)="onGalleryScroll($event)">
-          @for (photo of p.photos; track photo) {
-            <img [src]="imageUrl(photo)" [alt]="p.name" />
+      <section class="tile info">
+        <nav class="crumbs label" [attr.aria-label]="t('product.breadcrumb')">
+          <a [routerLink]="['/', b.slug]">{{ b.name }}</a>
+          @if (categoryName(); as category) {
+            <span aria-hidden="true">/</span>
+            <span>{{ category }}</span>
           }
-        </div>
-      } @else {
-        <div class="stage__placeholder" aria-hidden="true">{{ p.name.charAt(0) }}</div>
-      }
+        </nav>
 
-      @if (p.photos.length > 1) {
-        <div class="thumbs">
-          @for (photo of p.photos; track photo; let i = $index) {
+        <h1 class="display fit name" [style.--chars]="p.name.length">{{ p.name }}</h1>
+
+        <div class="info__foot">
+          <p class="price figure" [class.is-ask]="p.price === null">{{ price() }}</p>
+          <div class="meta">
+            @if (p.is_available) {
+              <span class="status status--ok">{{ t('itemForm.available') }}</span>
+            } @else {
+              <span class="status status--out">{{ t('product.soldOut') }}</span>
+            }
+            <span class="meta__kind">{{ t('kind.' + p.kind) }}</span>
+          </div>
+        </div>
+      </section>
+
+      @if (p.is_available && orderUrl(); as url) {
+        <section class="tile order" [attr.aria-label]="t('product.order')">
+          <!-- Solo los productos llevan cantidad; un servicio se solicita sin más. -->
+          @if (p.kind === 'product') {
+            <div class="quantity">
+              <div class="quantity__text">
+                <span class="label">{{ t('product.quantity') }}</span>
+                @if (p.price !== null && quantity() > 1) {
+                  <span class="quantity__total figure">{{
+                    t('product.total', { total: total() })
+                  }}</span>
+                }
+              </div>
+              <div class="quantity__stepper">
+                <button
+                  type="button"
+                  (click)="changeQuantity(-1)"
+                  [disabled]="quantity() === 1"
+                  [attr.aria-label]="t('product.less')"
+                >
+                  <app-icon name="minus" [size]="18" />
+                </button>
+                <output aria-live="polite">{{
+                  quantity() < 10 ? '0' + quantity() : quantity()
+                }}</output>
+                <button
+                  type="button"
+                  (click)="changeQuantity(1)"
+                  [disabled]="quantity() === maxQuantity"
+                  [attr.aria-label]="t('product.more')"
+                >
+                  <app-icon name="plus" [size]="18" />
+                </button>
+              </div>
+            </div>
+          }
+
+          <!-- Se arma un pedido con varias cosas; o se pide solo esta, directo por WhatsApp. -->
+          @if (p.kind === 'service' && inCart()) {
             <button
               type="button"
-              [class.is-active]="photoIndex() === i"
-              (click)="goToPhoto(i)"
-              [attr.aria-label]="'Ver foto ' + (i + 1)"
+              class="btn btn--brand btn--block"
+              (click)="cart.sheetOpen.set(true)"
             >
-              <img [src]="imageUrl(photo)" alt="" />
+              <app-icon name="check" [size]="20" /> {{ t('product.inOrder') }}
+            </button>
+          } @else {
+            <button type="button" class="btn btn--brand btn--block" (click)="addToCart()">
+              <app-icon [name]="justAdded() ? 'check' : 'bag'" [size]="20" />
+              {{ t(justAdded() ? 'product.added' : 'product.add') }}
             </button>
           }
-        </div>
-      }
-    </section>
-
-    <section class="tile info">
-      <nav class="crumbs label" aria-label="Ubicación">
-        <a [routerLink]="['/', b.slug]">{{ b.name }}</a>
-        @if (categoryName(); as category) {
-          <span aria-hidden="true">/</span>
-          <span>{{ category }}</span>
-        }
-      </nav>
-
-      <h1 class="display fit name" [style.--chars]="p.name.length">{{ p.name }}</h1>
-
-      <div class="info__foot">
-        <p class="price figure" [class.is-ask]="p.price === null">{{ price() }}</p>
-        <div class="meta">
-          @if (p.is_available) {
-            <span class="status status--ok">Disponible</span>
-          } @else {
-            <span class="status status--out">Agotado por ahora</span>
+          @if (p.kind === 'product' && inCart()) {
+            <p class="order__note">
+              {{ t('product.alreadyHave', { count: inCart() }) }}
+              <button type="button" (click)="cart.sheetOpen.set(true)">
+                {{ t('product.viewOrder') }}
+              </button>
+            </p>
           }
-          <span class="meta__kind">{{ p.kind === 'service' ? 'Servicio' : 'Producto' }}</span>
-        </div>
-      </div>
-    </section>
-
-    @if (p.is_available && orderUrl(); as url) {
-      <section class="tile order" aria-label="Pedido">
-        <!-- Solo los productos llevan cantidad; un servicio se solicita sin más. -->
-        @if (p.kind === 'product') {
-          <div class="quantity">
-            <div class="quantity__text">
-              <span class="label">Cantidad</span>
-              @if (p.price !== null && quantity() > 1) {
-                <span class="quantity__total figure">Total {{ total() }}</span>
-              }
-            </div>
-            <div class="quantity__stepper">
-              <button
-                type="button"
-                (click)="changeQuantity(-1)"
-                [disabled]="quantity() === 1"
-                aria-label="Uno menos"
-              >
-                <app-icon name="minus" [size]="18" />
-              </button>
-              <output aria-live="polite">{{
-                quantity() < 10 ? '0' + quantity() : quantity()
-              }}</output>
-              <button
-                type="button"
-                (click)="changeQuantity(1)"
-                [disabled]="quantity() === maxQuantity"
-                aria-label="Uno más"
-              >
-                <app-icon name="plus" [size]="18" />
-              </button>
-            </div>
-          </div>
-        }
-
-        <!-- Se arma un pedido con varias cosas; o se pide solo esta, directo por WhatsApp. -->
-        @if (p.kind === 'service' && inCart()) {
-          <button
-            type="button"
-            class="btn btn--brand btn--block"
-            (click)="cart.sheetOpen.set(true)"
+          <a
+            class="btn btn--ghost btn--block"
+            [href]="url"
+            target="_blank"
+            rel="noopener"
+            (click)="customer.interceptOrder($event)"
           >
-            <app-icon name="check" [size]="20" /> Ya está en tu pedido · Ver
-          </button>
-        } @else {
-          <button type="button" class="btn btn--brand btn--block" (click)="addToCart()">
-            <app-icon [name]="justAdded() ? 'check' : 'bag'" [size]="20" />
-            {{ justAdded() ? 'Añadido a tu pedido' : 'Añadir al pedido' }}
-          </button>
-        }
-        @if (p.kind === 'product' && inCart()) {
-          <p class="order__note">
-            Ya tienes {{ inCart() }} en tu pedido.
-            <button type="button" (click)="cart.sheetOpen.set(true)">Ver pedido</button>
-          </p>
-        }
-        <a
-          class="btn btn--ghost btn--block"
-          [href]="url"
-          target="_blank"
-          rel="noopener"
-          (click)="customer.interceptOrder($event)"
-        >
-          <app-icon name="whatsapp" [size]="20" />
-          {{
-            p.kind === 'service'
-              ? 'Solicitar solo este por WhatsApp'
-              : 'Pedir solo este por WhatsApp'
-          }}
-        </a>
-        <ng-container *ngTemplateOutlet="delivery" />
-      </section>
-    } @else if (!p.is_available && askUrl(); as url) {
-      <section class="tile order" aria-label="Pedido">
-        <span class="label">Agotado por ahora</span>
-        <a
-          class="btn btn--ghost btn--block"
-          [href]="url"
-          target="_blank"
-          rel="noopener"
-          (click)="customer.interceptOrder($event)"
-        >
-          <app-icon name="whatsapp" [size]="20" /> Preguntar cuándo vuelve
-        </a>
-        <ng-container *ngTemplateOutlet="delivery" />
-      </section>
-    }
-
-    @if (p.description) {
-      <section class="tile about">
-        <h2 class="label">Descripción</h2>
-        <p class="description">{{ p.description }}</p>
-      </section>
-    }
-
-    <a class="tile seller" [routerLink]="['/', b.slug]">
-      @if (logoUrl(); as logo) {
-        <img class="seller__logo" [src]="logo" alt="" />
-      } @else {
-        <span class="seller__logo seller__logo--initial">{{ b.name.charAt(0) }}</span>
+            <app-icon name="whatsapp" [size]="20" />
+            {{ t(p.kind === 'service' ? 'product.requestOnly' : 'product.orderOnly') }}
+          </a>
+          <ng-container *ngTemplateOutlet="delivery" />
+        </section>
+      } @else if (!p.is_available && askUrl(); as url) {
+        <section class="tile order" [attr.aria-label]="t('product.order')">
+          <span class="label">{{ t('product.soldOut') }}</span>
+          <a
+            class="btn btn--ghost btn--block"
+            [href]="url"
+            target="_blank"
+            rel="noopener"
+            (click)="customer.interceptOrder($event)"
+          >
+            <app-icon name="whatsapp" [size]="20" /> {{ t('product.askWhen') }}
+          </a>
+          <ng-container *ngTemplateOutlet="delivery" />
+        </section>
       }
-      <span class="seller__text">
-        <strong>{{ b.name }}</strong>
-        <small>Ver el catálogo completo</small>
-      </span>
-      <app-icon name="arrowUpRight" [size]="20" />
-    </a>
-  </div>
 
-  @if (related().length) {
-    <section class="shell related">
-      <header class="related__head">
-        <h2 class="display fit" [style.--chars]="relatedTitle().length">{{ relatedTitle() }}</h2>
-        <span class="label">{{ related().length }} más</span>
-      </header>
-      <div class="bento" [attr.data-count]="related().length">
-        @for (other of related(); track other.id; let first = $first) {
-          <app-product-card [class.is-featured]="first" [business]="b" [item]="other" />
+      @if (p.description) {
+        <section class="tile about">
+          <h2 class="label">{{ t('itemForm.description') }}</h2>
+          <p class="description">{{ p.description }}</p>
+        </section>
+      }
+
+      <a class="tile seller" [routerLink]="['/', b.slug]">
+        @if (logoUrl(); as logo) {
+          <img class="seller__logo" [src]="logo" alt="" />
+        } @else {
+          <span class="seller__logo seller__logo--initial">{{ b.name.charAt(0) }}</span>
         }
-      </div>
-    </section>
+        <span class="seller__text">
+          <strong>{{ b.name }}</strong>
+          <small>{{ t('product.fullCatalog') }}</small>
+        </span>
+        <app-icon name="arrowUpRight" [size]="20" />
+      </a>
+    </div>
+
+    @if (related().length) {
+      <section class="shell related">
+        <header class="related__head">
+          <h2 class="display fit" [style.--chars]="relatedTitle().length">{{ relatedTitle() }}</h2>
+          <span class="label">{{ t('product.more_count', { count: related().length }) }}</span>
+        </header>
+        <div class="bento" [attr.data-count]="related().length">
+          @for (other of related(); track other.id; let first = $first) {
+            <app-product-card [class.is-featured]="first" [business]="b" [item]="other" />
+          }
+        </div>
+      </section>
+    }
+
+    <app-cart-sheet [business]="b" [items]="allItems()" />
+    <app-customer-sheet [businessName]="b.name" />
   }
 
-  <app-cart-sheet [business]="b" [items]="allItems()" />
-  <app-customer-sheet [businessName]="b.name" />
-}
-
-<!-- A quién y a dónde va el pedido (sale en el mensaje de WhatsApp). -->
-<ng-template #delivery>
-  <div class="delivery">
-    <app-icon name="pin" [size]="18" />
-    @if (customer.data(); as c) {
-      <span class="delivery__text"
-        >Tus datos: <strong>{{ c.name }}</strong> · {{ c.address }}</span
-      >
-      <button type="button" (click)="customer.edit()">Cambiar</button>
-    } @else {
-      <span class="delivery__text"
-        >Agrega tu nombre y dirección para que el negocio sepa quién le escribe.</span
-      >
-      <button type="button" (click)="customer.edit()">Agregar</button>
-    }
-  </div>
-</ng-template>
+  <!-- A quién y a dónde va el pedido (sale en el mensaje de WhatsApp). -->
+  <ng-template #delivery>
+    <div class="delivery">
+      <app-icon name="pin" [size]="18" />
+      @if (customer.data(); as c) {
+        <span class="delivery__text"
+          >{{ t('catalog.yourDetails') }} <strong>{{ c.name }}</strong> · {{ c.address }}</span
+        >
+        <button type="button" (click)="customer.edit()">{{ t('settings.changeLogo') }}</button>
+      } @else {
+        <span class="delivery__text">{{ t('catalog.addDetails') }}</span>
+        <button type="button" (click)="customer.edit()">{{ t('categories.add') }}</button>
+      }
+    </div>
+  </ng-template>
+</ng-container>

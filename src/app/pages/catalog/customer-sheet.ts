@@ -1,5 +1,6 @@
 import { Component, DestroyRef, ElementRef, effect, inject, input, viewChild } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { CustomerProfile } from '../../core/customer';
 import { Icon } from '../../shared/icon';
@@ -10,7 +11,7 @@ import { Icon } from '../../shared/icon';
  */
 @Component({
   selector: 'app-customer-sheet',
-  imports: [ReactiveFormsModule, Icon],
+  imports: [ReactiveFormsModule, Icon, TranslocoDirective],
   template: `
     <dialog
       #dialog
@@ -19,52 +20,55 @@ import { Icon } from '../../shared/icon';
       (cancel)="$event.preventDefault(); customer.dismiss()"
       (close)="customer.closedByBrowser()"
     >
-      <form class="sheet__body" [formGroup]="form" (ngSubmit)="save()">
+      <form class="sheet__body" [formGroup]="form" (ngSubmit)="save()" *transloco="let t">
         <header class="sheet__head">
           <span class="sheet__icon"><app-icon name="pin" [size]="22" /></span>
           <button
             type="button"
             class="sheet__close"
             (click)="customer.dismiss()"
-            aria-label="Cerrar"
+            [attr.aria-label]="t('common.close')"
           >
             <app-icon name="close" [size]="18" />
           </button>
         </header>
 
-        <h2 id="customer-sheet-title" class="sheet__title">¿Quién nos escribe?</h2>
-        <p class="sheet__text">
-          Tu nombre y dirección van en el mensaje de WhatsApp, así {{ businessName() }} sabe quién
-          eres y dónde estás sin tener que preguntarte. Se guardan solo en este teléfono.
-        </p>
+        <h2 id="customer-sheet-title" class="sheet__title">{{ t('customer.title') }}</h2>
+        <p class="sheet__text">{{ t('customer.text', { name: businessName() }) }}</p>
         @if (customer.forOrder()) {
-          <p class="sheet__hint">
-            Después de guardar, toca otra vez el botón de WhatsApp para enviar tu mensaje.
-          </p>
+          <p class="sheet__hint">{{ t('customer.hint') }}</p>
         }
 
         <label class="field">
-          <span>Tu nombre</span>
-          <input formControlName="name" autocomplete="name" placeholder="Ej. María Pérez" />
+          <span>{{ t('customer.name') }}</span>
+          <input
+            formControlName="name"
+            autocomplete="name"
+            [placeholder]="t('customer.namePlaceholder')"
+          />
         </label>
         <label class="field">
-          <span>Tu dirección</span>
+          <span>{{ t('customer.address') }}</span>
           <textarea
             formControlName="address"
             rows="2"
             autocomplete="street-address"
-            placeholder="Calle, número, entre calles, barrio, municipio"
+            [placeholder]="t('customer.addressPlaceholder')"
           ></textarea>
         </label>
         <label class="field">
-          <span>Referencia <small>(opcional)</small></span>
-          <input formControlName="reference" placeholder="Ej. cerca del parque, edificio azul" />
+          <span
+            >{{ t('customer.reference') }} <small>({{ t('customer.optional') }})</small></span
+          >
+          <input formControlName="reference" [placeholder]="t('customer.referencePlaceholder')" />
         </label>
 
         <button type="submit" class="sheet__primary" [disabled]="form.invalid">
-          Guardar mis datos
+          {{ t('customer.save') }}
         </button>
-        <button type="button" class="sheet__skip" (click)="customer.dismiss()">Ahora no</button>
+        <button type="button" class="sheet__skip" (click)="customer.dismiss()">
+          {{ t('customer.skip') }}
+        </button>
       </form>
     </dialog>
   `,

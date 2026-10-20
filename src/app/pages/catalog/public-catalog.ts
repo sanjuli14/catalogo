@@ -1,4 +1,5 @@
 import { Injectable, inject } from '@angular/core';
+import { translate } from '@jsverse/transloco';
 
 import { Auth } from '../../core/auth';
 import { CatalogApi } from '../../core/catalog-api';
@@ -71,7 +72,13 @@ export function itemPrice(business: Business, item: Item): string {
  * llevan todo lo necesario para atenderlo sin preguntar: qué quiere, cuánto, el precio,
  * el enlace para verlo y quién escribe y dónde está (sirve igual para una tienda, un
  * restaurante o un carpintero). *texto* sale en negrita en WhatsApp.
+ * Van en el idioma del cliente (claves whatsapp.* de los archivos de traducción).
  */
+
+/** Atajo para los textos de whatsapp.* */
+function w(key: string, params?: Record<string, unknown>): string {
+  return translate(`whatsapp.${key}`, params);
+}
 
 /** Un renglón del pedido: un producto con su cantidad, o un servicio (siempre 1). */
 export interface OrderLine {
@@ -111,29 +118,25 @@ function orderMessage(business: Business, lines: OrderLine[], customer: Customer
   const services = lines.filter((l) => l.item.kind === 'service');
   const single = lines.length === 1;
 
-  const intro = products.length
-    ? 'Quiero hacer este pedido desde su catálogo:'
-    : single
-      ? 'Me interesa este servicio de su catálogo:'
-      : 'Me interesan estos servicios de su catálogo:';
-  const message = [`¡Hola, ${plain(business.name)}! ${intro}`];
+  const intro = w(products.length ? 'introOrder' : single ? 'introService' : 'introServices');
+  const message = [`${w('hello', { name: plain(business.name) })} ${intro}`];
 
   if (products.length) {
-    message.push('', services.length ? '*PRODUCTOS*' : '*PEDIDO*');
+    message.push('', `*${w(services.length ? 'productsTitle' : 'orderTitle')}*`);
     for (const line of products) message.push(...productLines(business, line, withLinks));
   }
   if (services.length) {
-    message.push('', services.length === 1 ? '*SERVICIO*' : '*SERVICIOS*');
+    message.push('', `*${w(services.length === 1 ? 'serviceTitle' : 'servicesTitle')}*`);
     for (const line of services) message.push(...serviceLines(business, line, withLinks));
   }
 
   const total = linesTotal(lines);
   const unpriced = lines.some((l) => l.item.price === null);
   if (total !== null && (lines.length > 1 || lines[0].quantity > 1)) {
-    const note = unpriced ? ' (más lo que tiene precio a consultar)' : '';
-    message.push('', `*TOTAL: ${formatPrice(total, business.currency)}*${note}`);
+    const note = unpriced ? ` ${w('totalNote')}` : '';
+    message.push('', `*${w('total', { total: formatPrice(total, business.currency) })}*${note}`);
   }
-  if (!withLinks) message.push('', `Catálogo: ${catalogUrl(business)}`);
+  if (!withLinks) message.push('', w('catalog', { url: catalogUrl(business) }));
 
   message.push(
     ...customerLines(customer),
@@ -149,30 +152,27 @@ function productLines(
   withLink: boolean,
 ): string[] {
   let price: string;
-  if (item.price === null) price = 'precio a consultar';
-  else if (quantity > 1)
-    price = `${itemPrice(business, item)} c/u = *${orderTotal(business, item, quantity)}*`;
-  else price = `*${itemPrice(business, item)}*`;
-  const lines = [`• *${plain(item.name)}*`, `   Cantidad: ${quantity} · ${price}`];
-  if (withLink) lines.push(`   Ver: ${productUrl(business, item)}`);
+  if (item.price === null) price = w('priceOnRequest');
+  else if (quantity > 1) {
+    const each = w('each', { price: itemPrice(business, item) });
+    price = `${each} = *${orderTotal(business, item, quantity)}*`;
+  } else price = `*${itemPrice(business, item)}*`;
+  const lines = [`• *${plain(item.name)}*`, `   ${w('quantity', { quantity })} · ${price}`];
+  if (withLink) lines.push(`   ${w('view', { url: productUrl(business, item) })}`);
   return lines;
 }
 
 function serviceLines(business: Business, { item }: OrderLine, withLink: boolean): string[] {
-  const price = item.price === null ? 'a consultar' : `*${itemPrice(business, item)}*`;
-  const lines = [`• *${plain(item.name)}*`, `   Precio: ${price}`];
-  if (withLink) lines.push(`   Ver: ${productUrl(business, item)}`);
+  const price = item.price === null ? w('onRequest') : `*${itemPrice(business, item)}*`;
+  const lines = [`• *${plain(item.name)}*`, `   ${w('price', { price })}`];
+  if (withLink) lines.push(`   ${w('view', { url: productUrl(business, item) })}`);
   return lines;
 }
 
 function closingQuestion(hasProducts: boolean, unpriced: boolean, single: boolean): string {
-  if (!hasProducts) {
-    return '¿Qué disponibilidad tienen y qué necesitan saber para coordinarlo? ¡Gracias!';
-  }
-  const available = single ? 'si está disponible' : 'si está todo disponible';
-  return unpriced
-    ? `¿Me dicen los precios que faltan, ${available} y cómo lo coordinamos? ¡Gracias!`
-    : `¿Me confirman ${available} y cómo lo coordinamos? ¡Gracias!`;
+  if (!hasProducts) return w('closingServices');
+  const available = w(single ? 'available' : 'allAvailable');
+  return w(unpriced ? 'closingUnpriced' : 'closing', { available });
 }
 
 /** Suma de los renglones con precio; null si ninguno tiene precio. */
@@ -190,10 +190,10 @@ export function askAvailabilityUrl(
 ): string | null {
   if (!business.whatsapp) return null;
   const lines = [
-    `¡Hola, ${plain(business.name)}! Vi *${plain(item.name)}* en su catálogo, pero aparece agotado.`,
+    `${w('hello', { name: plain(business.name) })} ${w('soldOut', { item: plain(item.name) })}`,
     productUrl(business, item),
     '',
-    '¿Saben cuándo vuelve a estar disponible? Si se puede, me gustaría apartarlo.',
+    w('soldOutQuestion'),
     ...customerLines(customer),
   ];
   return whatsappChatUrl(business.whatsapp, lines.join('\n'));
@@ -208,17 +208,17 @@ export function orderTotal(business: Business, item: Item, quantity: number): st
 export function contactUrl(business: Business, customer: Customer | null): string | null {
   if (!business.whatsapp) return null;
   const lines = [
-    `¡Hola, ${plain(business.name)}! Estoy viendo su catálogo (${catalogUrl(business)}).`,
+    `${w('hello', { name: plain(business.name) })} ${w('browsing', { url: catalogUrl(business) })}`,
     ...customerLines(customer),
     '',
-    'Mi consulta: ',
+    `${w('question')} `,
   ];
   return whatsappChatUrl(business.whatsapp, lines.join('\n'));
 }
 
 /** Recomendar el catálogo a un amigo. */
 export function shareCatalogMessage(business: Business): string {
-  const lines = [`Te recomiendo *${plain(business.name)}*. Mira su catálogo y pide por WhatsApp:`];
+  const lines = [w('recommend', { name: plain(business.name) })];
   // En un solo renglón: con saltos de línea, la cursiva de WhatsApp no funciona.
   const description = business.description?.replace(/\s+/g, ' ').trim();
   if (description) lines.push(`_${plain(description)}_`);
@@ -231,11 +231,13 @@ function customerLines(customer: Customer | null): string[] {
   if (!customer) return [];
   const lines = [
     '',
-    '*MIS DATOS*',
-    `• Nombre: ${plain(customer.name)}`,
-    `• Dirección: ${plain(customer.address)}`,
+    `*${w('myDetails')}*`,
+    `• ${w('name', { name: plain(customer.name) })}`,
+    `• ${w('address', { address: plain(customer.address) })}`,
   ];
-  if (customer.reference) lines.push(`• Referencia: ${plain(customer.reference)}`);
+  if (customer.reference) {
+    lines.push(`• ${w('reference', { reference: plain(customer.reference) })}`);
+  }
   return lines;
 }
 

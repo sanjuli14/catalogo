@@ -1,48 +1,51 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { Auth, homeFor } from '../../core/auth';
 import { Icon } from '../../shared/icon';
+import { LangSwitch } from '../../shared/lang-switch';
 import { Turnstile, captchaEnabled } from '../../shared/turnstile';
 
 @Component({
   selector: 'app-login',
-  imports: [ReactiveFormsModule, RouterLink, Turnstile, Icon],
+  imports: [ReactiveFormsModule, RouterLink, Turnstile, Icon, TranslocoDirective, LangSwitch],
   template: `
-    <main class="auth-page">
+    <main class="auth-page" *transloco="let t">
       <!-- Tile de marca: solo en computadora (en el celular se ve solo el formulario). -->
       <aside class="auth-brand">
         <a class="auth-brand__top" routerLink="/">
-          <img src="icono/icono.png" alt="" width="36" height="36" /> Catálogo
+          <img src="icono/icono.png" alt="" width="36" height="36" /> {{ t('common.appName') }}
         </a>
-        <h2>Hola de nuevo. Tus clientes te esperan.</h2>
+        <h2>{{ t('login.brandTitle') }}</h2>
         <ul class="auth-brand__list">
-          <li><app-icon name="whatsapp" [size]="20" /> Pedidos por WhatsApp</li>
-          <li><app-icon name="sparkles" [size]="20" /> Tu logo y tus colores</li>
-          <li><app-icon name="download" [size]="20" /> Un PDF para compartir</li>
+          <li><app-icon name="whatsapp" [size]="20" /> {{ t('brand.whatsapp') }}</li>
+          <li><app-icon name="sparkles" [size]="20" /> {{ t('brand.colors') }}</li>
+          <li><app-icon name="download" [size]="20" /> {{ t('brand.pdf') }}</li>
         </ul>
       </aside>
       <form class="card auth-card" [formGroup]="form" (ngSubmit)="submit()">
         <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
-        <h1>Iniciar sesión</h1>
+        <h1>{{ t('login.title') }}</h1>
 
         @if (auth.profileError()) {
-          <p class="alert">No pudimos cargar tu cuenta. Revisa tu conexión e inténtalo de nuevo.</p>
+          <p class="alert">{{ t('login.profileError') }}</p>
         } @else if (auth.session() && !auth.profile()) {
           <p class="alert">
-            Tu cuenta todavía no tiene un negocio.
-            <a routerLink="/registro">Termina de crearlo aquí</a>.
+            {{ t('login.noBusiness') }}
+            <a routerLink="/registro">{{ t('login.finishHere') }}</a
+            >.
           </p>
         }
 
         <label class="field">
-          <span>Correo</span>
+          <span>{{ t('common.email') }}</span>
           <input type="email" formControlName="email" autocomplete="email" />
         </label>
 
         <label class="field">
-          <span>Contraseña</span>
+          <span>{{ t('common.password') }}</span>
           <input type="password" formControlName="password" autocomplete="current-password" />
         </label>
 
@@ -59,13 +62,16 @@ import { Turnstile, captchaEnabled } from '../../shared/turnstile';
           class="button"
           [disabled]="form.invalid || loading() || (captchaEnabled && !captchaToken())"
         >
-          {{ loading() ? 'Entrando…' : 'Entrar' }}
+          {{ loading() ? t('login.submitting') : t('login.submit') }}
         </button>
 
         <p class="muted">
-          <a routerLink="/recuperar">¿Olvidaste tu contraseña?</a>
+          <a routerLink="/recuperar">{{ t('login.forgot') }}</a>
         </p>
-        <p class="muted">¿No tienes cuenta? <a routerLink="/registro">Crea tu catálogo</a></p>
+        <p class="muted">
+          {{ t('login.noAccount') }} <a routerLink="/registro">{{ t('login.createCatalog') }}</a>
+        </p>
+        <app-lang-switch />
       </form>
     </main>
   `,

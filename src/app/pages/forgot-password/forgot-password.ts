@@ -1,34 +1,36 @@
 import { Component, inject, signal, viewChild } from '@angular/core';
 import { NonNullableFormBuilder, ReactiveFormsModule, Validators } from '@angular/forms';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { Auth } from '../../core/auth';
 import { errorMessage } from '../../core/format';
+import { LangSwitch } from '../../shared/lang-switch';
 import { Turnstile, captchaEnabled } from '../../shared/turnstile';
 
 @Component({
   selector: 'app-forgot-password',
-  imports: [ReactiveFormsModule, RouterLink, Turnstile],
+  imports: [ReactiveFormsModule, RouterLink, Turnstile, TranslocoDirective, LangSwitch],
   template: `
-    <main class="auth-page">
+    <main class="auth-page" *transloco="let t">
       @if (sent()) {
         <section class="card auth-card">
           <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
-          <h1>Revisa tu correo</h1>
+          <h1>{{ t('forgot.sentTitle') }}</h1>
           <p>
-            Si <strong>{{ form.controls.email.value }}</strong> tiene una cuenta, te llegará un
-            enlace para elegir una contraseña nueva.
+            {{ t('forgot.sentBefore') }} <strong>{{ form.controls.email.value }}</strong>
+            {{ t('forgot.sentAfter') }}
           </p>
-          <a class="button button--ghost" routerLink="/login">Volver al inicio de sesión</a>
+          <a class="button button--ghost" routerLink="/login">{{ t('common.backToLogin') }}</a>
         </section>
       } @else {
         <form class="card auth-card" [formGroup]="form" (ngSubmit)="submit()">
           <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
-          <h1>Recuperar contraseña</h1>
-          <p class="muted">Te enviaremos un enlace para elegir una contraseña nueva.</p>
+          <h1>{{ t('forgot.title') }}</h1>
+          <p class="muted">{{ t('forgot.lead') }}</p>
 
           <label class="field">
-            <span>Correo</span>
+            <span>{{ t('common.email') }}</span>
             <input type="email" formControlName="email" autocomplete="email" />
           </label>
 
@@ -45,10 +47,13 @@ import { Turnstile, captchaEnabled } from '../../shared/turnstile';
             class="button"
             [disabled]="form.invalid || busy() || (captchaEnabled && !captchaToken())"
           >
-            {{ busy() ? 'Enviando…' : 'Enviar enlace' }}
+            {{ busy() ? t('forgot.sending') : t('forgot.send') }}
           </button>
 
-          <p class="muted"><a routerLink="/login">Volver al inicio de sesión</a></p>
+          <p class="muted">
+            <a routerLink="/login">{{ t('common.backToLogin') }}</a>
+          </p>
+          <app-lang-switch />
         </form>
       }
     </main>

@@ -3,10 +3,12 @@ import {
   ElementRef,
   OnDestroy,
   afterNextRender,
+  inject,
   output,
   signal,
   viewChild,
 } from '@angular/core';
+import { TranslocoDirective, TranslocoService } from '@jsverse/transloco';
 
 import { environment } from '../../environments/environment';
 
@@ -52,25 +54,17 @@ function loadTurnstile(): Promise<TurnstileApi> {
  */
 @Component({
   selector: 'app-turnstile',
+  imports: [TranslocoDirective],
   template: `
     <div #widget></div>
-    @switch (problem()) {
-      @case ('script') {
-        <p class="alert">
-          No se pudo cargar la verificación de seguridad. Recarga la página o desactiva el
-          bloqueador de anuncios para este sitio.
-        </p>
-      }
-      @case ('challenge') {
-        <p class="alert">
-          No pudimos verificar que eres una persona. Recarga la página e inténtalo de nuevo.
-        </p>
-      }
+    @if (problem(); as problem) {
+      <p class="alert" *transloco="let t">{{ t('turnstile.' + problem) }}</p>
     }
   `,
   host: { class: 'turnstile' },
 })
 export class Turnstile implements OnDestroy {
+  private readonly transloco = inject(TranslocoService);
   private readonly container = viewChild.required<ElementRef<HTMLElement>>('widget');
   private widgetId?: string;
   private destroyed = false;
@@ -94,7 +88,7 @@ export class Turnstile implements OnDestroy {
 
       this.widgetId = turnstile.render(this.container().nativeElement, {
         sitekey: environment.turnstileSiteKey,
-        language: 'es',
+        language: this.transloco.getActiveLang(),
         retry: 'auto',
         'retry-interval': 3000,
         callback: (token: string) => {

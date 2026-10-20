@@ -11,13 +11,16 @@ import {
 } from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
+import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { readableTextColor } from '../../core/color';
 import { CustomerProfile } from '../../core/customer';
 import { errorMessage } from '../../core/format';
+import { Language } from '../../core/i18n';
 import { Business, Category, Item } from '../../core/models';
 import { whatsappShareUrl } from '../../core/whatsapp';
 import { Icon, IconName } from '../../shared/icon';
+import { LangSwitch } from '../../shared/lang-switch';
 import { downloadCatalogPdf } from './catalog-pdf';
 import { countLabel, groupItems } from './group-items';
 import { Cart } from './cart';
@@ -26,17 +29,26 @@ import { CustomerSheet } from './customer-sheet';
 import { ProductCard } from './product-card';
 import { PublicCatalog, catalogUrl, contactUrl, shareCatalogMessage } from './public-catalog';
 
+/** label null: se traduce ("Sitio web", "Website"). */
 const SOCIALS = {
   instagram: { label: 'Instagram', icon: 'instagram' },
   facebook: { label: 'Facebook', icon: 'facebook' },
   tiktok: { label: 'TikTok', icon: 'tiktok' },
   x: { label: 'X', icon: 'xsocial' },
-  website: { label: 'Sitio web', icon: 'globe' },
-} as const satisfies Record<string, { label: string; icon: IconName }>;
+  website: { label: null, icon: 'globe' },
+} as const satisfies Record<string, { label: string | null; icon: IconName }>;
 
 @Component({
   selector: 'app-catalog',
-  imports: [RouterLink, Icon, ProductCard, CartSheet, CustomerSheet],
+  imports: [
+    RouterLink,
+    Icon,
+    ProductCard,
+    CartSheet,
+    CustomerSheet,
+    TranslocoDirective,
+    LangSwitch,
+  ],
   templateUrl: './catalog.html',
   styleUrls: ['./catalog-theme.css', './catalog.css'],
   host: {
@@ -51,6 +63,8 @@ export class Catalog implements OnInit, OnDestroy {
   private readonly meta = inject(Meta);
   protected readonly customer = inject(CustomerProfile);
   protected readonly cart = inject(Cart);
+  /** Los textos armados en el código (grupos, mensajes) se rehacen al cambiar de idioma. */
+  private readonly language = inject(Language);
 
   /** Viene de la ruta /:slug */
   readonly slug = input.required<string>();
@@ -75,7 +89,10 @@ export class Catalog implements OnInit, OnDestroy {
     return color ? readableTextColor(color) : null;
   });
 
-  protected readonly groups = computed(() => groupItems(this.categories(), this.items()));
+  protected readonly groups = computed(() => {
+    this.language.current();
+    return groupItems(this.categories(), this.items());
+  });
 
   /** Lo que se muestra: agrupado si no hay filtros; una sola lista si se filtra o busca. */
   protected readonly visibleGroups = computed(() => {
@@ -97,8 +114,8 @@ export class Catalog implements OnInit, OnDestroy {
   /** Título del tile del contador: "Productos", "Servicios" o "En catálogo" si hay de ambos. */
   protected readonly itemsLabel = computed(() => {
     const kinds = new Set(this.items().map((i) => i.kind));
-    if (kinds.size !== 1) return 'En catálogo';
-    return kinds.has('service') ? 'Servicios' : 'Productos';
+    if (kinds.size !== 1) return 'catalog.inCatalog';
+    return kinds.has('service') ? 'catalog.services' : 'admin.tabs.products';
   });
   protected readonly countLabel = countLabel;
   /** Cosas en el pedido: la barra de abajo abre el pedido en vez de una consulta. */
@@ -116,6 +133,7 @@ export class Catalog implements OnInit, OnDestroy {
   });
 
   protected readonly contactUrl = computed(() => {
+    this.language.current();
     const business = this.business();
     return business ? contactUrl(business, this.customer.data()) : null;
   });
@@ -150,7 +168,9 @@ export class Catalog implements OnInit, OnDestroy {
       this.title.setTitle(data.business.name);
       this.meta.updateTag({
         name: 'description',
-        content: data.business.description ?? `Catálogo de ${data.business.name}`,
+        content:
+          data.business.description ??
+          translate<string>('catalog.of', { name: data.business.name }),
       });
       this.meta.updateTag({ name: 'theme-color', content: data.business.primary_color });
       if (data.business.whatsapp) this.customer.askOnArrival();
@@ -176,7 +196,8 @@ export class Catalog implements OnInit, OnDestroy {
     const url = catalogUrl(business);
     if (navigator.share) {
       try {
-        await navigator.share({ title: business.name, text: `Catálogo de ${business.name}`, url });
+        const text = translate('catalog.of', { name: business.name });
+        await navigator.share({ title: business.name, text, url });
       } catch {
         // La persona cerró el menú de compartir.
       }

@@ -8,9 +8,11 @@ import {
   input,
   viewChild,
 } from '@angular/core';
+import { TranslocoDirective } from '@jsverse/transloco';
 
 import { CustomerProfile } from '../../core/customer';
 import { formatPrice } from '../../core/format';
+import { Language } from '../../core/i18n';
 import { Business, Item } from '../../core/models';
 import { Icon } from '../../shared/icon';
 import { Cart, MAX_QUANTITY } from './cart';
@@ -22,45 +24,47 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
  */
 @Component({
   selector: 'app-cart-sheet',
-  imports: [Icon],
+  imports: [Icon, TranslocoDirective],
   template: `
-    @if (lines().length) {
-      <!-- Espacio al final de la página para que la barra no tape lo último. -->
-      <div class="cart-spacer" aria-hidden="true"></div>
-    }
-    @if (lines().length && !cart.sheetOpen()) {
-      <button
-        type="button"
-        class="cart-bar"
-        [class.cart-bar--raised]="raised()"
-        (click)="cart.sheetOpen.set(true)"
-      >
-        <span class="cart-bar__count">{{ count() }}</span>
-        <span class="cart-bar__text">Ver mi pedido</span>
-        @if (total(); as total) {
-          <span class="cart-bar__total">{{ total }}</span>
-        }
-      </button>
-    } @else if (sentPending()) {
-      <!-- Recién enviado: el pedido se vació, pero se puede recuperar si WhatsApp no abrió. -->
-      <div class="cart-bar cart-bar--sent" [class.cart-bar--raised]="raised()" role="status">
-        <span class="cart-bar__count"><app-icon name="check" [size]="20" /></span>
-        <span class="cart-bar__text">
-          Pedido enviado
-          <button type="button" class="cart-bar__link" (click)="restore()">
-            ¿No se abrió WhatsApp? Recuperarlo
-          </button>
-        </span>
+    <ng-container *transloco="let t">
+      @if (lines().length) {
+        <!-- Espacio al final de la página para que la barra no tape lo último. -->
+        <div class="cart-spacer" aria-hidden="true"></div>
+      }
+      @if (lines().length && !cart.sheetOpen()) {
         <button
           type="button"
-          class="cart-bar__close"
-          (click)="cart.forgetSent(business().id)"
-          aria-label="Cerrar aviso"
+          class="cart-bar"
+          [class.cart-bar--raised]="raised()"
+          (click)="cart.sheetOpen.set(true)"
         >
-          <app-icon name="close" [size]="16" />
+          <span class="cart-bar__count">{{ count() }}</span>
+          <span class="cart-bar__text">{{ t('cart.view') }}</span>
+          @if (total(); as total) {
+            <span class="cart-bar__total">{{ total }}</span>
+          }
         </button>
-      </div>
-    }
+      } @else if (sentPending()) {
+        <!-- Recién enviado: el pedido se vació, pero se puede recuperar si WhatsApp no abrió. -->
+        <div class="cart-bar cart-bar--sent" [class.cart-bar--raised]="raised()" role="status">
+          <span class="cart-bar__count"><app-icon name="check" [size]="20" /></span>
+          <span class="cart-bar__text">
+            {{ t('cart.sent') }}
+            <button type="button" class="cart-bar__link" (click)="restore()">
+              {{ t('cart.restore') }}
+            </button>
+          </span>
+          <button
+            type="button"
+            class="cart-bar__close"
+            (click)="cart.forgetSent(business().id)"
+            [attr.aria-label]="t('cart.closeNotice')"
+          >
+            <app-icon name="close" [size]="16" />
+          </button>
+        </div>
+      }
+    </ng-container>
 
     <dialog
       #dialog
@@ -69,23 +73,23 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
       (cancel)="$event.preventDefault(); cart.sheetOpen.set(false)"
       (close)="cart.sheetOpen.set(false)"
     >
-      <div class="sheet__body">
+      <div class="sheet__body" *transloco="let t">
         <header class="sheet__head">
           <span class="sheet__icon"><app-icon name="bag" [size]="22" /></span>
           <button
             type="button"
             class="sheet__close"
             (click)="cart.sheetOpen.set(false)"
-            aria-label="Cerrar"
+            [attr.aria-label]="t('common.close')"
           >
             <app-icon name="close" [size]="18" />
           </button>
         </header>
 
-        <h2 id="cart-sheet-title" class="sheet__title">Tu pedido</h2>
+        <h2 id="cart-sheet-title" class="sheet__title">{{ t('cart.title') }}</h2>
 
         @if (!lines().length) {
-          <p class="sheet__text">Todavía no agregaste nada. Toca «Añadir» en lo que te interese.</p>
+          <p class="sheet__text">{{ t('cart.empty') }}</p>
         } @else {
           <ul class="lines">
             @for (line of lines(); track line.item.id) {
@@ -101,9 +105,9 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
                   <span class="line__name">{{ line.item.name }}</span>
                   <span class="line__price">
                     @if (line.item.kind === 'service') {
-                      Servicio · {{ price(line.item) }}
+                      {{ t('kind.service') }} · {{ price(line.item) }}
                     } @else if (line.item.price !== null && line.quantity > 1) {
-                      {{ price(line.item) }} c/u ·
+                      {{ t('whatsapp.each', { price: price(line.item) }) }} ·
                       <strong>{{ lineTotal(line.item, line.quantity) }}</strong>
                     } @else {
                       {{ price(line.item) }}
@@ -114,7 +118,7 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
                       <button
                         type="button"
                         (click)="cart.set(line.item, line.quantity - 1)"
-                        [attr.aria-label]="line.quantity === 1 ? 'Quitar' : 'Uno menos'"
+                        [attr.aria-label]="t(line.quantity === 1 ? 'cart.remove' : 'product.less')"
                       >
                         <app-icon [name]="line.quantity === 1 ? 'trash' : 'minus'" [size]="16" />
                       </button>
@@ -123,7 +127,7 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
                         type="button"
                         (click)="cart.set(line.item, line.quantity + 1)"
                         [disabled]="line.quantity === maxQuantity"
-                        aria-label="Uno más"
+                        [attr.aria-label]="t('product.more')"
                       >
                         <app-icon name="plus" [size]="16" />
                       </button>
@@ -135,7 +139,7 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
                     type="button"
                     class="line__remove"
                     (click)="cart.set(line.item, 0)"
-                    [attr.aria-label]="'Quitar ' + line.item.name"
+                    [attr.aria-label]="t('cart.removeItem', { name: line.item.name })"
                   >
                     <app-icon name="trash" [size]="16" />
                   </button>
@@ -145,10 +149,10 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
           </ul>
 
           <div class="summary">
-            <span class="summary__label">Total</span>
-            <span class="summary__value">{{ total() ?? 'A consultar' }}</span>
+            <span class="summary__label">{{ t('cart.total') }}</span>
+            <span class="summary__value">{{ total() ?? t('cart.onRequest') }}</span>
             @if (total() && hasUnpriced()) {
-              <small class="summary__note">Más lo que tiene precio a consultar</small>
+              <small class="summary__note">{{ t('cart.unpricedNote') }}</small>
             }
           </div>
 
@@ -156,12 +160,15 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
             <app-icon name="pin" [size]="18" />
             @if (customer.data(); as c) {
               <span class="customer__text"
-                >Tus datos: <strong>{{ c.name }}</strong> · {{ c.address }}</span
+                >{{ t('catalog.yourDetails') }} <strong>{{ c.name }}</strong> ·
+                {{ c.address }}</span
               >
-              <button type="button" (click)="customer.edit()">Cambiar</button>
+              <button type="button" (click)="customer.edit()">
+                {{ t('settings.changeLogo') }}
+              </button>
             } @else {
-              <span class="customer__text">Agrega tu nombre y dirección para enviar.</span>
-              <button type="button" (click)="customer.edit()">Agregar</button>
+              <span class="customer__text">{{ t('cart.addDetails') }}</span>
+              <button type="button" (click)="customer.edit()">{{ t('categories.add') }}</button>
             }
           </div>
 
@@ -175,10 +182,10 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
               (auxclick)="$event.button === 1 && send($event)"
             >
               <app-icon name="whatsapp" [size]="20" />
-              Enviar pedido por WhatsApp
+              {{ t('cart.send') }}
             </a>
           }
-          <button type="button" class="sheet__skip" (click)="clear()">Vaciar el pedido</button>
+          <button type="button" class="sheet__skip" (click)="clear()">{{ t('cart.clear') }}</button>
         }
       </div>
     </dialog>
@@ -466,6 +473,8 @@ export class CartSheet {
   protected readonly cart = inject(Cart);
   protected readonly customer = inject(CustomerProfile);
   private readonly catalog = inject(PublicCatalog);
+  /** Los textos armados en el código (precios, mensaje) se rehacen al cambiar de idioma. */
+  private readonly language = inject(Language);
   private readonly dialog = viewChild.required<ElementRef<HTMLDialogElement>>('dialog');
 
   readonly business = input.required<Business>();
@@ -479,12 +488,14 @@ export class CartSheet {
   protected readonly count = computed(() => this.lines().reduce((n, l) => n + l.quantity, 0));
   protected readonly hasUnpriced = computed(() => this.lines().some((l) => l.item.price === null));
   protected readonly total = computed(() => {
+    this.language.current();
     const total = linesTotal(this.lines());
     return total === null ? null : formatPrice(total, this.business().currency);
   });
-  protected readonly orderUrl = computed(() =>
-    cartOrderUrl(this.business(), this.lines(), this.customer.data()),
-  );
+  protected readonly orderUrl = computed(() => {
+    this.language.current();
+    return cartOrderUrl(this.business(), this.lines(), this.customer.data());
+  });
 
   constructor() {
     // El estado de la hoja es global: si la página se destruye con la hoja abierta (por
