@@ -159,7 +159,8 @@
       "productsLong": "y servicios",
       "categories": "Categorías",
       "business": "Mi negocio",
-      "stats": "Estadísticas"
+      "stats": "Estadísticas",
+      "share": "Compartir"
     },
     "viewCatalog": "Ver mi catálogo",
     "pending": "Tu catálogo está en revisión. Ya puedes cargar tus productos; el público lo verá en cuanto lo aprobemos.",
@@ -492,5 +493,22 @@
     "topItems": "Lo más visto",
     "noItems": "Todavía nadie abrió un producto en este período.",
     "note": "Tus propias visitas (con la sesión iniciada) no se cuentan. Cada visitante cuenta una vez por pestaña."
+  },
+  "share": {
+    "title": "Compartir",
+    "lead": "Tu enlace y tu código QR, para enviarlos o imprimirlos y pegarlos en el local.",
+    "notPublic": "Tu catálogo todavía no es público: el enlace y el código funcionarán en cuanto lo aprobemos.",
+    "qr": "Código QR",
+    "qrAlt": "Código QR de {{ url }}",
+    "downloadPng": "Descargar imagen",
+    "downloadPoster": "Descargar cartel para imprimir",
+    "generating": "Generando…",
+    "qrHint": "Al escanearlo con la cámara del celular se abre tu catálogo. Si cambias la dirección web, vuelve a descargarlo: el código anterior dejará de funcionar.",
+    "link": "Enlace",
+    "copy": "Copiar enlace",
+    "copied": "¡Copiado!",
+    "linkHint": "Ponlo en tu perfil de Instagram, tu estado de WhatsApp o donde te encuentren tus clientes.",
+    "posterTitle": "Escanea y mira nuestro catálogo",
+    "posterSubtitle": "Elige lo que quieras y pide por WhatsApp"
   }
 }

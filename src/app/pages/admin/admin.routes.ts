@@ -23,6 +23,10 @@ export const adminRoutes: Routes = [
     loadComponent: () => import('./stats/stats').then((m) => m.Stats),
   },
   {
+    path: 'compartir',
+    loadComponent: () => import('./share/share').then((m) => m.Share),
+  },
+  {
     path: 'negocio',
     loadComponent: () =>
       import('./business-settings/business-settings').then((m) => m.BusinessSettings),

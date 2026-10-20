@@ -29,6 +29,8 @@
               "src/styles.css"
             ],
             "allowedCommonJsDependencies": [
+              "qrcode",
+              "dijkstrajs",
               "core-js",
               "html2canvas",
               "raf",

@@ -159,7 +159,8 @@
       "productsLong": "and services",
       "categories": "Categories",
       "business": "My business",
-      "stats": "Statistics"
+      "stats": "Statistics",
+      "share": "Share"
     },
     "viewCatalog": "View my catalog",
     "pending": "Your catalog is under review. You can already add your products; the public will see it as soon as we approve it.",
@@ -492,5 +493,22 @@
     "topItems": "Most viewed",
     "noItems": "Nobody has opened a product in this period yet.",
     "note": "Your own visits (while signed in) aren't counted. Each visitor counts once per tab."
+  },
+  "share": {
+    "title": "Share",
+    "lead": "Your link and your QR code, to send them or print them and put them up at your shop.",
+    "notPublic": "Your catalog isn't public yet: the link and the code will work as soon as we approve it.",
+    "qr": "QR code",
+    "qrAlt": "QR code for {{ url }}",
+    "downloadPng": "Download image",
+    "downloadPoster": "Download printable poster",
+    "generating": "Generating…",
+    "qrHint": "Scanning it with a phone camera opens your catalog. If you change your web address, download it again: the old code will stop working.",
+    "link": "Link",
+    "copy": "Copy link",
+    "copied": "Copied!",
+    "linkHint": "Put it in your Instagram bio, your WhatsApp status or wherever your customers find you.",
+    "posterTitle": "Scan to see our catalog",
+    "posterSubtitle": "Pick what you like and order via WhatsApp"
   }
 }
