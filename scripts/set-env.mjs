@@ -3,7 +3,10 @@
 import { mkdirSync, writeFileSync } from 'node:fs';
 
 const required = ['SUPABASE_URL', 'SUPABASE_ANON_KEY', 'TURNSTILE_SITE_KEY'];
-const missing = required.filter((name) => !process.env[name]);
+
+// Sin espacios ni saltos de línea: al pegar en el panel de Cloudflare es fácil que se cuelen.
+const env = Object.fromEntries(required.map((name) => [name, process.env[name]?.trim() ?? '']));
+const missing = required.filter((name) => !env[name]);
 
 if (missing.length) {
   console.error(`Faltan variables de entorno: ${missing.join(', ')}`);
@@ -11,10 +14,10 @@ if (missing.length) {
 }
 
 const environment = {
-  supabaseUrl: process.env.SUPABASE_URL,
-  supabaseAnonKey: process.env.SUPABASE_ANON_KEY,
+  supabaseUrl: env.SUPABASE_URL,
+  supabaseAnonKey: env.SUPABASE_ANON_KEY,
   // Supabase exige el captcha de Turnstile al registrarse y al iniciar sesión.
-  turnstileSiteKey: process.env.TURNSTILE_SITE_KEY,
+  turnstileSiteKey: env.TURNSTILE_SITE_KEY,
 };
 
 mkdirSync('src/environments', { recursive: true });
