@@ -15,7 +15,9 @@ export interface QrOptions {
  * La librería se carga solo cuando hace falta.
  */
 export async function renderQr(url: string, options: QrOptions): Promise<HTMLCanvasElement> {
-  const { toCanvas } = await import('qrcode');
+  // qrcode es CommonJS: al compilarlo, sus funciones vienen dentro de `default`.
+  const module = await import('qrcode');
+  const { toCanvas } = ('default' in module ? module.default : module) as typeof module;
   const size = options.size ?? 1024;
   // Un color claro sobre blanco no lo leen las cámaras: entonces va en casi negro.
   const dark = readableTextColor(options.color) === '#ffffff' ? options.color : '#111111';
@@ -35,9 +37,14 @@ export async function renderQr(url: string, options: QrOptions): Promise<HTMLCan
     const box = Math.round(canvas.width * 0.22);
     const x = (canvas.width - box) / 2;
     context.fillStyle = '#ffffff';
-    context.beginPath();
-    context.roundRect(x, x, box, box, box * 0.18);
-    context.fill();
+    // roundRect no existe en Safari < 16: ahí el cuadro va sin esquinas redondeadas.
+    if (context.roundRect) {
+      context.beginPath();
+      context.roundRect(x, x, box, box, box * 0.18);
+      context.fill();
+    } else {
+      context.fillRect(x, x, box, box);
+    }
 
     const padding = box * 0.1;
     const inner = box - padding * 2;

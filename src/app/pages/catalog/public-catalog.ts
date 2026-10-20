@@ -72,9 +72,23 @@ export function itemPrice(business: Business, item: Item, variant?: Variant | nu
   return formatPrice(unitPrice(item, variant), business.currency);
 }
 
+/** Precios de las variantes (las que no tienen uno propio usan el del producto). */
+function variantPrices(item: Item): number[] {
+  return item.variants.map((v) => unitPrice(item, v)).filter((p) => p !== null);
+}
+
+/**
+ * La tarjeta muestra otro precio que el del producto: un rango ("Desde $5") o el precio
+ * único de sus variantes. Entonces la oferta del producto no se muestra: no sería de todas.
+ */
+export function hasPriceRange(item: Item): boolean {
+  const prices = variantPrices(item);
+  return prices.length > 0 && prices.some((p) => p !== item.price);
+}
+
 /** "Desde $5" si las variantes tienen precios distintos; si no, el precio de siempre. */
 export function cardPrice(business: Business, item: Item): string {
-  const prices = item.variants.map((v) => unitPrice(item, v)).filter((p) => p !== null);
+  const prices = variantPrices(item);
   if (!prices.length) return itemPrice(business, item);
   const min = Math.min(...prices);
   const price = formatPrice(min, business.currency);

@@ -21,8 +21,10 @@ import { downloadQrPoster } from './qr-poster';
         </div>
       </section>
 
-      @if (current.business()?.status !== 'active') {
-        <p class="notice">{{ t('share.notPublic') }}</p>
+      @if (current.business(); as business) {
+        @if (business.status !== 'active') {
+          <p class="notice">{{ t('share.notPublic') }}</p>
+        }
       }
       @if (error(); as error) {
         <p class="alert">{{ error }}</p>
@@ -133,6 +135,8 @@ export class Share {
   protected readonly copied = signal(false);
   protected readonly error = signal<string | null>(null);
   private qr: HTMLCanvasElement | null = null;
+  /** Solo vale el último código pedido: uno viejo que tarde más no reemplaza al nuevo. */
+  private request = 0;
 
   constructor() {
     // Se rehace si cambian el enlace, el color o el logo del negocio.
@@ -170,11 +174,14 @@ export class Share {
   }
 
   private async render(url: string, color: string, logoUrl: string | null): Promise<void> {
+    const request = ++this.request;
     try {
-      this.qr = await renderQr(url, { color, logoUrl });
-      this.qrUrl.set(this.qr.toDataURL('image/png'));
+      const qr = await renderQr(url, { color, logoUrl });
+      if (request !== this.request) return;
+      this.qr = qr;
+      this.qrUrl.set(qr.toDataURL('image/png'));
     } catch (e) {
-      this.error.set(errorMessage(e));
+      if (request === this.request) this.error.set(errorMessage(e));
     }
   }
 }

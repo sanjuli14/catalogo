@@ -304,7 +304,11 @@ export class Stats {
     return date.toLocaleDateString(intlLocale(), { day: 'numeric', month: 'short' });
   }
 
+  /** Solo vale la última consulta: si se cambia de período rápido, las viejas se descartan. */
+  private request = 0;
+
   private async load(): Promise<void> {
+    const request = ++this.request;
     this.loading.set(true);
     this.error.set(null);
     try {
@@ -314,12 +318,13 @@ export class Stats {
         this.statsApi.get(this.businessId, since),
         this.items().length ? this.items() : this.api.listItems(this.businessId),
       ]);
+      if (request !== this.request) return;
       this.data.set(data);
       this.items.set(items);
     } catch (e) {
-      this.error.set(errorMessage(e));
+      if (request === this.request) this.error.set(errorMessage(e));
     } finally {
-      this.loading.set(false);
+      if (request === this.request) this.loading.set(false);
     }
   }
 }

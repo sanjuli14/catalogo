@@ -10,10 +10,10 @@ import {
   PublicCatalog,
   cardPrice,
   discountPercent,
+  hasPriceRange,
   isOrderable,
   isNew,
   itemCompareAtPrice,
-  itemPrice,
 } from './public-catalog';
 
 /** Tarjeta de un producto o servicio: abre su página y, si se puede, lo pide por WhatsApp. */
@@ -98,10 +98,8 @@ export class ProductCard {
     this.language.current();
     return cardPrice(this.business(), this.item());
   });
-  /** Con un rango de precios ("Desde…") no se muestra la oferta: no sería de todas. */
-  private readonly priceRange = computed(
-    () => this.price() !== itemPrice(this.business(), this.item()),
-  );
+  /** Con otro precio que el del producto ("Desde…") no se muestra la oferta. */
+  private readonly priceRange = computed(() => hasPriceRange(this.item()));
   protected readonly before = computed(() => {
     this.language.current();
     return this.priceRange() ? null : itemCompareAtPrice(this.business(), this.item());

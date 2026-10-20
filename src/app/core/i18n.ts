@@ -42,9 +42,15 @@ export class Language {
     initialValue: this.transloco.getActiveLang(),
   });
 
+  /**
+   * Primero carga las traducciones y después cambia el idioma: si no, los computed que usan
+   * translate() se recalcularían antes de tenerlas y quedarían en el idioma anterior.
+   */
   set(lang: Lang): void {
-    this.transloco.setActiveLang(lang);
-    document.documentElement.lang = lang;
+    this.transloco.load(lang).subscribe(() => {
+      this.transloco.setActiveLang(lang);
+      document.documentElement.lang = lang;
+    });
     try {
       localStorage.setItem(STORAGE_KEY, lang);
     } catch {
