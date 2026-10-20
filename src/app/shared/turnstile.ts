@@ -27,6 +27,9 @@ declare global {
 
 let script: Promise<TurnstileApi> | undefined;
 
+/** Turnstile reintenta solo tras un error; el aviso sale si falla esta cantidad de veces seguidas. */
+const ERRORS_BEFORE_NOTICE = 3;
+
 function loadTurnstile(): Promise<TurnstileApi> {
   script ??= new Promise((resolve, reject) => {
     const tag = document.createElement('script');
@@ -51,11 +54,18 @@ function loadTurnstile(): Promise<TurnstileApi> {
   selector: 'app-turnstile',
   template: `
     <div #widget></div>
-    @if (failed()) {
-      <p class="alert">
-        No se pudo cargar la verificación de seguridad. Recarga la página o desactiva el bloqueador
-        de anuncios para este sitio.
-      </p>
+    @switch (problem()) {
+      @case ('script') {
+        <p class="alert">
+          No se pudo cargar la verificación de seguridad. Recarga la página o desactiva el
+          bloqueador de anuncios para este sitio.
+        </p>
+      }
+      @case ('challenge') {
+        <p class="alert">
+          No pudimos verificar que eres una persona. Recarga la página e inténtalo de nuevo.
+        </p>
+      }
     }
   `,
   host: { class: 'turnstile' },
@@ -64,9 +74,11 @@ export class Turnstile implements OnDestroy {
   private readonly container = viewChild.required<ElementRef<HTMLElement>>('widget');
   private widgetId?: string;
   private destroyed = false;
+  private consecutiveErrors = 0;
 
   readonly token = output<string | null>();
-  protected readonly failed = signal(false);
+  /** script: no cargó el script de Cloudflare. challenge: la verificación falla una y otra vez. */
+  protected readonly problem = signal<'script' | 'challenge' | null>(null);
 
   constructor() {
     afterNextRender(async () => {
@@ -74,7 +86,7 @@ export class Turnstile implements OnDestroy {
       try {
         turnstile = await loadTurnstile();
       } catch {
-        this.failed.set(true);
+        this.problem.set('script');
         return;
       }
       // El formulario pudo cerrarse mientras cargaba el script.
@@ -83,15 +95,20 @@ export class Turnstile implements OnDestroy {
       this.widgetId = turnstile.render(this.container().nativeElement, {
         sitekey: environment.turnstileSiteKey,
         language: 'es',
+        retry: 'auto',
+        'retry-interval': 3000,
         callback: (token: string) => {
-          this.failed.set(false);
+          this.consecutiveErrors = 0;
+          this.problem.set(null);
           this.token.emit(token);
         },
         'expired-callback': () => this.token.emit(null),
-        // Por ejemplo, si el dominio no está en los Hostnames del widget en Cloudflare.
+        // Errores como el 600010 son pasajeros: Turnstile reintenta solo.
         'error-callback': () => {
-          this.failed.set(true);
           this.token.emit(null);
+          this.consecutiveErrors++;
+          if (this.consecutiveErrors >= ERRORS_BEFORE_NOTICE) this.problem.set('challenge');
+          return true; // Error manejado: Turnstile no lo lanza como excepción.
         },
       });
     });
