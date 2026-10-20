@@ -4,11 +4,12 @@ import { FormsModule } from '@angular/forms';
 import { CatalogApi } from '../../../core/catalog-api';
 import { errorMessage } from '../../../core/format';
 import { Category } from '../../../core/models';
+import { Icon } from '../../../shared/icon';
 import { CurrentBusiness } from '../current-business';
 
 @Component({
   selector: 'app-categories',
-  imports: [FormsModule],
+  imports: [FormsModule, Icon],
   template: `
     <section class="section-header">
       <div>
@@ -65,8 +66,9 @@ import { CurrentBusiness } from '../current-business';
                   [disabled]="i === 0 || busy()"
                   (click)="move(i, -1)"
                   aria-label="Subir"
+                  title="Subir"
                 >
-                  ↑
+                  <app-icon name="chevronUp" [size]="18" />
                 </button>
                 <button
                   type="button"
@@ -74,19 +76,28 @@ import { CurrentBusiness } from '../current-business';
                   [disabled]="last || busy()"
                   (click)="move(i, 1)"
                   aria-label="Bajar"
+                  title="Bajar"
                 >
-                  ↓
-                </button>
-                <button type="button" class="button button--ghost" (click)="startEdit(category)">
-                  Renombrar
+                  <app-icon name="chevronDown" [size]="18" />
                 </button>
                 <button
                   type="button"
-                  class="button button--danger"
+                  class="icon-button"
+                  (click)="startEdit(category)"
+                  aria-label="Renombrar"
+                  title="Renombrar"
+                >
+                  <app-icon name="pencil" [size]="16" />
+                </button>
+                <button
+                  type="button"
+                  class="icon-button icon-button--danger"
                   [disabled]="busy()"
                   (click)="remove(category)"
+                  aria-label="Eliminar"
+                  title="Eliminar"
                 >
-                  Eliminar
+                  <app-icon name="trash" [size]="16" />
                 </button>
               </div>
             }

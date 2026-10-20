@@ -180,7 +180,7 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
                   @case ('pending') {
                     <button
                       type="button"
-                      class="button"
+                      class="button button--sm"
                       [disabled]="busy()"
                       (click)="setStatus(business, 'active')"
                     >
@@ -190,7 +190,7 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
                   @case ('active') {
                     <button
                       type="button"
-                      class="button button--ghost"
+                      class="button button--ghost button--sm"
                       [disabled]="busy()"
                       (click)="setStatus(business, 'suspended')"
                     >
@@ -200,7 +200,7 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
                   @case ('suspended') {
                     <button
                       type="button"
-                      class="button"
+                      class="button button--sm"
                       [disabled]="busy()"
                       (click)="setStatus(business, 'active')"
                     >
@@ -208,19 +208,19 @@ const STATUS_LABELS: Record<BusinessStatus, string> = {
                     </button>
                   }
                 }
-                <a class="button button--ghost" [routerLink]="['negocios', business.id]"
+                <a class="button button--ghost button--sm" [routerLink]="['negocios', business.id]"
                   >Administrar</a
                 >
                 <button
                   type="button"
-                  class="button button--ghost"
+                  class="button button--ghost button--sm"
                   (click)="startAddOwner(business)"
                 >
                   Agregar dueño
                 </button>
                 <button
                   type="button"
-                  class="button button--danger"
+                  class="button button--danger button--sm"
                   [disabled]="busy()"
                   (click)="remove(business)"
                 >

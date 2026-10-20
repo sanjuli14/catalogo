@@ -1,12 +1,13 @@
 import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 
+import { Icon } from '../../shared/icon';
 import { PanelHeader } from '../../shared/panel-header';
 import { CurrentBusiness } from './current-business';
 
 @Component({
   selector: 'app-admin',
-  imports: [PanelHeader, RouterLink, RouterLinkActive, RouterOutlet],
+  imports: [PanelHeader, RouterLink, RouterLinkActive, RouterOutlet, Icon],
   providers: [CurrentBusiness],
   template: `
     <app-panel-header [title]="current.business()?.name ?? 'Panel del negocio'" />
@@ -26,12 +27,18 @@ import { CurrentBusiness } from './current-business';
       </main>
     } @else {
       <nav class="tabs" aria-label="Secciones del panel">
-        <a routerLink="productos" routerLinkActive="is-active">Productos y servicios</a>
-        <a routerLink="categorias" routerLinkActive="is-active">Categorías</a>
-        <a routerLink="negocio" routerLinkActive="is-active">Mi negocio</a>
+        <a routerLink="productos" routerLinkActive="is-active">
+          <app-icon name="bag" [size]="16" /> Productos y servicios
+        </a>
+        <a routerLink="categorias" routerLinkActive="is-active">
+          <app-icon name="layers" [size]="16" /> Categorías
+        </a>
+        <a routerLink="negocio" routerLinkActive="is-active">
+          <app-icon name="store" [size]="16" /> Mi negocio
+        </a>
         @if (current.business(); as business) {
           <a class="tabs__external" [href]="'/' + business.slug" target="_blank" rel="noopener">
-            Ver mi catálogo ↗
+            Ver mi catálogo <app-icon name="arrowUpRight" [size]="16" />
           </a>
         }
       </nav>

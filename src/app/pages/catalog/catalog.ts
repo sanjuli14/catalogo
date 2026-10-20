@@ -17,26 +17,32 @@ import { readableTextColor } from '../../core/color';
 import { errorMessage, formatPrice } from '../../core/format';
 import { Business, Category, Item } from '../../core/models';
 import { whatsappChatUrl, whatsappShareUrl } from '../../core/whatsapp';
+import { Icon, IconName } from '../../shared/icon';
 import { downloadCatalogPdf } from './catalog-pdf';
 import { groupItems } from './group-items';
 
-const SOCIAL_LABELS = {
-  instagram: 'Instagram',
-  facebook: 'Facebook',
-  tiktok: 'TikTok',
-  x: 'X',
-  website: 'Sitio web',
-} as const;
+const SOCIALS = {
+  instagram: { label: 'Instagram', icon: 'instagram' },
+  facebook: { label: 'Facebook', icon: 'facebook' },
+  tiktok: { label: 'TikTok', icon: 'tiktok' },
+  x: { label: 'X', icon: 'xsocial' },
+  website: { label: 'Sitio web', icon: 'globe' },
+} as const satisfies Record<string, { label: string; icon: IconName }>;
+
+/** A partir de cuánto scroll aparecen la barra compacta y el botón flotante de WhatsApp. */
+const SCROLLED_AFTER_PX = 280;
 
 @Component({
   selector: 'app-catalog',
-  imports: [RouterLink],
+  imports: [RouterLink, Icon],
   templateUrl: './catalog.html',
   styleUrl: './catalog.css',
   host: {
     '[style.--brand]': 'business()?.primary_color',
     '[style.--brand-2]': 'business()?.secondary_color',
     '[style.--on-brand]': 'onBrand()',
+    '[class.is-scrolled]': 'scrolled()',
+    '(window:scroll)': 'onScroll()',
   },
 })
 export class Catalog implements OnDestroy {
@@ -61,7 +67,10 @@ export class Catalog implements OnDestroy {
   protected readonly openPhoto = signal(0);
   protected readonly copied = signal(false);
   protected readonly generatingPdf = signal(false);
+  /** true cuando ya se pasó la portada: muestra la barra compacta y el botón flotante. */
+  protected readonly scrolled = signal(false);
   private readonly dialog = viewChild<ElementRef<HTMLDialogElement>>('dialog');
+  private readonly gallery = viewChild<ElementRef<HTMLElement>>('gallery');
 
   protected readonly onBrand = computed(() => {
     const color = this.business()?.primary_color;
@@ -87,11 +96,13 @@ export class Catalog implements OnDestroy {
     this.visibleGroups().reduce((total, g) => total + g.items.length, 0),
   );
 
+  protected readonly itemCount = computed(() => this.items().length);
+
   protected readonly socials = computed(() => {
     const socials = this.business()?.socials ?? {};
-    return (Object.keys(SOCIAL_LABELS) as (keyof typeof SOCIAL_LABELS)[])
+    return (Object.keys(SOCIALS) as (keyof typeof SOCIALS)[])
       .filter((key) => socials[key])
-      .map((key) => ({ label: SOCIAL_LABELS[key], url: withProtocol(socials[key]!) }));
+      .map((key) => ({ ...SOCIALS[key], url: withProtocol(socials[key]!) }));
   });
 
   /** El dueño (o el superadmin) ve su catálogo aunque todavía no sea público. */
@@ -207,10 +218,31 @@ export class Catalog implements OnDestroy {
     }
   }
 
+  protected onScroll(): void {
+    this.scrolled.set(window.scrollY > SCROLLED_AFTER_PX);
+  }
+
+  protected scrollToTop(): void {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   protected showItem(item: Item): void {
     this.openItem.set(item);
     this.openPhoto.set(0);
     this.dialog()?.nativeElement.showModal();
+    this.gallery()?.nativeElement.scrollTo({ left: 0 });
+  }
+
+  /** La galería del detalle se desliza con el dedo; aquí se sabe qué foto se está viendo. */
+  protected onGalleryScroll(event: Event): void {
+    const gallery = event.target as HTMLElement;
+    this.openPhoto.set(Math.round(gallery.scrollLeft / gallery.clientWidth));
+  }
+
+  protected goToPhoto(index: number): void {
+    const gallery = this.gallery()?.nativeElement;
+    gallery?.scrollTo({ left: index * gallery.clientWidth, behavior: 'smooth' });
+    this.openPhoto.set(index);
   }
 
   protected closeItem(): void {

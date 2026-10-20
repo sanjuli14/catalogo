@@ -4,18 +4,19 @@ import { RouterLink } from '@angular/router';
 import { CatalogApi } from '../../../core/catalog-api';
 import { errorMessage, formatPrice } from '../../../core/format';
 import { Category, Item } from '../../../core/models';
+import { Icon } from '../../../shared/icon';
 import { CurrentBusiness } from '../current-business';
 
 @Component({
   selector: 'app-items',
-  imports: [RouterLink],
+  imports: [RouterLink, Icon],
   template: `
     <section class="section-header">
       <div>
         <h2>Productos y servicios</h2>
         <p class="muted">Aparecen en tu catálogo en este orden.</p>
       </div>
-      <a class="button" routerLink="nuevo">Nuevo</a>
+      <a class="button" routerLink="nuevo"><app-icon name="plus" [size]="18" /> Nuevo</a>
     </section>
 
     @if (error(); as error) {
@@ -35,7 +36,9 @@ import { CurrentBusiness } from '../current-business';
             @if (item.photos.length) {
               <img class="thumb" [src]="api.imageUrl(item.photos[0])" alt="" />
             } @else {
-              <span class="thumb thumb--empty" aria-hidden="true">Sin foto</span>
+              <span class="thumb thumb--empty" aria-hidden="true"
+                ><app-icon name="image" [size]="22"
+              /></span>
             }
 
             <div class="list__grow">
@@ -62,8 +65,9 @@ import { CurrentBusiness } from '../current-business';
                 [disabled]="i === 0 || busy()"
                 (click)="move(i, -1)"
                 aria-label="Subir"
+                title="Subir"
               >
-                ↑
+                <app-icon name="chevronUp" [size]="18" />
               </button>
               <button
                 type="button"
@@ -71,32 +75,42 @@ import { CurrentBusiness } from '../current-business';
                 [disabled]="last || busy()"
                 (click)="move(i, 1)"
                 aria-label="Bajar"
+                title="Bajar"
               >
-                ↓
+                <app-icon name="chevronDown" [size]="18" />
               </button>
               <button
                 type="button"
-                class="button button--ghost"
+                class="icon-button"
                 [disabled]="busy()"
                 (click)="toggle(item, 'is_visible')"
+                [attr.aria-label]="
+                  item.is_visible ? 'Ocultar del catálogo' : 'Mostrar en el catálogo'
+                "
+                [title]="item.is_visible ? 'Ocultar del catálogo' : 'Mostrar en el catálogo'"
               >
-                {{ item.is_visible ? 'Ocultar' : 'Mostrar' }}
+                <app-icon [name]="item.is_visible ? 'eye' : 'eyeOff'" [size]="18" />
               </button>
               <button
                 type="button"
-                class="button button--ghost"
+                class="button button--ghost button--sm"
                 [disabled]="busy()"
                 (click)="toggle(item, 'is_available')"
               >
                 {{ item.is_available ? 'Marcar agotado' : 'Marcar disponible' }}
               </button>
+              <a class="icon-button" [routerLink]="item.id" aria-label="Editar" title="Editar">
+                <app-icon name="pencil" [size]="16" />
+              </a>
               <button
                 type="button"
-                class="button button--danger"
+                class="icon-button icon-button--danger"
                 [disabled]="busy()"
                 (click)="remove(item)"
+                aria-label="Eliminar"
+                title="Eliminar"
               >
-                Eliminar
+                <app-icon name="trash" [size]="16" />
               </button>
             </div>
           </li>
