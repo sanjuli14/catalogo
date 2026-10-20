@@ -6,12 +6,13 @@ alter type public.business_status add value if not exists 'pending';
 
 -- /registro es una página de la app: ningún negocio puede usarla como dirección.
 alter table public.businesses
-  drop constraint businesses_slug_check1,
+  drop constraint if exists businesses_slug_check1,
+  drop constraint if exists businesses_slug_reserved,
   add constraint businesses_slug_reserved
     check (slug not in ('login', 'admin', 'superadmin', 'api', 'assets', 'registro'));
 
 -- ¿Se puede usar esta dirección web? Lo usa la pantalla de registro antes de crear la cuenta.
-create function public.slug_available(candidate text)
+create or replace function public.slug_available(candidate text)
 returns boolean
 language sql
 stable
@@ -26,7 +27,7 @@ $$;
 
 -- Crea el negocio (pendiente) del usuario que acaba de registrarse y lo hace su dueño.
 -- plpgsql: el valor 'pending' recién agregado no se valida hasta ejecutarla.
-create function public.register_business(business_name text, business_slug text)
+create or replace function public.register_business(business_name text, business_slug text)
 returns uuid
 language plpgsql
 security definer
