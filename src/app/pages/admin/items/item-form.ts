@@ -1,6 +1,9 @@
 import { Component, OnDestroy, inject, input, signal } from '@angular/core';
 import {
   AbstractControl,
+  FormArray,
+  FormControl,
+  FormGroup,
   NonNullableFormBuilder,
   ReactiveFormsModule,
   ValidationErrors,
@@ -11,10 +14,19 @@ import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { CatalogApi } from '../../../core/catalog-api';
 import { errorMessage } from '../../../core/format';
-import { Category, ItemKind } from '../../../core/models';
+import { Category, ItemKind, Variant } from '../../../core/models';
+import { Icon } from '../../../shared/icon';
 import { CurrentBusiness } from '../current-business';
 
 const MAX_PHOTOS = 5;
+const MAX_VARIANTS = 30;
+
+type VariantForm = FormGroup<{
+  id: FormControl<string>;
+  name: FormControl<string>;
+  price: FormControl<number | null>;
+  is_available: FormControl<boolean>;
+}>;
 
 /** El precio anterior (tachado) tiene que ser mayor que el precio, y necesita uno. */
 function compareAtAbovePrice(group: AbstractControl): ValidationErrors | null {
@@ -35,7 +47,7 @@ interface PhotoDraft {
 
 @Component({
   selector: 'app-item-form',
-  imports: [ReactiveFormsModule, RouterLink, TranslocoDirective],
+  imports: [ReactiveFormsModule, RouterLink, TranslocoDirective, Icon],
   template: `
     <ng-container *transloco="let t">
       <section class="section-header">
@@ -139,10 +151,92 @@ interface PhotoDraft {
             </div>
           </section>
 
-          <section class="card form-tile item-form__photos">
+          <section class="card form-tile item-form__wide">
+            <header class="form-tile__head">
+              <span class="kicker">04 · {{ t('itemForm.variants') }}</span>
+              <h3>{{ t('itemForm.variantsTitle') }}</h3>
+            </header>
+            <p class="muted variants-hint">{{ t('itemForm.variantsHint') }}</p>
+            @if (variants.length) {
+              <label class="field">
+                <span>{{ t('itemForm.variantLabel') }}</span>
+                <input
+                  formControlName="variant_label"
+                  maxlength="40"
+                  [placeholder]="t('itemForm.variantLabelPlaceholder')"
+                />
+              </label>
+              <ul class="variant-rows" formArrayName="variants">
+                @for (row of variants.controls; track row; let i = $index, last = $last) {
+                  <li class="variant-row" [formGroupName]="i">
+                    <label class="field">
+                      <span>{{ t('itemForm.variantName') }}</span>
+                      <input formControlName="name" maxlength="40" />
+                    </label>
+                    <label class="field">
+                      <span>{{ t('itemForm.price') }}</span>
+                      <input
+                        type="number"
+                        formControlName="price"
+                        min="0"
+                        step="0.01"
+                        inputmode="decimal"
+                        [placeholder]="t('itemForm.variantPricePlaceholder')"
+                      />
+                    </label>
+                    <label class="check">
+                      <input type="checkbox" formControlName="is_available" />
+                      {{ t('itemForm.available') }}
+                    </label>
+                    <div class="variant-row__actions">
+                      <button
+                        type="button"
+                        class="icon-button"
+                        [disabled]="i === 0"
+                        (click)="moveVariant(i, -1)"
+                        [attr.aria-label]="t('common.moveUp')"
+                        [title]="t('common.moveUp')"
+                      >
+                        <app-icon name="chevronUp" [size]="18" />
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-button"
+                        [disabled]="last"
+                        (click)="moveVariant(i, 1)"
+                        [attr.aria-label]="t('common.moveDown')"
+                        [title]="t('common.moveDown')"
+                      >
+                        <app-icon name="chevronDown" [size]="18" />
+                      </button>
+                      <button
+                        type="button"
+                        class="icon-button icon-button--danger"
+                        (click)="variants.removeAt(i)"
+                        [attr.aria-label]="t('common.delete')"
+                        [title]="t('common.delete')"
+                      >
+                        <app-icon name="trash" [size]="16" />
+                      </button>
+                    </div>
+                  </li>
+                }
+              </ul>
+            }
+            <button
+              type="button"
+              class="button button--ghost variants-add"
+              [disabled]="variants.length >= maxVariants"
+              (click)="addVariant()"
+            >
+              <app-icon name="plus" [size]="18" /> {{ t('itemForm.addVariant') }}
+            </button>
+          </section>
+
+          <section class="card form-tile item-form__wide">
             <header class="form-tile__head">
               <span class="kicker"
-                >04 · {{ t('itemForm.photos', { count: photos().length, max: maxPhotos }) }}</span
+                >05 · {{ t('itemForm.photos', { count: photos().length, max: maxPhotos }) }}</span
               >
               <h3>{{ t('itemForm.photosTitle') }}</h3>
             </header>
@@ -191,9 +285,53 @@ interface PhotoDraft {
   `,
   styles: `
     .item-form__info,
-    .item-form__photos,
+    .item-form__wide,
     .item-form__bar {
       grid-column: 1 / -1;
+    }
+
+    .variants-hint {
+      margin: 0;
+      font-size: 14px;
+    }
+
+    .variant-rows {
+      display: grid;
+      gap: 10px;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    /* Celular: nombre y precio lado a lado; disponible y acciones debajo. */
+    .variant-row {
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+      gap: 10px 12px;
+      align-items: end;
+      padding: 12px;
+      border: 1px solid var(--color-border);
+      border-radius: 16px;
+    }
+
+    .variant-row .check {
+      min-height: 44px;
+    }
+
+    .variant-row__actions {
+      display: flex;
+      gap: 4px;
+      justify-content: flex-end;
+    }
+
+    .variants-add {
+      justify-self: start;
+    }
+
+    @media (min-width: 900px) {
+      .variant-row {
+        grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) auto auto;
+      }
     }
 
     /* Computadora: información a la izquierda; precio y estado apilados a la derecha. */
@@ -220,6 +358,8 @@ export class ItemForm implements OnDestroy {
   readonly id = input<string>();
 
   protected readonly maxPhotos = MAX_PHOTOS;
+  protected readonly maxVariants = MAX_VARIANTS;
+  private readonly fb = inject(NonNullableFormBuilder);
   protected readonly categories = signal<Category[]>([]);
   protected readonly photos = signal<PhotoDraft[]>([]);
   protected readonly loading = signal(true);
@@ -229,7 +369,7 @@ export class ItemForm implements OnDestroy {
   private removedPaths: string[] = [];
   private nextPosition = 0;
 
-  protected readonly form = inject(NonNullableFormBuilder).group(
+  protected readonly form = this.fb.group(
     {
       kind: ['product' as ItemKind],
       category_id: [null as string | null],
@@ -240,6 +380,8 @@ export class ItemForm implements OnDestroy {
       is_available: [true],
       is_visible: [true],
       is_pinned: [false],
+      variant_label: [''],
+      variants: new FormArray<VariantForm>([]),
     },
     { validators: compareAtAbovePrice },
   );
@@ -274,7 +416,12 @@ export class ItemForm implements OnDestroy {
       const item = items.find((i) => i.id === this.id());
       if (this.id() && !item) throw new Error(translate('itemForm.notFound'));
       if (item) {
-        this.form.patchValue({ ...item, description: item.description ?? '' });
+        for (const variant of item.variants) this.variants.push(this.variantForm(variant));
+        this.form.patchValue({
+          ...item,
+          description: item.description ?? '',
+          variant_label: item.variant_label ?? '',
+        });
         this.photos.set(item.photos.map((path) => ({ path, url: this.api.imageUrl(path) })));
       }
     } catch (e) {
@@ -282,6 +429,32 @@ export class ItemForm implements OnDestroy {
     } finally {
       this.loading.set(false);
     }
+  }
+
+  protected get variants(): FormArray<VariantForm> {
+    return this.form.controls.variants;
+  }
+
+  protected addVariant(): void {
+    this.variants.push(
+      this.variantForm({ id: crypto.randomUUID(), name: '', price: null, is_available: true }),
+    );
+  }
+
+  protected moveVariant(index: number, delta: -1 | 1): void {
+    const row = this.variants.at(index);
+    this.variants.removeAt(index);
+    this.variants.insert(index + delta, row);
+  }
+
+  /** El id se conserva al editar: así un pedido armado con esa variante sigue valiendo. */
+  private variantForm(variant: Variant): VariantForm {
+    return this.fb.group({
+      id: [variant.id],
+      name: [variant.name, [Validators.required, Validators.pattern(/\S/)]],
+      price: [variant.price, Validators.min(0)],
+      is_available: [variant.is_available],
+    });
   }
 
   protected addPhotos(event: Event): void {
@@ -327,6 +500,12 @@ export class ItemForm implements OnDestroy {
         description: value.description.trim() || null,
         price: value.price ?? null,
         compare_at_price: value.compare_at_price ?? null,
+        variant_label: (value.variants.length && value.variant_label.trim()) || null,
+        variants: value.variants.map((v) => ({
+          ...v,
+          name: v.name.trim(),
+          price: v.price ?? null,
+        })),
         photos,
       };
 

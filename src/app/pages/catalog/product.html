@@ -117,7 +117,7 @@
             <p class="price figure" [class.is-ask]="p.price === null">{{ price() }}</p>
           </div>
           <div class="meta">
-            @if (p.is_available) {
+            @if (orderable()) {
               <span class="status status--ok">{{ t('itemForm.available') }}</span>
             } @else {
               <span class="status status--out">{{ t('product.soldOut') }}</span>
@@ -130,8 +130,35 @@
         </div>
       </section>
 
-      @if (p.is_available && orderUrl(); as url) {
+      @if (orderable() && orderUrl(); as url) {
         <section class="tile order" [attr.aria-label]="t('product.order')">
+          @if (p.variants.length) {
+            <div
+              class="variants"
+              role="radiogroup"
+              [attr.aria-label]="p.variant_label || t('product.options')"
+            >
+              <span class="label">{{ p.variant_label || t('product.options') }}</span>
+              <div class="variants__list">
+                @for (option of p.variants; track option.id) {
+                  <button
+                    type="button"
+                    role="radio"
+                    class="variant"
+                    [class.is-active]="variantId() === option.id"
+                    [attr.aria-checked]="variantId() === option.id"
+                    [disabled]="!option.is_available"
+                    (click)="variantId.set(option.id)"
+                  >
+                    {{ option.name }}
+                    @if (!option.is_available) {
+                      <span class="visually-hidden">({{ t('card.soldOut') }})</span>
+                    }
+                  </button>
+                }
+              </div>
+            </div>
+          }
           <!-- Solo los productos llevan cantidad; un servicio se solicita sin más. -->
           @if (p.kind === 'product') {
             <div class="quantity">
@@ -182,9 +209,9 @@
               {{ t(justAdded() ? 'product.added' : 'product.add') }}
             </button>
           }
-          @if (p.kind === 'product' && inCart()) {
+          @if (p.kind === 'product' && inCartTotal()) {
             <p class="order__note">
-              {{ t('product.alreadyHave', { count: inCart() }) }}
+              {{ t('product.alreadyHave', { count: inCartTotal() }) }}
               <button type="button" (click)="cart.sheetOpen.set(true)">
                 {{ t('product.viewOrder') }}
               </button>
@@ -202,7 +229,7 @@
           </a>
           <ng-container *ngTemplateOutlet="delivery" />
         </section>
-      } @else if (!p.is_available && askUrl(); as url) {
+      } @else if (!orderable() && askUrl(); as url) {
         <section class="tile order" [attr.aria-label]="t('product.order')">
           <span class="label">{{ t('product.soldOut') }}</span>
           <a

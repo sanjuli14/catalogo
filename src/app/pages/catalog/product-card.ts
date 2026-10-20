@@ -1,5 +1,5 @@
 import { Component, computed, inject, input } from '@angular/core';
-import { RouterLink } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { TranslocoDirective, translate } from '@jsverse/transloco';
 
 import { Language } from '../../core/i18n';
@@ -8,7 +8,9 @@ import { Icon } from '../../shared/icon';
 import { Cart } from './cart';
 import {
   PublicCatalog,
+  cardPrice,
   discountPercent,
+  isOrderable,
   isNew,
   itemCompareAtPrice,
   itemPrice,
@@ -19,7 +21,7 @@ import {
   selector: 'app-product-card',
   imports: [RouterLink, Icon, TranslocoDirective],
   template: `
-    <article class="product" [class.is-unavailable]="!item().is_available" *transloco="let t">
+    <article class="product" [class.is-unavailable]="!orderable()" *transloco="let t">
       <a
         class="product__open"
         [routerLink]="['/', business().slug, item().id]"
@@ -31,7 +33,7 @@ import {
           } @else {
             <span class="product__placeholder" aria-hidden="true">{{ item().name.charAt(0) }}</span>
           }
-          @if (!item().is_available) {
+          @if (!orderable()) {
             <span class="tag tag--dark">{{ t('card.soldOut') }}</span>
           } @else if (discount(); as discount) {
             <span class="tag tag--brand">-{{ discount }}%</span>
@@ -56,7 +58,7 @@ import {
           }
           {{ price() }}
         </span>
-        @if (item().is_available && business().whatsapp) {
+        @if (orderable() && business().whatsapp) {
           <button
             type="button"
             class="product__order"
@@ -67,9 +69,9 @@ import {
           >
             <app-icon [name]="inCart() ? 'check' : 'plus'" [size]="18" />
             <span class="product__order-text" aria-hidden="true">{{
-              t(inCart() ? 'card.inOrder' : 'card.add')
+              t(inCart() ? 'card.inOrder' : hasVariants() ? 'card.choose' : 'card.add')
             }}</span>
-            @if (inCart() && item().kind === 'product') {
+            @if (inCart() && (item().kind === 'product' || hasVariants())) {
               <span class="product__order-count" aria-hidden="true">{{ inCart() }}</span>
             }
           </button>
@@ -83,34 +85,53 @@ export class ProductCard {
   private readonly catalog = inject(PublicCatalog);
   private readonly cart = inject(Cart);
   private readonly language = inject(Language);
+  private readonly router = inject(Router);
 
   readonly business = input.required<Business>();
   readonly item = input.required<Item>();
 
+  protected readonly hasVariants = computed(() => this.item().variants.length > 0);
+  protected readonly orderable = computed(() => isOrderable(this.item()));
+
+  /** "Desde $5" si las variantes tienen precios distintos. */
   protected readonly price = computed(() => {
     this.language.current();
-    return itemPrice(this.business(), this.item());
+    return cardPrice(this.business(), this.item());
   });
+  /** Con un rango de precios ("Desde…") no se muestra la oferta: no sería de todas. */
+  private readonly priceRange = computed(
+    () => this.price() !== itemPrice(this.business(), this.item()),
+  );
   protected readonly before = computed(() => {
     this.language.current();
-    return itemCompareAtPrice(this.business(), this.item());
+    return this.priceRange() ? null : itemCompareAtPrice(this.business(), this.item());
   });
-  protected readonly discount = computed(() => discountPercent(this.item()));
+  protected readonly discount = computed(() =>
+    this.priceRange() ? null : discountPercent(this.item()),
+  );
   protected readonly isNew = computed(() => isNew(this.item()));
-  /** Cantidad que ya está en el pedido (0 si no está). */
+  /** Cantidad que ya está en el pedido, de todas sus variantes (0 si no está). */
   protected readonly inCart = computed(() =>
-    this.cart.quantity(this.business().id, this.item().id),
+    this.cart.itemQuantity(this.business().id, this.item().id),
   );
   protected readonly label = computed(() => {
     this.language.current();
     const name = this.item().name;
+    if (this.hasVariants()) return translate('card.chooseLabel', { name });
     if (!this.inCart()) return translate('card.addLabel', { name });
     return this.item().kind === 'service'
       ? translate('card.serviceInOrderLabel', { name })
       : translate('card.addAnotherLabel', { name, count: this.inCart() });
   });
-  /** Un producto suma uno más; un servicio ya agregado abre el pedido. */
+  /**
+   * Un producto suma uno más; un servicio ya agregado abre el pedido. Con variantes, abre
+   * la página del producto para elegir cuál.
+   */
   protected add(): void {
+    if (this.hasVariants()) {
+      void this.router.navigate(['/', this.business().slug, this.item().id]);
+      return;
+    }
     if (this.inCart() && this.item().kind === 'service') {
       this.cart.sheetOpen.set(true);
       return;

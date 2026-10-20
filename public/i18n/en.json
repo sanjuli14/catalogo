@@ -18,7 +18,8 @@
     "moveDown": "Move down"
   },
   "price": {
-    "onRequest": "Price on request"
+    "onRequest": "Price on request",
+    "from": "From {{ price }}"
   },
   "errors": {
     "23505": "That web address is already used by another business. Choose another one.",
@@ -186,7 +187,8 @@
     "edit": "Edit",
     "confirmDelete": "Delete \"{{ name }}\"? This can't be undone.",
     "onSale": "On sale",
-    "pinned": "Featured"
+    "pinned": "Featured",
+    "variants": "{{ n }} variants"
   },
   "itemForm": {
     "back": "Back",
@@ -214,7 +216,15 @@
     "compareAtHint": "Optional. If you fill it in, it's shown crossed out and the product appears on sale.",
     "compareAtError": "It must be higher than the price.",
     "pinned": "Featured at the top of the catalog",
-    "pinnedHint": "Products added in the last 14 days get the \"New\" tag automatically."
+    "pinnedHint": "Products added in the last 14 days get the \"New\" tag automatically.",
+    "variants": "Variants",
+    "variantsTitle": "Sizes, colors, flavors…",
+    "variantsHint": "Optional. The customer picks one before ordering. If a variant has no price, it uses the product's.",
+    "variantLabel": "What changes between them?",
+    "variantLabelPlaceholder": "For example: Size",
+    "variantName": "Option",
+    "variantPricePlaceholder": "Same as product",
+    "addVariant": "Add variant"
   },
   "categories": {
     "lead": "They group your products and services in the catalog, in this order.",
@@ -419,7 +429,8 @@
     "more_count": "{{ count }} more",
     "moreIn": "More in {{ category }}",
     "alsoLike": "You may also like",
-    "itemAt": "{{ item }} at {{ name }}"
+    "itemAt": "{{ item }} at {{ name }}",
+    "options": "Options"
   },
   "card": {
     "soldOut": "Sold out",
@@ -430,7 +441,9 @@
     "serviceInOrderLabel": "{{ name }} is already in the order: view the order",
     "addAnotherLabel": "Add another {{ name }} ({{ count }} already)",
     "new": "New",
-    "before": "Before:"
+    "before": "Before:",
+    "choose": "Choose",
+    "chooseLabel": "Choose an option for {{ name }}"
   },
   "customer": {
     "title": "Who's writing?",

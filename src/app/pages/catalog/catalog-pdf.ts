@@ -1,9 +1,9 @@
 import { translate } from '@jsverse/transloco';
 
 import { readableTextColor } from '../../core/color';
-import { formatPrice } from '../../core/format';
 import { Business } from '../../core/models';
 import { ItemGroup } from './group-items';
+import { cardPrice, isOrderable } from './public-catalog';
 
 interface CatalogPdfInput {
   business: Business;
@@ -122,7 +122,7 @@ export async function downloadCatalogPdf(input: CatalogPdfInput): Promise<void> 
       }
 
       const x = MARGIN + THUMB + 5;
-      const price = formatPrice(item.price, business.currency);
+      const price = cardPrice(business, item);
       doc.setFont('helvetica', 'bold');
       doc.setFontSize(10.5);
       doc.setTextColor(...brand);
@@ -137,11 +137,21 @@ export async function downloadCatalogPdf(input: CatalogPdfInput): Promise<void> 
       doc.setFont('helvetica', 'normal');
       doc.setFontSize(9);
       doc.setTextColor(...MUTED);
+      // Con variantes, la descripción deja un renglón para "Talla: S, M, L".
+      let textY = y + 10.5;
       if (item.description) {
-        const lines = doc.splitTextToSize(item.description, PAGE_WIDTH - MARGIN - x);
-        doc.text(lines.slice(0, 3), x, y + 10.5);
+        const lines = doc
+          .splitTextToSize(item.description, PAGE_WIDTH - MARGIN - x)
+          .slice(0, item.variants.length ? 2 : 3);
+        doc.text(lines, x, textY);
+        textY += lines.length * 3.8;
       }
-      if (!item.is_available) {
+      if (item.variants.length) {
+        const names = item.variants.map((v) => v.name).join(', ');
+        const text = item.variant_label ? `${item.variant_label}: ${names}` : names;
+        doc.text(doc.splitTextToSize(text, PAGE_WIDTH - MARGIN - x)[0], x, textY);
+      }
+      if (!isOrderable(item)) {
         doc.setTextColor(164, 22, 26);
         doc.text(translate('items.unavailable'), x, y + THUMB - 0.5);
       }

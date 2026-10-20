@@ -120,6 +120,11 @@ import { CurrentBusiness } from '../current-business';
                   @if (item.compare_at_price !== null) {
                     <span class="badge">{{ t('items.onSale') }}</span>
                   }
+                  @if (item.variants.length) {
+                    <span class="badge">{{
+                      t('items.variants', { n: item.variants.length })
+                    }}</span>
+                  }
                   @if (item.is_pinned) {
                     <span class="badge">{{ t('items.pinned') }}</span>
                   }

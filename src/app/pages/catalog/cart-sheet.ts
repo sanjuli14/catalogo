@@ -17,7 +17,16 @@ import { Stats } from '../../core/stats';
 import { Business, Item } from '../../core/models';
 import { Icon } from '../../shared/icon';
 import { Cart, MAX_QUANTITY } from './cart';
-import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from './public-catalog';
+import {
+  OrderLine,
+  PublicCatalog,
+  cartOrderUrl,
+  itemPrice,
+  linesTotal,
+  orderTotal,
+  unitPrice,
+  variantText,
+} from './public-catalog';
 
 /**
  * Pedido de varios productos y servicios: una barra flotante con el resumen y una hoja para
@@ -93,7 +102,7 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
           <p class="sheet__text">{{ t('cart.empty') }}</p>
         } @else {
           <ul class="lines">
-            @for (line of lines(); track line.item.id) {
+            @for (line of lines(); track line.item.id + ':' + (line.variant?.id ?? '')) {
               <li class="line">
                 @if (line.item.photos[0]; as photo) {
                   <img class="line__photo" [src]="imageUrl(photo)" alt="" />
@@ -104,21 +113,24 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
                 }
                 <div class="line__info">
                   <span class="line__name">{{ line.item.name }}</span>
+                  @if (line.variant) {
+                    <span class="line__variant">{{ variantText(line.item, line.variant) }}</span>
+                  }
                   <span class="line__price">
                     @if (line.item.kind === 'service') {
-                      {{ t('kind.service') }} · {{ price(line.item) }}
-                    } @else if (line.item.price !== null && line.quantity > 1) {
-                      {{ t('whatsapp.each', { price: price(line.item) }) }} ·
-                      <strong>{{ lineTotal(line.item, line.quantity) }}</strong>
+                      {{ t('kind.service') }} · {{ price(line) }}
+                    } @else if (hasPrice(line) && line.quantity > 1) {
+                      {{ t('whatsapp.each', { price: price(line) }) }} ·
+                      <strong>{{ lineTotal(line) }}</strong>
                     } @else {
-                      {{ price(line.item) }}
+                      {{ price(line) }}
                     }
                   </span>
                   @if (line.item.kind === 'product') {
                     <div class="stepper">
                       <button
                         type="button"
-                        (click)="cart.set(line.item, line.quantity - 1)"
+                        (click)="cart.set(line.item, line.quantity - 1, line.variant)"
                         [attr.aria-label]="t(line.quantity === 1 ? 'cart.remove' : 'product.less')"
                       >
                         <app-icon [name]="line.quantity === 1 ? 'trash' : 'minus'" [size]="16" />
@@ -126,7 +138,7 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
                       <output>{{ line.quantity }}</output>
                       <button
                         type="button"
-                        (click)="cart.set(line.item, line.quantity + 1)"
+                        (click)="cart.set(line.item, line.quantity + 1, line.variant)"
                         [disabled]="line.quantity === maxQuantity"
                         [attr.aria-label]="t('product.more')"
                       >
@@ -139,7 +151,7 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
                   <button
                     type="button"
                     class="line__remove"
-                    (click)="cart.set(line.item, 0)"
+                    (click)="cart.set(line.item, 0, line.variant)"
                     [attr.aria-label]="t('cart.removeItem', { name: line.item.name })"
                   >
                     <app-icon name="trash" [size]="16" />
@@ -328,6 +340,12 @@ import { PublicCatalog, cartOrderUrl, itemPrice, linesTotal, orderTotal } from '
       min-width: 0;
     }
 
+    .line__variant {
+      color: var(--muted);
+      font-size: 13px;
+      font-weight: 600;
+    }
+
     .line__name {
       display: -webkit-box;
       overflow: hidden;
@@ -488,7 +506,7 @@ export class CartSheet {
   protected readonly maxQuantity = MAX_QUANTITY;
   protected readonly lines = computed(() => this.cart.lines(this.business().id, this.items()));
   protected readonly count = computed(() => this.lines().reduce((n, l) => n + l.quantity, 0));
-  protected readonly hasUnpriced = computed(() => this.lines().some((l) => l.item.price === null));
+  protected readonly hasUnpriced = computed(() => this.lines().some((l) => !this.hasPrice(l)));
   protected readonly total = computed(() => {
     this.language.current();
     const total = linesTotal(this.lines());
@@ -510,12 +528,18 @@ export class CartSheet {
     });
   }
 
-  protected price(item: Item): string {
-    return itemPrice(this.business(), item);
+  protected readonly variantText = variantText;
+
+  protected hasPrice(line: OrderLine): boolean {
+    return unitPrice(line.item, line.variant) !== null;
   }
 
-  protected lineTotal(item: Item, quantity: number): string {
-    return orderTotal(this.business(), item, quantity);
+  protected price(line: OrderLine): string {
+    return itemPrice(this.business(), line.item, line.variant);
+  }
+
+  protected lineTotal(line: OrderLine): string {
+    return orderTotal(this.business(), line.item, line.quantity, line.variant);
   }
 
   protected imageUrl(path: string): string {

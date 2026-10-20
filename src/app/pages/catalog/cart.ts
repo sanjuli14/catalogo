@@ -1,6 +1,6 @@
 import { DestroyRef, Injectable, inject, signal } from '@angular/core';
 
-import { Item } from '../../core/models';
+import { Item, Variant } from '../../core/models';
 import { OrderLine } from './public-catalog';
 
 const STORAGE_KEY = 'catalogo.carrito';
@@ -16,7 +16,10 @@ interface SentOrder {
 }
 export const MAX_QUANTITY = 99;
 
-/** Cantidades por negocio y producto: { [businessId]: { [itemId]: cantidad } }. */
+/**
+ * Cantidades por negocio y renglón: { [businessId]: { [clave]: cantidad } }.
+ * La clave es el id del producto, o "producto:variante" si se eligió una talla, sabor...
+ */
 type CartState = Record<string, Record<string, number>>;
 
 /**
@@ -37,19 +40,31 @@ export class Cart {
   /** La hoja del pedido está abierta. */
   readonly sheetOpen = signal(false);
 
-  quantity(businessId: string, itemId: string): number {
-    return this.state()[businessId]?.[itemId] ?? 0;
+  quantity(businessId: string, itemId: string, variant?: Variant | null): number {
+    return this.state()[businessId]?.[lineKey(itemId, variant)] ?? 0;
+  }
+
+  /** Total de un producto en el pedido, sumando todas sus variantes. */
+  itemQuantity(businessId: string, itemId: string): number {
+    return Object.entries(this.state()[businessId] ?? {})
+      .filter(([key]) => key.split(':')[0] === itemId)
+      .reduce((total, [, quantity]) => total + quantity, 0);
   }
 
   /**
    * Renglones del pedido en el orden en que se agregaron. Solo los que siguen en el catálogo
-   * y disponibles: si el negocio quitó uno o lo marcó agotado, deja de contar.
+   * y disponibles: si el negocio quitó uno (o su variante) o lo marcó agotado, deja de contar.
    */
   lines(businessId: string, items: Item[]): OrderLine[] {
     const quantities = this.state()[businessId] ?? {};
-    return Object.entries(quantities).flatMap(([id, quantity]) => {
+    return Object.entries(quantities).flatMap(([key, quantity]) => {
+      const [id, variantId] = key.split(':');
       const item = items.find((i) => i.id === id);
-      return item?.is_available ? [{ item, quantity }] : [];
+      if (!item?.is_available) return [];
+      // Un producto con variantes solo se pide con una elegida (y que siga disponible).
+      if (!item.variants.length) return variantId ? [] : [{ item, quantity }];
+      const variant = item.variants.find((v) => v.id === variantId);
+      return variant?.is_available ? [{ item, quantity, variant }] : [];
     });
   }
 
@@ -96,20 +111,21 @@ export class Cart {
   }
 
   /** Un producto suma la cantidad; un servicio queda siempre en 1. */
-  add(item: Item, quantity = 1): void {
+  add(item: Item, quantity = 1, variant: Variant | null = null): void {
     // Se empezó un pedido nuevo: el anterior ya no se ofrece para recuperar.
     this.forgetSent(item.business_id);
-    const current = this.quantity(item.business_id, item.id);
+    const current = this.quantity(item.business_id, item.id, variant);
     const next = item.kind === 'service' ? 1 : Math.min(MAX_QUANTITY, current + quantity);
-    this.set(item, next);
+    this.set(item, next, variant);
   }
 
   /** Cantidad exacta; 0 lo quita del pedido. */
-  set(item: Item, quantity: number): void {
+  set(item: Item, quantity: number, variant: Variant | null = null): void {
+    const key = lineKey(item.id, variant);
     this.update(item.business_id, (lines) => {
       const next = { ...lines };
-      if (quantity > 0) next[item.id] = Math.min(MAX_QUANTITY, quantity);
-      else delete next[item.id];
+      if (quantity > 0) next[key] = Math.min(MAX_QUANTITY, quantity);
+      else delete next[key];
       return next;
     });
   }
@@ -129,6 +145,10 @@ export class Cart {
     });
     save(STORAGE_KEY, this.state());
   }
+}
+
+function lineKey(itemId: string, variant?: Variant | null): string {
+  return variant ? `${itemId}:${variant.id}` : itemId;
 }
 
 function save(key: string, state: CartState | Record<string, SentOrder>): void {

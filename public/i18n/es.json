@@ -18,7 +18,8 @@
     "moveDown": "Bajar"
   },
   "price": {
-    "onRequest": "Precio a consultar"
+    "onRequest": "Precio a consultar",
+    "from": "Desde {{ price }}"
   },
   "errors": {
     "23505": "Esa dirección web ya la usa otro negocio. Elige otra.",
@@ -186,7 +187,8 @@
     "edit": "Editar",
     "confirmDelete": "¿Eliminar \"{{ name }}\"? Esta acción no se puede deshacer.",
     "onSale": "Oferta",
-    "pinned": "Destacado"
+    "pinned": "Destacado",
+    "variants": "{{ n }} variantes"
   },
   "itemForm": {
     "back": "Volver",
@@ -214,7 +216,15 @@
     "compareAtHint": "Opcional. Si lo llenas, sale tachado y el producto se muestra en oferta.",
     "compareAtError": "Tiene que ser mayor que el precio.",
     "pinned": "Destacado arriba del catálogo",
-    "pinnedHint": "Los productos agregados en los últimos 14 días llevan la etiqueta «Nuevo» solos."
+    "pinnedHint": "Los productos agregados en los últimos 14 días llevan la etiqueta «Nuevo» solos.",
+    "variants": "Variantes",
+    "variantsTitle": "Tallas, colores, sabores…",
+    "variantsHint": "Opcional. El cliente elige una antes de pedir. Si una variante no tiene precio, usa el del producto.",
+    "variantLabel": "¿Qué cambia entre ellas?",
+    "variantLabelPlaceholder": "Por ejemplo: Talla",
+    "variantName": "Opción",
+    "variantPricePlaceholder": "Igual al producto",
+    "addVariant": "Agregar variante"
   },
   "categories": {
     "lead": "Agrupan tus productos y servicios en el catálogo, en este orden.",
@@ -419,7 +429,8 @@
     "more_count": "{{ count }} más",
     "moreIn": "Más en {{ category }}",
     "alsoLike": "También te puede interesar",
-    "itemAt": "{{ item }} en {{ name }}"
+    "itemAt": "{{ item }} en {{ name }}",
+    "options": "Opciones"
   },
   "card": {
     "soldOut": "Agotado",
@@ -430,7 +441,9 @@
     "serviceInOrderLabel": "{{ name }} ya está en el pedido: ver el pedido",
     "addAnotherLabel": "Añadir otro {{ name }} (ya hay {{ count }})",
     "new": "Nuevo",
-    "before": "Antes:"
+    "before": "Antes:",
+    "choose": "Elegir",
+    "chooseLabel": "Elegir opción de {{ name }}"
   },
   "customer": {
     "title": "¿Quién nos escribe?",

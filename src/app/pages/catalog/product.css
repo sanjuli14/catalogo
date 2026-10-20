@@ -240,6 +240,51 @@
   gap: 14px;
 }
 
+/* Selector de variantes: talla, color, sabor... */
+.variants {
+  display: grid;
+  gap: 10px;
+}
+
+.variants__list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.variant {
+  font: inherit;
+  min-width: 48px;
+  min-height: 44px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #ffffff;
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    border-color 0.15s,
+    background-color 0.15s;
+}
+
+.variant:hover:not(:disabled) {
+  border-color: var(--ink);
+}
+
+.variant.is-active {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: #ffffff;
+}
+
+.variant:disabled {
+  color: var(--muted);
+  text-decoration: line-through;
+  cursor: not-allowed;
+}
+
 .quantity {
   display: flex;
   flex-wrap: wrap;

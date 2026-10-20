@@ -5,7 +5,7 @@ import { Auth } from '../../core/auth';
 import { CatalogApi } from '../../core/catalog-api';
 import { Customer } from '../../core/customer';
 import { formatPrice } from '../../core/format';
-import { Business, Category, Item } from '../../core/models';
+import { Business, Category, Item, Variant } from '../../core/models';
 import { whatsappChatUrl } from '../../core/whatsapp';
 
 export interface PublicCatalogData {
@@ -63,21 +63,50 @@ export function productUrl(business: Business, item: Item): string {
   return `${catalogUrl(business)}/${item.id}`;
 }
 
-export function itemPrice(business: Business, item: Item): string {
-  return formatPrice(item.price, business.currency);
+/** Precio de una unidad: el de la variante si tiene uno propio, si no el del producto. */
+export function unitPrice(item: Item, variant?: Variant | null): number | null {
+  return variant?.price ?? item.price;
+}
+
+export function itemPrice(business: Business, item: Item, variant?: Variant | null): string {
+  return formatPrice(unitPrice(item, variant), business.currency);
+}
+
+/** "Desde $5" si las variantes tienen precios distintos; si no, el precio de siempre. */
+export function cardPrice(business: Business, item: Item): string {
+  const prices = item.variants.map((v) => unitPrice(item, v)).filter((p) => p !== null);
+  if (!prices.length) return itemPrice(business, item);
+  const min = Math.min(...prices);
+  const price = formatPrice(min, business.currency);
+  return prices.every((p) => p === min) ? price : translate('price.from', { price });
+}
+
+/**
+ * La oferta (precio anterior) es del producto: no aplica a una variante con precio propio.
+ * Las variantes sin precio propio la comparten.
+ */
+function onSale(item: Item, variant?: Variant | null): boolean {
+  return item.compare_at_price !== null && item.price !== null && variant?.price == null;
 }
 
 /** Precio anterior (tachado) si el producto está en oferta; null si no. */
-export function itemCompareAtPrice(business: Business, item: Item): string | null {
-  return item.compare_at_price === null
-    ? null
-    : formatPrice(item.compare_at_price, business.currency);
+export function itemCompareAtPrice(
+  business: Business,
+  item: Item,
+  variant?: Variant | null,
+): string | null {
+  return onSale(item, variant) ? formatPrice(item.compare_at_price, business.currency) : null;
 }
 
 /** Descuento de la oferta en porcentaje entero (20 = "-20%"); null si no está en oferta. */
-export function discountPercent(item: Item): number | null {
-  if (item.compare_at_price === null || item.price === null) return null;
-  return Math.round((1 - item.price / item.compare_at_price) * 100);
+export function discountPercent(item: Item, variant?: Variant | null): number | null {
+  if (!onSale(item, variant)) return null;
+  return Math.round((1 - item.price! / item.compare_at_price!) * 100);
+}
+
+/** Se puede pedir: está disponible y, si tiene variantes, queda alguna disponible. */
+export function isOrderable(item: Item): boolean {
+  return item.is_available && (!item.variants.length || item.variants.some((v) => v.is_available));
 }
 
 /** Días que un producto recién agregado lleva la etiqueta "Nuevo". */
@@ -104,6 +133,8 @@ function w(key: string, params?: Record<string, unknown>): string {
 export interface OrderLine {
   item: Item;
   quantity: number;
+  /** La talla, el sabor... elegido, si el producto tiene variantes. */
+  variant?: Variant | null;
 }
 
 /** Pedir un solo producto o servicio por WhatsApp. null si no hay WhatsApp. */
@@ -112,8 +143,9 @@ export function orderUrl(
   item: Item,
   customer: Customer | null,
   quantity = 1,
+  variant: Variant | null = null,
 ): string | null {
-  return cartOrderUrl(business, [{ item, quantity }], customer);
+  return cartOrderUrl(business, [{ item, quantity, variant }], customer);
 }
 
 /** Enviar el pedido completo (uno o varios renglones) en un solo mensaje. */
@@ -151,7 +183,7 @@ function orderMessage(business: Business, lines: OrderLine[], customer: Customer
   }
 
   const total = linesTotal(lines);
-  const unpriced = lines.some((l) => l.item.price === null);
+  const unpriced = lines.some((l) => unitPrice(l.item, l.variant) === null);
   if (total !== null && (lines.length > 1 || lines[0].quantity > 1)) {
     const note = unpriced ? ` ${w('totalNote')}` : '';
     message.push('', `*${w('total', { total: formatPrice(total, business.currency) })}*${note}`);
@@ -168,28 +200,46 @@ function orderMessage(business: Business, lines: OrderLine[], customer: Customer
 
 function productLines(
   business: Business,
-  { item, quantity }: OrderLine,
+  { item, quantity, variant }: OrderLine,
   withLink: boolean,
 ): string[] {
   let price: string;
-  if (item.price === null) price = w('priceOnRequest');
+  if (unitPrice(item, variant) === null) price = w('priceOnRequest');
   else if (quantity > 1) {
-    const each = w('each', { price: itemPrice(business, item) });
-    price = `${each} = *${orderTotal(business, item, quantity)}*`;
-  } else price = `*${itemPrice(business, item)}*`;
+    const each = w('each', { price: itemPrice(business, item, variant) });
+    price = `${each} = *${orderTotal(business, item, quantity, variant)}*`;
+  } else price = `*${itemPrice(business, item, variant)}*`;
   // El precio anterior: el negocio ve que se pidió en oferta.
-  const before = itemCompareAtPrice(business, item);
+  const before = itemCompareAtPrice(business, item, variant);
   if (before) price += ` ${w('before', { price: before })}`;
-  const lines = [`• *${plain(item.name)}*`, `   ${w('quantity', { quantity })} · ${price}`];
+  const lines = [...nameLines(item, variant), `   ${w('quantity', { quantity })} · ${price}`];
   if (withLink) lines.push(`   ${w('view', { url: productUrl(business, item) })}`);
   return lines;
 }
 
-function serviceLines(business: Business, { item }: OrderLine, withLink: boolean): string[] {
-  const price = item.price === null ? w('onRequest') : `*${itemPrice(business, item)}*`;
-  const lines = [`• *${plain(item.name)}*`, `   ${w('price', { price })}`];
+function serviceLines(
+  business: Business,
+  { item, variant }: OrderLine,
+  withLink: boolean,
+): string[] {
+  const price =
+    unitPrice(item, variant) === null ? w('onRequest') : `*${itemPrice(business, item, variant)}*`;
+  const lines = [...nameLines(item, variant), `   ${w('price', { price })}`];
   if (withLink) lines.push(`   ${w('view', { url: productUrl(business, item) })}`);
   return lines;
+}
+
+/** "• *Camisa*" y, si eligió una variante, "Talla: M" debajo. */
+function nameLines(item: Item, variant?: Variant | null): string[] {
+  const lines = [`• *${plain(item.name)}*`];
+  if (variant) lines.push(`   ${variantText(item, variant)}`);
+  return lines;
+}
+
+/** "Talla: M" (o solo "M" si el dueño no le puso nombre al tipo de variante). */
+export function variantText(item: Item, variant: Variant): string {
+  const label = item.variant_label?.trim();
+  return label ? `${plain(label)}: ${plain(variant.name)}` : plain(variant.name);
 }
 
 function closingQuestion(hasProducts: boolean, unpriced: boolean, single: boolean): string {
@@ -200,9 +250,9 @@ function closingQuestion(hasProducts: boolean, unpriced: boolean, single: boolea
 
 /** Suma de los renglones con precio; null si ninguno tiene precio. */
 export function linesTotal(lines: OrderLine[]): number | null {
-  const priced = lines.filter((l) => l.item.price !== null);
+  const priced = lines.filter((l) => unitPrice(l.item, l.variant) !== null);
   if (!priced.length) return null;
-  return priced.reduce((sum, l) => sum + l.item.price! * l.quantity, 0);
+  return priced.reduce((sum, l) => sum + unitPrice(l.item, l.variant)! * l.quantity, 0);
 }
 
 /** Para un producto agotado: preguntar cuándo vuelve y dejarlo apartado. */
@@ -223,8 +273,14 @@ export function askAvailabilityUrl(
 }
 
 /** Precio por la cantidad; "Precio a consultar" si el producto no tiene precio. */
-export function orderTotal(business: Business, item: Item, quantity: number): string {
-  return formatPrice(item.price === null ? null : item.price * quantity, business.currency);
+export function orderTotal(
+  business: Business,
+  item: Item,
+  quantity: number,
+  variant?: Variant | null,
+): string {
+  const price = unitPrice(item, variant);
+  return formatPrice(price === null ? null : price * quantity, business.currency);
 }
 
 /** Escribirle al negocio sin un producto concreto: el cliente escribe su consulta al final. */

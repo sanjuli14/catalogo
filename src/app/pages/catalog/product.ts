@@ -31,6 +31,7 @@ import {
   PublicCatalogData,
   askAvailabilityUrl,
   discountPercent,
+  isOrderable,
   isNew,
   itemCompareAtPrice,
   itemPrice,
@@ -95,10 +96,25 @@ export class Product implements OnInit, OnDestroy {
   );
 
   protected readonly allItems = computed(() => this.data()?.items ?? []);
-  /** Cuántos hay ya en el pedido (0 si no está). */
+  /** Variante elegida (talla, sabor...); null si el producto no tiene. */
+  protected readonly variantId = signal<string | null>(null);
+  protected readonly variant = computed(
+    () => this.item()?.variants.find((v) => v.id === this.variantId()) ?? null,
+  );
+  protected readonly orderable = computed(() => {
+    const item = this.item();
+    return item ? isOrderable(item) : false;
+  });
+
+  /** Cuántos hay ya en el pedido de este renglón (con la variante elegida). */
   protected readonly inCart = computed(() => {
     const item = this.item();
-    return item ? this.cart.quantity(item.business_id, item.id) : 0;
+    return item ? this.cart.quantity(item.business_id, item.id, this.variant()) : 0;
+  });
+  /** Cuántos hay en el pedido sumando todas las variantes. */
+  protected readonly inCartTotal = computed(() => {
+    const item = this.item();
+    return item ? this.cart.itemQuantity(item.business_id, item.id) : 0;
   });
 
   protected readonly categoryName = computed(() => {
@@ -133,11 +149,11 @@ export class Product implements OnInit, OnDestroy {
     this.language.current();
     const business = this.business();
     const item = this.item();
-    return business && item ? itemCompareAtPrice(business, item) : null;
+    return business && item ? itemCompareAtPrice(business, item, this.variant()) : null;
   });
   protected readonly discount = computed(() => {
     const item = this.item();
-    return item ? discountPercent(item) : null;
+    return item ? discountPercent(item, this.variant()) : null;
   });
   protected readonly isNew = computed(() => {
     const item = this.item();
@@ -147,7 +163,7 @@ export class Product implements OnInit, OnDestroy {
     this.language.current();
     const business = this.business();
     const item = this.item();
-    return business && item ? itemPrice(business, item) : '';
+    return business && item ? itemPrice(business, item, this.variant()) : '';
   });
   protected readonly orderUrl = computed(() => {
     this.language.current();
@@ -156,13 +172,13 @@ export class Product implements OnInit, OnDestroy {
     if (!business || !item) return null;
     // Los servicios no llevan cantidad.
     const quantity = item.kind === 'product' ? this.quantity() : 1;
-    return orderUrl(business, item, this.customer.data(), quantity);
+    return orderUrl(business, item, this.customer.data(), quantity, this.variant());
   });
   protected readonly total = computed(() => {
     this.language.current();
     const business = this.business();
     const item = this.item();
-    return business && item ? orderTotal(business, item, this.quantity()) : '';
+    return business && item ? orderTotal(business, item, this.quantity(), this.variant()) : '';
   });
   /** Para un producto agotado: preguntar cuándo vuelve. */
   protected readonly askUrl = computed(() => {
@@ -189,6 +205,8 @@ export class Product implements OnInit, OnDestroy {
       untracked(() => {
         this.photoIndex.set(0);
         this.quantity.set(1);
+        // Empieza con la primera variante disponible ya elegida.
+        this.variantId.set(item?.variants.find((v) => v.is_available)?.id ?? null);
         this.gallery()?.nativeElement.scrollTo({ left: 0 });
       });
       if (!item || !business) return;
@@ -263,7 +281,7 @@ export class Product implements OnInit, OnDestroy {
 
   protected addToCart(): void {
     const item = this.item()!;
-    this.cart.add(item, item.kind === 'product' ? this.quantity() : 1);
+    this.cart.add(item, item.kind === 'product' ? this.quantity() : 1, this.variant());
     this.quantity.set(1);
     this.justAdded.set(true);
     clearTimeout(this.justAddedTimer);

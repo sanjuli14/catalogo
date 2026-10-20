@@ -52,6 +52,19 @@ export interface Item {
   is_visible: boolean;
   /** Va arriba del catálogo, en "Destacados". */
   is_pinned: boolean;
+  /** Qué varía entre las opciones ("Talla", "Sabor"); null si no tiene variantes. */
+  variant_label: string | null;
+  /** Opciones para elegir (vacío = sin variantes). */
+  variants: Variant[];
   position: number;
   created_at: string;
+}
+
+/** Una opción de un producto: una talla, un color, un sabor... */
+export interface Variant {
+  id: string;
+  name: string;
+  /** null = el precio del producto. */
+  price: number | null;
+  is_available: boolean;
 }
