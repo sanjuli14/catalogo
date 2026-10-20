@@ -51,8 +51,19 @@ export async function downloadCatalogPdf(input: CatalogPdfInput): Promise<void> 
   }
   doc.setTextColor(...onBrand);
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(20);
-  doc.text(business.name, textX, 19, { maxWidth: PAGE_WIDTH - textX - MARGIN });
+  // El nombre va en una sola línea: se achica hasta 14 pt y, si aún no cabe, se recorta.
+  const nameWidth = PAGE_WIDTH - textX - MARGIN;
+  let nameSize = 20;
+  doc.setFontSize(nameSize);
+  while (nameSize > 14 && doc.getTextWidth(business.name) > nameWidth) {
+    doc.setFontSize(--nameSize);
+  }
+  let name = business.name;
+  if (doc.getTextWidth(name) > nameWidth) {
+    while (name && doc.getTextWidth(`${name}…`) > nameWidth) name = name.slice(0, -1);
+    name = `${name.trimEnd()}…`;
+  }
+  doc.text(name, textX, 19);
   if (business.description) {
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(10);

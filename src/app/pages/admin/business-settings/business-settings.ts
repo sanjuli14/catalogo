@@ -264,12 +264,15 @@ export class BusinessSettings implements OnDestroy {
     this.saving.set(true);
     this.saved.set(false);
     this.error.set(null);
+    // Si el guardado falla, el logo recién subido se borra para no dejarlo huérfano.
+    let uploadedLogo: string | null = null;
     try {
       let logoPath = business.logo_path;
-      if (this.logoChange !== undefined) {
-        logoPath = this.logoChange
-          ? await this.api.uploadImage(business.id, 'logo', this.logoChange)
-          : null;
+      if (this.logoChange) {
+        uploadedLogo = await this.api.uploadImage(business.id, 'logo', this.logoChange);
+        logoPath = uploadedLogo;
+      } else if (this.logoChange === null) {
+        logoPath = null;
       }
 
       const { instagram, facebook, tiktok, website, ...value } = this.form.getRawValue();
@@ -300,6 +303,7 @@ export class BusinessSettings implements OnDestroy {
       this.current.business.set(updated);
       this.saved.set(true);
     } catch (e) {
+      if (uploadedLogo) await this.api.removeImages([uploadedLogo]);
       this.error.set(errorMessage(e));
     } finally {
       this.saving.set(false);

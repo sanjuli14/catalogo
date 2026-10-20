@@ -160,7 +160,7 @@ export class Items {
       const list = [...this.items()];
       [list[index], list[index + delta]] = [list[index + delta], list[index]];
       this.items.set(list);
-      await this.api.savePositions('items', list);
+      this.items.set(await this.api.savePositions('items', list));
     });
   }
 

@@ -196,11 +196,22 @@ export class ItemForm implements OnDestroy {
   protected async save(): Promise<void> {
     this.saving.set(true);
     this.error.set(null);
+    // Fotos subidas en este intento: si algo falla, se borran para no dejarlas huérfanas.
+    const uploaded: string[] = [];
     try {
       // Sube las fotos nuevas y deja todas como rutas del bucket, en el orden mostrado.
-      const photos = await Promise.all(
-        this.photos().map((p) => p.path ?? this.api.uploadImage(this.businessId, 'items', p.file!)),
+      // allSettled espera a todas las subidas, así `uploaded` queda completo aunque una falle.
+      const results = await Promise.allSettled(
+        this.photos().map(async (photo) => {
+          if (photo.path) return photo.path;
+          const path = await this.api.uploadImage(this.businessId, 'items', photo.file!);
+          uploaded.push(path);
+          return path;
+        }),
       );
+      const failedUpload = results.find((r) => r.status === 'rejected');
+      if (failedUpload) throw failedUpload.reason;
+      const photos = results.map((r) => (r as PromiseFulfilledResult<string>).value);
       const value = this.form.getRawValue();
       const data = {
         ...value,
@@ -220,9 +231,11 @@ export class ItemForm implements OnDestroy {
           position: this.nextPosition,
         });
       }
+      uploaded.length = 0; // Ya quedaron guardadas en el producto.
       await this.api.removeImages(this.removedPaths);
       await this.router.navigateByUrl('/admin/productos');
     } catch (e) {
+      await this.api.removeImages(uploaded);
       this.error.set(errorMessage(e));
     } finally {
       this.saving.set(false);

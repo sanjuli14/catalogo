@@ -1,4 +1,12 @@
-import { Component, ElementRef, OnDestroy, afterNextRender, inject, output } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  afterNextRender,
+  output,
+  signal,
+  viewChild,
+} from '@angular/core';
 
 import { environment } from '../../environments/environment';
 
@@ -25,7 +33,11 @@ function loadTurnstile(): Promise<TurnstileApi> {
     tag.src = 'https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit';
     tag.async = true;
     tag.onload = () => resolve(window.turnstile!);
-    tag.onerror = () => reject(new Error('No se pudo cargar el captcha'));
+    tag.onerror = () => {
+      script = undefined; // Permite reintentar si el componente se vuelve a crear.
+      tag.remove();
+      reject(new Error('No se pudo cargar el captcha'));
+    };
     document.head.appendChild(tag);
   });
   return script;
@@ -37,24 +49,50 @@ function loadTurnstile(): Promise<TurnstileApi> {
  */
 @Component({
   selector: 'app-turnstile',
-  template: '',
+  template: `
+    <div #widget></div>
+    @if (failed()) {
+      <p class="alert">
+        No se pudo cargar la verificación de seguridad. Recarga la página o desactiva el bloqueador
+        de anuncios para este sitio.
+      </p>
+    }
+  `,
   host: { class: 'turnstile' },
 })
 export class Turnstile implements OnDestroy {
-  private readonly element = inject<ElementRef<HTMLElement>>(ElementRef);
+  private readonly container = viewChild.required<ElementRef<HTMLElement>>('widget');
   private widgetId?: string;
+  private destroyed = false;
 
   readonly token = output<string | null>();
+  protected readonly failed = signal(false);
 
   constructor() {
     afterNextRender(async () => {
-      const turnstile = await loadTurnstile();
-      this.widgetId = turnstile.render(this.element.nativeElement, {
+      let turnstile: TurnstileApi;
+      try {
+        turnstile = await loadTurnstile();
+      } catch {
+        this.failed.set(true);
+        return;
+      }
+      // El formulario pudo cerrarse mientras cargaba el script.
+      if (this.destroyed) return;
+
+      this.widgetId = turnstile.render(this.container().nativeElement, {
         sitekey: environment.turnstileSiteKey,
         language: 'es',
-        callback: (token: string) => this.token.emit(token),
+        callback: (token: string) => {
+          this.failed.set(false);
+          this.token.emit(token);
+        },
         'expired-callback': () => this.token.emit(null),
-        'error-callback': () => this.token.emit(null),
+        // Por ejemplo, si el dominio no está en los Hostnames del widget en Cloudflare.
+        'error-callback': () => {
+          this.failed.set(true);
+          this.token.emit(null);
+        },
       });
     });
   }
@@ -65,6 +103,7 @@ export class Turnstile implements OnDestroy {
   }
 
   ngOnDestroy(): void {
+    this.destroyed = true;
     if (this.widgetId) window.turnstile?.remove(this.widgetId);
   }
 }

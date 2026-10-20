@@ -21,6 +21,8 @@ export class Auth {
   readonly session = signal<Session | null>(null);
   /** null si no hay sesión o si el usuario no tiene perfil asignado. */
   readonly profile = signal<Profile | null>(null);
+  /** true si no se pudo leer el perfil (por ejemplo, sin conexión): no significa "sin negocio". */
+  readonly profileError = signal(false);
   /** Se resuelve cuando ya se sabe si hay sesión y se cargó su perfil. */
   readonly ready: Promise<void>;
 
@@ -103,6 +105,7 @@ export class Auth {
     await this.supabase.auth.signOut();
     this.session.set(null);
     this.profile.set(null);
+    this.profileError.set(false);
   }
 
   private async setSession(session: Session | null): Promise<void> {
@@ -116,11 +119,12 @@ export class Auth {
   }
 
   private async loadProfile(userId: string): Promise<void> {
-    const { data } = await this.supabase
+    const { data, error } = await this.supabase
       .from('profiles')
       .select('user_id, role, business_id')
       .eq('user_id', userId)
       .maybeSingle<Profile>();
+    this.profileError.set(error !== null);
     this.profile.set(data);
   }
 }

@@ -160,7 +160,7 @@ export class Categories {
       const list = [...this.categories()];
       [list[index], list[index + delta]] = [list[index + delta], list[index]];
       this.categories.set(list);
-      await this.api.savePositions('categories', list);
+      this.categories.set(await this.api.savePositions('categories', list));
     });
   }
 

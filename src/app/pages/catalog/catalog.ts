@@ -1,4 +1,13 @@
-import { Component, ElementRef, computed, inject, input, signal, viewChild } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  computed,
+  inject,
+  input,
+  signal,
+  viewChild,
+} from '@angular/core';
 import { Meta, Title } from '@angular/platform-browser';
 import { RouterLink } from '@angular/router';
 
@@ -30,7 +39,7 @@ const SOCIAL_LABELS = {
     '[style.--on-brand]': 'onBrand()',
   },
 })
-export class Catalog {
+export class Catalog implements OnDestroy {
   private readonly api = inject(CatalogApi);
   private readonly auth = inject(Auth);
   private readonly title = inject(Title);
@@ -88,8 +97,19 @@ export class Catalog {
   /** El dueño (o el superadmin) ve su catálogo aunque todavía no sea público. */
   protected readonly isPreview = computed(() => this.business()?.status !== 'active');
 
+  /** Título y color de la barra del navegador de la plataforma, para restaurarlos al salir. */
+  private readonly platformTitle = this.title.getTitle();
+  private readonly platformThemeColor =
+    this.meta.getTag('name="theme-color"')?.content ?? '#6b45ff';
+
   constructor() {
     void this.load();
+  }
+
+  ngOnDestroy(): void {
+    this.title.setTitle(this.platformTitle);
+    this.meta.updateTag({ name: 'theme-color', content: this.platformThemeColor });
+    this.meta.removeTag('name="description"');
   }
 
   private async load(): Promise<void> {

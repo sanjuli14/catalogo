@@ -179,6 +179,8 @@ body {
 }
 
 .panel {
+  display: grid;
+  gap: 16px;
   max-width: 960px;
   margin: 0 auto;
   padding: 16px;
@@ -208,7 +210,9 @@ a {
 }
 
 .turnstile {
-  justify-self: center;
+  display: grid;
+  gap: 8px;
+  justify-items: center;
   min-height: 65px;
 }
 
@@ -232,11 +236,6 @@ a {
   background: var(--color-success-bg);
   color: var(--color-success-text);
   font-size: 14px;
-}
-
-.panel {
-  display: grid;
-  gap: 16px;
 }
 
 a.button {

@@ -136,6 +136,12 @@ export class Register {
       return;
     }
 
+    // No se pudo leer su perfil: quizá ya tiene negocio. El login muestra el error.
+    if (this.auth.profileError()) {
+      await this.router.navigateByUrl('/login');
+      return;
+    }
+
     // Tiene sesión pero no negocio (si lo tuviera, el guard lo habría mandado a su panel).
     this.form.controls.email.disable();
     this.form.controls.password.disable();

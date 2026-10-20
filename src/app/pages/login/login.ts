@@ -14,7 +14,9 @@ import { Turnstile, captchaEnabled } from '../../shared/turnstile';
         <img class="auth-card__logo" src="icono/icono.png" alt="" width="56" height="56" />
         <h1>Iniciar sesión</h1>
 
-        @if (auth.session() && !auth.profile()) {
+        @if (auth.profileError()) {
+          <p class="alert">No pudimos cargar tu cuenta. Revisa tu conexión e inténtalo de nuevo.</p>
+        } @else if (auth.session() && !auth.profile()) {
           <p class="alert">
             Tu cuenta todavía no tiene un negocio.
             <a routerLink="/registro">Termina de crearlo aquí</a>.
@@ -79,6 +81,9 @@ export class Login {
       this.error.set(error);
       return;
     }
+
+    // Entró, pero no se pudo leer su perfil: la alerta de arriba lo explica.
+    if (this.auth.profileError()) return;
 
     // Sin perfil: se registró pero aún no creó su negocio.
     const profile = this.auth.profile();

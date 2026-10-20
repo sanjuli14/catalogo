@@ -5,6 +5,11 @@ import { Business, Category, Item } from './models';
 import { Supabase } from './supabase';
 
 const BUCKET = 'catalog';
+const EXTENSIONS: Record<string, string> = {
+  'image/webp': 'webp',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+};
 
 export type BusinessPatch = Partial<Omit<Business, 'id' | 'status' | 'created_at' | 'updated_at'>>;
 export type ItemInput = Omit<Item, 'id'>;
@@ -115,19 +120,32 @@ export class CatalogApi {
     await this.removeImages(item.photos);
   }
 
-  /** Guarda el orden: cada fila queda con position = su índice en la lista. */
-  async savePositions(table: 'categories' | 'items', rows: { id: string }[]): Promise<void> {
+  /**
+   * Guarda el orden mostrado: cada fila queda con position = su índice en la lista.
+   * Solo actualiza las filas que cambian (al intercambiar dos, son dos peticiones).
+   */
+  async savePositions<T extends { id: string; position: number }>(
+    table: 'categories' | 'items',
+    rows: T[],
+  ): Promise<T[]> {
     const results = await Promise.all(
-      rows.map((row, position) => this.supabase.from(table).update({ position }).eq('id', row.id)),
+      rows
+        .map((row, position) => ({ row, position }))
+        .filter(({ row, position }) => row.position !== position)
+        .map(({ row, position }) =>
+          this.supabase.from(table).update({ position }).eq('id', row.id),
+        ),
     );
     const failed = results.find((r) => r.error);
     if (failed) throw failed.error;
+    return rows.map((row, position) => ({ ...row, position }));
   }
 
   /** Sube una imagen reducida a {businessId}/{folder}/... y devuelve su ruta en el bucket. */
   async uploadImage(businessId: string, folder: 'logo' | 'items', file: File): Promise<string> {
-    const blob = await resizeImage(file, folder === 'logo' ? 512 : 1600);
-    const extension = blob.type === 'image/webp' ? 'webp' : 'png';
+    const isLogo = folder === 'logo';
+    const blob = await resizeImage(file, isLogo ? 512 : 1600, isLogo);
+    const extension = EXTENSIONS[blob.type] ?? 'png';
     const path = `${businessId}/${folder}/${crypto.randomUUID()}.${extension}`;
 
     const { error } = await this.supabase.storage
